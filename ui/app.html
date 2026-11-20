@@ -115,7 +115,7 @@ main { padding-block: 20px 48px; }
 .phone { width: 100%; max-width: min(250px, 62vw); aspect-ratio: 9 / 16; background: var(--screen); border-radius: 22px; padding: 6px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06); }
 .phone video, .phone .screen { width: 100%; height: 100%; border-radius: 17px; display: block; object-fit: cover; background: var(--screen); }
 .phone .screen { display: grid; place-content: center; justify-items: center; gap: 10px; color: #C9D3E3; font-size: 13px; text-align: center; padding: 16px; }
-.screen .spin { width: 34px; height: 34px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, .15); border-top-color: var(--saffron); animation: spin 1s linear infinite; }
+.spin { width: 34px; height: 34px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, .15); border-top-color: var(--saffron); animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .ep-body { min-width: 0; display: grid; gap: 16px; align-content: start; }
@@ -220,6 +220,50 @@ main { padding-block: 20px 48px; }
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--surface); padding: 10px 16px; border-radius: 12px; font-size: 14px; font-weight: 600; box-shadow: var(--shadow); z-index: 20; max-width: calc(100% - 32px); text-align: center; }
 .fatal { background: var(--bad-soft); border-radius: 12px; padding: 14px 16px; }
 
+/* ---------- Окна: новая серия и новый бренд ---------- */
+.sheet { border: 0; padding: 0; background: transparent; color: var(--ink); width: min(560px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); }
+.sheet::backdrop { background: rgba(8, 12, 22, .55); }
+.sheet-body { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); padding: 20px; display: grid; gap: 14px; max-height: calc(100dvh - 24px); overflow-y: auto; }
+.sheet-head h2 { margin: 0; font: 700 20px/1.2 var(--font-display); }
+.sheet-note { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+.field { display: grid; gap: 6px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.field > span, .field > legend { font-size: 13px; font-weight: 700; padding: 0; }
+.field small { color: var(--muted); font-weight: 500; }
+.field input, .field select, .field textarea { width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--bg); min-width: 0; }
+.field textarea { resize: vertical; }
+.field-row { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+.sheet-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; padding-top: 4px; }
+.engines { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); }
+.engine { position: relative; display: grid; gap: 2px; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; cursor: pointer; background: var(--surface); }
+.engine input { position: absolute; opacity: 0; pointer-events: none; }
+.engine b { font-size: 14px; }
+.engine span { font-size: 12px; color: var(--muted); }
+.engine:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.engine:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.engine:has(input:disabled) { opacity: .5; cursor: not-allowed; }
+
+/* ---------- Бренды ---------- */
+.section-head.split { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.brands { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
+.brand-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; display: grid; gap: 12px; align-content: start; }
+.brand-card h3 { margin: 0; font: 700 18px/1.25 var(--font-display); }
+.brand-client { font-size: 13px; color: var(--muted); }
+.brand-client b { color: var(--ink); }
+.cast { display: flex; flex-wrap: wrap; gap: 6px; }
+.cast .who { display: inline-flex; align-items: center; gap: 6px; background: var(--surface-2); border-radius: 99px; padding: 3px 10px 3px 3px; font-size: 13px; font-weight: 600; }
+.cast .ava { width: 24px; height: 24px; font-size: 11px; }
+.rubrics { display: flex; flex-wrap: wrap; gap: 6px; }
+.rubrics span { font-size: 12px; border: 1px dashed var(--line); border-radius: 99px; padding: 3px 9px; color: var(--muted); }
+.brand-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
+.brand-stats div { display: grid; gap: 2px; }
+.brand-stats b { font: 600 16px var(--font-mono); font-variant-numeric: tabular-nums; }
+.brand-stats span { font-size: 11.5px; color: var(--muted); }
+.brand-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.tag { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 99px; background: var(--surface-2); color: var(--muted); }
+.tag.engine-tag { background: var(--accent-soft); color: var(--accent); }
+.brief { background: var(--saffron-soft); border-radius: 10px; padding: 8px 12px; font-size: 14px; }
+.brief b { display: block; font-size: 12px; color: var(--saffron); text-transform: uppercase; letter-spacing: .05em; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before { animation: none !important; transition: none !important; }
 }
@@ -251,6 +295,7 @@ main { padding-block: 20px 48px; }
   </div>
   <nav class="wrap tabs" role="tablist" aria-label="Разделы студии">
     <a href="#series" role="tab" data-tab="series">Серии <span class="count" id="countYou"></span></a>
+    <a href="#brands" role="tab" data-tab="brands">Бренды</a>
     <a href="#agents" role="tab" data-tab="agents">Агенты</a>
     <a href="#connections" role="tab" data-tab="connections">Подключения</a>
   </nav>
@@ -262,13 +307,28 @@ main { padding-block: 20px 48px; }
 
 <main class="wrap">
   <section data-view="series" aria-label="Серии">
+    <div class="filters" id="brandFilters"></div>
     <div class="filters" id="filters"></div>
     <div class="episodes" id="episodes"></div>
   </section>
 
+  <section data-view="brands" hidden aria-label="Бренды">
+    <div class="section-head split">
+      <div>
+        <h2>Бренды и сериалы</h2>
+        <p>У каждого бренда свой сериал: маскот, герои, локации и рубрики. Компания-клиент получает серию каждый день, а ты одобряешь её в один тап.</p>
+      </div>
+      <button class="btn primary" type="button" data-open="brandSheet">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
+        Новый бренд
+      </button>
+    </div>
+    <div class="brands" id="brands"></div>
+  </section>
+
   <section data-view="agents" hidden aria-label="Агенты">
     <div class="section-head">
-      <h2>15 агентов на смене</h2>
+      <h2 id="agentsTitle">Агенты на смене</h2>
       <p id="agentsSummary">Этап «Старт»: агенты в том порядке, в котором через них проходит ролик.</p>
     </div>
     <div class="agents" id="agents"></div>
@@ -288,6 +348,64 @@ main { padding-block: 20px 48px; }
   </section>
 </main>
 
+<dialog class="sheet" id="episodeSheet" aria-labelledby="episodeSheetTitle">
+  <form id="episodeForm" class="sheet-body">
+    <div class="sheet-head">
+      <h2 id="episodeSheetTitle">Новая серия</h2>
+      <p class="sheet-note">Агенты придумают сюжет, нарисуют кадры, озвучат и пришлют ролик на одобрение.</p>
+    </div>
+    <label class="field" for="epBrand"><span>Бренд</span><select id="epBrand" name="series"></select></label>
+    <label class="field" for="epBrief"><span>Задание агентам <small>необязательно</small></span>
+      <textarea id="epBrief" name="brief" rows="3" placeholder="Например: серия к Наврузу — Somsa aka печёт сумаляк на весь базар"></textarea>
+    </label>
+    <div class="quick" id="briefIdeas"></div>
+    <fieldset class="field">
+      <legend>Чем рисовать и оживлять кадры</legend>
+      <div class="engines" id="epEngines"></div>
+    </fieldset>
+    <div class="sheet-actions">
+      <button class="btn" type="button" data-close>Отмена</button>
+      <button class="btn primary" type="submit" id="epSubmit">Запустить агентов</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="sheet" id="brandSheet" aria-labelledby="brandSheetTitle">
+  <form id="brandForm" class="sheet-body">
+    <div class="sheet-head">
+      <h2 id="brandSheetTitle">Новый бренд</h2>
+      <p class="sheet-note">Дизайнер маскотов (№ 29) придумает маскота, героев, локации и рубрики. После этого студия делает серии для бренда каждый день.</p>
+    </div>
+    <label class="field" for="brCompany"><span>Компания</span><input id="brCompany" name="company" required maxlength="80" placeholder="Например: Lazzat Somsa"></label>
+    <label class="field" for="brProduct"><span>Что продаёт</span><input id="brProduct" name="product" required maxlength="200" placeholder="Самса и выпечка из тандыра, 5 точек в Ташкенте"></label>
+    <label class="field" for="brAudience"><span>Для кого</span><input id="brAudience" name="audience" maxlength="200" placeholder="Студенты и офисные работники, 18–35 лет"></label>
+    <div class="field-row">
+      <label class="field" for="brTone"><span>Тон</span>
+        <select id="brTone" name="tone">
+          <option>Тёплый семейный юмор</option>
+          <option>Дерзкий молодёжный юмор</option>
+          <option>Премиальный и спокойный</option>
+          <option>Познавательный, с фактами</option>
+        </select>
+      </label>
+      <label class="field" for="brLang"><span>Язык серий</span>
+        <select id="brLang" name="language">
+          <option value="uz">Узбекский</option>
+          <option value="ru">Русский</option>
+          <option value="en">Английский</option>
+        </select>
+      </label>
+    </div>
+    <label class="field" for="brWishes"><span>Пожелания <small>необязательно</small></span>
+      <textarea id="brWishes" name="wishes" rows="2" maxlength="500" placeholder="Фирменный цвет — оранжевый, маскот — весёлая самса в тюбетейке"></textarea>
+    </label>
+    <div class="sheet-actions">
+      <button class="btn" type="button" data-close>Отмена</button>
+      <button class="btn primary" type="submit" id="brSubmit">Собрать бренд</button>
+    </div>
+  </form>
+</dialog>
+
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script>
@@ -305,8 +423,17 @@ main { padding-block: 20px 48px; }
   let state = null;
   let timer = null;
   let filter = pref.get("filter", "all");
+  let brandFilter = pref.get("brand", "all");
+  let expectBrands = 0; // сколько брендов должно стать, пока Дизайнер маскотов работает
   const ui = {};      // id → { redo, confirmReject, busy }
   const drafts = {};  // id → текст правок
+
+  function plural(n, one, few, many) {
+    const m10 = n % 10, m100 = n % 100;
+    if (m10 === 1 && m100 !== 11) return one;
+    if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
+    return many;
+  }
 
   const FILTERS = [
     ["all", "Все", () => true],
@@ -316,7 +443,8 @@ main { padding-block: 20px 48px; }
     ["issues", "Проблемы", (e) => e.status === "failed" || e.status === "paused_budget"],
     ["rejected", "Отклонены", (e) => e.status === "rejected"],
   ];
-  const QUICK_FIXES = ["Сделай смешнее", "Короче, до 20 секунд", "Другая концовка", "Сильнее первая фраза", "Больше Non bobo"];
+  const QUICK_FIXES = ["Сделай смешнее", "Короче, до 20 секунд", "Другая концовка", "Сильнее первая фраза", "Больше главного героя"];
+  const BRIEF_IDEAS = ["Серия к Наврузу", "Свадебный сезон", "Начало учебного года", "Рамадан: ифтар у соседей", "Футбол: вся махалля болеет"];
 
   // ---------- Данные ----------
   async function load() {
@@ -327,6 +455,10 @@ main { padding-block: 20px 48px; }
         const res = await fetch("/api/state", { headers: { Accept: "application/json" } });
         if (!res.ok) throw new Error(res.status === 401 ? "Нужно войти: обнови страницу и введи пароль." : "Сервер ответил " + res.status);
         state = await res.json();
+      }
+      if (expectBrands && state.brands.length >= expectBrands) {
+        expectBrands = 0;
+        toast("Бренд готов — смотри во вкладке «Бренды»");
       }
       render();
     } catch (error) {
@@ -339,7 +471,7 @@ main { padding-block: 20px 48px; }
   function schedule() {
     clearTimeout(timer);
     if (PREVIEW || !state) return;
-    const busy = state.episodes.some((e) => e.status === "in_progress");
+    const busy = state.episodes.some((e) => e.status === "in_progress") || expectBrands > 0;
     timer = setTimeout(load, busy ? 4000 : 15000);
   }
 
@@ -371,7 +503,7 @@ main { padding-block: 20px 48px; }
   }
 
   // ---------- Шапка и вкладки ----------
-  const TABS = ["series", "agents", "connections"];
+  const TABS = ["series", "brands", "agents", "connections"];
   function currentTab() {
     const h = location.hash.slice(1);
     return TABS.includes(h) ? h : "series";
@@ -387,7 +519,8 @@ main { padding-block: 20px 48px; }
   });
 
   function renderHeader() {
-    $("#seriesName").textContent = state.series.title;
+    const n = state.brands.length;
+    $("#seriesName").textContent = `${n} ${plural(n, "бренд", "бренда", "брендов")} · ${state.episodes.length} ${plural(state.episodes.length, "серия", "серии", "серий")}`;
     const { spent, limit } = state.budget;
     const share = limit > 0 ? Math.min(1, spent / limit) : 1;
     $("#budgetText").textContent = `${money(spent)} из ${money(limit)}`;
@@ -400,8 +533,13 @@ main { padding-block: 20px 48px; }
   }
 
   // ---------- Серии ----------
-  function charById(id) {
-    return state.characters.find((c) => c.id === id) || { id, name: id, color: "var(--muted)" };
+  function brandBySlug(slug) {
+    return state.brands.find((b) => b.slug === slug);
+  }
+
+  function charById(ep, id) {
+    const brand = brandBySlug(ep.series);
+    return brand?.characters.find((c) => c.id === id) || { id, name: id, color: "var(--muted)" };
   }
 
   function pipeline(ep) {
@@ -452,7 +590,7 @@ main { padding-block: 20px 48px; }
     if (!ep.lines.length) return "";
     const lines = ep.lines
       .map((l) => {
-        const c = charById(l.character);
+        const c = charById(ep, l.character);
         return `<div class="line">
           <span class="ava" style="--c:${esc(c.color)}" aria-hidden="true">${esc(c.name.charAt(0))}</span>
           <div><div class="line-who"><b>${esc(c.name)}</b><span class="scene-tag">сцена ${l.scene}</span></div>
@@ -507,15 +645,20 @@ main { padding-block: 20px 48px; }
       ? `<video src="${esc(ep.video)}" ${ep.poster ? `poster="${esc(ep.poster)}"` : ""} controls playsinline preload="metadata"></video>`
       : `<div class="screen">${ep.status === "in_progress" ? '<span class="spin" aria-hidden="true"></span><span>Агенты собирают ролик</span>' : "<span>Ролика нет</span>"}</div>`;
     const date = new Date(ep.createdAt).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+    const tags = [
+      state.brands.length > 1 ? `<span class="tag">${esc(ep.seriesTitle)}</span>` : "",
+      ep.engine ? `<span class="tag engine-tag">${esc(ep.engine)}</span>` : "",
+    ].join("");
     return `<article class="ep" data-id="${ep.id}">
       <div class="ep-head">
-        <div class="ep-top"><span class="pill st-${ep.status}">${esc(ep.statusLabel.replace(/^\S+\s/, ""))}</span></div>
+        <div class="ep-top"><span class="pill st-${ep.status}">${esc(ep.statusLabel.replace(/^\S+\s/, ""))}</span>${tags}</div>
         <h3>${esc(ep.title)}</h3>
         ${ep.logline ? `<p class="logline">${esc(ep.logline)}</p>` : ""}
         <div class="meta mono"><span>${esc(date)}</span>${ep.duration ? `<span>${Math.round(ep.duration)} с</span>` : ""}<span>${money(ep.costUsd)}</span><span>${esc(ep.id)}</span></div>
       </div>
       <div class="ep-media"><div class="phone">${media}</div></div>
       <div class="ep-body">
+        ${ep.brief ? `<div class="brief"><b>Задание</b>${esc(ep.brief)}</div>` : ""}
         ${pipeline(ep)}
         ${statusBlock(ep)}
         ${qaBlock(ep)}
@@ -525,31 +668,41 @@ main { padding-block: 20px 48px; }
     </article>`;
   }
 
+  function visibleEpisodes() {
+    return state.episodes.filter((e) => brandFilter === "all" || e.series === brandFilter);
+  }
+
   function renderFilters() {
-    const html = FILTERS.map(([key, label, test]) => {
-      const n = state.episodes.filter(test).length;
+    if (brandFilter !== "all" && !brandBySlug(brandFilter)) brandFilter = "all";
+    $("#brandFilters").hidden = state.brands.length < 2;
+    $("#brandFilters").innerHTML = state.brands.length < 2 ? "" : [
+      `<button class="chip" type="button" data-brand="all" aria-pressed="${brandFilter === "all"}">Все бренды <b>${state.episodes.length}</b></button>`,
+      ...state.brands.map((b) => `<button class="chip" type="button" data-brand="${esc(b.slug)}" aria-pressed="${brandFilter === b.slug}">${esc(b.title)} <b>${b.stats.episodes}</b></button>`),
+    ].join("");
+    const pool = visibleEpisodes();
+    $("#filters").innerHTML = FILTERS.map(([key, label, test]) => {
+      const n = pool.filter(test).length;
       if (key !== "all" && n === 0 && filter !== key) return "";
       const attn = key === "you" && n > 0 ? " attn" : "";
       return `<button class="chip${attn}" type="button" data-filter="${key}" aria-pressed="${filter === key}">${label} <b>${n}</b></button>`;
     }).join("");
-    $("#filters").innerHTML = html;
   }
 
   // Перерисовываем только изменившиеся карточки, чтобы не сбивать видео и набранный текст.
   function cardKey(ep) {
-    return JSON.stringify([ep, ui[ep.id] || {}, drafts[ep.id] || ""]);
+    return JSON.stringify([ep, ui[ep.id] || {}, drafts[ep.id] || "", state.brands.length > 1]);
   }
 
   function renderEpisodes() {
     const box = $("#episodes");
     const test = (FILTERS.find((f) => f[0] === filter) || FILTERS[0])[2];
-    const list = state.episodes.filter(test);
+    const list = visibleEpisodes().filter(test);
     if (state.episodes.length === 0) {
-      box.innerHTML = `<div class="empty"><h3>Серий пока нет</h3><p>Нажми «Новая серия»: агенты придумают сюжет, нарисуют кадры, озвучат и пришлют ролик сюда на одобрение.</p></div>`;
+      box.innerHTML = `<div class="empty"><h3>Серий пока нет</h3><p>Нажми «Новая серия»: агенты придумают сюжет, нарисуют кадры, озвучат и пришлют ролик сюда на одобрение.</p><button class="btn primary" type="button" data-open="episodeSheet">Новая серия</button></div>`;
       return;
     }
     if (list.length === 0) {
-      box.innerHTML = `<div class="empty"><p>В этом разделе пусто.</p></div>`;
+      box.innerHTML = `<div class="empty"><p>Здесь пусто.</p></div>`;
       return;
     }
     box.querySelectorAll(".empty, .fatal").forEach((n) => n.remove());
@@ -574,16 +727,49 @@ main { padding-block: 20px 48px; }
     [...box.children].forEach((n) => { if (!keep.has(n)) n.remove(); });
   }
 
+  // ---------- Бренды ----------
+  function renderBrands() {
+    const waiting = expectBrands > 0 ? `<div class="brand-card empty"><span class="spin" aria-hidden="true"></span><p>Дизайнер маскотов собирает новый бренд…</p></div>` : "";
+    $("#brands").innerHTML = state.brands
+      .map((b) => {
+        const cast = b.characters
+          .map((c) => `<span class="who"><span class="ava" style="--c:${esc(c.color)}" aria-hidden="true">${esc(c.name.charAt(0))}</span>${esc(c.name)}</span>`)
+          .join("");
+        const client = b.client
+          ? `<div class="brand-client">Клиент: <b>${esc(b.client.company)}</b> · ${esc(b.client.product)}</div>`
+          : `<div class="brand-client">Собственный сериал студии</div>`;
+        return `<article class="brand-card">
+          <div><h3>${esc(b.title)}</h3>${client}</div>
+          <p class="logline">${esc(b.logline)}</p>
+          <div class="cast">${cast}</div>
+          ${b.rubrics.length ? `<div class="rubrics">${b.rubrics.slice(0, 4).map((r) => `<span>${esc(r.split(":")[0])}</span>`).join("")}</div>` : ""}
+          <div class="brand-stats">
+            <div><b>${b.stats.episodes}</b><span>серий</span></div>
+            <div><b>${b.stats.waiting}</b><span>ждут тебя</span></div>
+            <div><b>${b.stats.published}</b><span>в Instagram</span></div>
+            <div><b>${money(b.stats.costUsd)}</b><span>расход</span></div>
+          </div>
+          <div class="brand-actions">
+            <button class="btn primary" type="button" data-new-for="${esc(b.slug)}">Новая серия</button>
+            <button class="btn" type="button" data-show-brand="${esc(b.slug)}">Серии бренда</button>
+          </div>
+        </article>`;
+      })
+      .join("") + waiting;
+  }
+
   // ---------- Агенты и подключения ----------
   function renderAgents() {
+    $("#agentsTitle").textContent = `${state.agents.length} ${plural(state.agents.length, "агент", "агента", "агентов")} на смене`;
     const busy = new Map();
     for (const ep of state.episodes.filter((e) => e.status === "in_progress")) {
       const step = state.steps[ep.stepsDone];
       if (step) step.agents.forEach((no) => busy.set(no, ep.title));
     }
+    if (expectBrands > 0) busy.set(29, "новый бренд");
     $("#agentsSummary").textContent = busy.size
       ? "Сейчас работают: " + [...busy.keys()].map((no) => "№ " + no).join(", ") + ". Остальные ждут своей очереди."
-      : "Этап «Старт»: агенты в том порядке, в котором через них проходит ролик. Сейчас все свободны.";
+      : "Агенты в том порядке, в котором через них проходит ролик. Сейчас все свободны.";
     $("#agents").innerHTML = state.agents
       .map((a) => {
         const on = busy.has(a.no) || (a.no === 99 && busy.size > 0);
@@ -596,14 +782,21 @@ main { padding-block: 20px 48px; }
       .join("");
   }
 
+  const ENGINE_INFO = {
+    gemini: ["Gemini", "Nano Banana для кадров, Omni Flash для видео", ["GEMINI_API_KEY"]],
+    grok: ["Grok", "Grok Imagine: кадры и видео до 15 секунд", ["XAI_API_KEY"]],
+    higgsfield: ["Higgsfield", "Soul для кадров, Kling 3.0 для видео", ["HIGGSFIELD_KEY_ID", "HIGGSFIELD_KEY_SECRET"]],
+    fal: ["fal.ai", "Flux для кадров, Kling для видео", ["FAL_KEY"]],
+  };
+
   function renderConnections() {
     const p = state.providers;
+    const engineOn = (e) => state.engines.find((x) => x.engine === e)?.available;
     const rows = [
-      ["Claude", "Идеи, сценарии, хуки, промпты кадров, проверка качества, аналитика", p.claude, ["ANTHROPIC_API_KEY"], true],
-      ["Картинки — fal.ai", "Ключевые кадры каждой сцены", p.image, ["FAL_KEY"], true],
-      ["Видео — fal.ai", "Оживление кадров в клипы", p.video, ["FAL_KEY"], true],
-      ["Голос — Azure Speech", "Узбекская озвучка героев", p.tts, ["AZURE_SPEECH_KEY", "AZURE_SPEECH_REGION"], true],
-      ["Telegram", "Ролики на одобрение с кнопками прямо в чат", p.telegram, ["TELEGRAM_BOT_TOKEN", "TELEGRAM_ADMIN_CHAT_ID"], false],
+      ["Claude", "Мозг студии: идеи, сценарии, хуки, промпты кадров, проверка качества, маскоты брендов", p.claude, ["ANTHROPIC_API_KEY"], true],
+      ...Object.entries(ENGINE_INFO).map(([e, [name, what, keys]]) => [`${name} — кадры и видео`, what, engineOn(e), keys, true]),
+      ["Голос — Azure Speech", "Узбекская, русская и английская озвучка героев", p.tts, ["AZURE_SPEECH_KEY", "AZURE_SPEECH_REGION"], true],
+      ["Telegram", "Ролики на одобрение с кнопками прямо в чат, задания командой /new", p.telegram, ["TELEGRAM_BOT_TOKEN", "TELEGRAM_ADMIN_CHAT_ID"], false],
       ["Instagram", "Публикация Reels и статистика роликов", p.instagram, ["IG_USER_ID", "IG_ACCESS_TOKEN"], false],
       ["Публичный адрес", "По этой ссылке Instagram скачивает готовый ролик", p.publicUrl, ["PUBLIC_BASE_URL"], false],
     ];
@@ -616,6 +809,7 @@ main { padding-block: 20px 48px; }
       .join("");
     const s = state.schedule;
     $("#facts").innerHTML = [
+      ["Движок по умолчанию", state.autoEngine],
       ["Ежедневный запуск", s.dailyAt ? `${s.dailyAt} · ${s.timezone}` : "выключен"],
       ["Серий в день", String(s.episodesPerDay)],
       ["Дневной лимит", money(state.budget.limit)],
@@ -628,8 +822,37 @@ main { padding-block: 20px 48px; }
     renderHeader();
     renderFilters();
     renderEpisodes();
+    renderBrands();
     renderAgents();
     renderConnections();
+  }
+
+  // ---------- Окна ----------
+  function openSheet(id) {
+    const dialog = document.getElementById(id);
+    if (!dialog || dialog.open) return;
+    if (id === "episodeSheet") fillEpisodeSheet();
+    dialog.showModal();
+  }
+
+  function fillEpisodeSheet(slug) {
+    const select = $("#epBrand");
+    const current = slug || select.value || (brandFilter !== "all" ? brandFilter : state.defaultSeries);
+    select.innerHTML = state.brands
+      .map((b) => `<option value="${esc(b.slug)}" ${b.slug === current ? "selected" : ""}>${esc(b.title)}${b.client ? ` — ${esc(b.client.company)}` : ""}</option>`)
+      .join("");
+    $("#briefIdeas").innerHTML = BRIEF_IDEAS.map((t) => `<button type="button" data-brief="${esc(t)}">${esc(t)}</button>`).join("");
+    const chosen = document.querySelector('input[name="engine"]:checked')?.value || "auto";
+    $("#epEngines").innerHTML = [
+      { engine: "auto", label: "Авто", available: true, note: `сейчас: ${state.autoEngine}` },
+      ...state.engines.map((e) => ({ ...e, note: e.available ? "подключён" : "нет ключа" })),
+    ]
+      .map(
+        (e) => `<label class="engine"><input type="radio" name="engine" value="${esc(e.engine)}" ${e.engine === chosen && e.available ? "checked" : ""} ${e.available ? "" : "disabled"}>
+          <b>${esc(e.label)}</b><span>${esc(e.note)}</span></label>`,
+      )
+      .join("");
+    if (!document.querySelector('input[name="engine"]:checked')) document.querySelector('input[name="engine"][value="auto"]').checked = true;
   }
 
   // ---------- Действия ----------
@@ -651,7 +874,43 @@ main { padding-block: 20px 48px; }
   }
 
   document.addEventListener("click", (event) => {
-    const chip = event.target.closest("[data-filter]");
+    const t = event.target;
+    const open = t.closest("[data-open]");
+    if (open) return openSheet(open.dataset.open);
+    const close = t.closest("[data-close]");
+    if (close) return close.closest("dialog")?.close();
+    const newFor = t.closest("[data-new-for]");
+    if (newFor) {
+      openSheet("episodeSheet");
+      fillEpisodeSheet(newFor.dataset.newFor);
+      return;
+    }
+    const showBrand = t.closest("[data-show-brand]");
+    if (showBrand) {
+      brandFilter = showBrand.dataset.showBrand;
+      pref.set("brand", brandFilter);
+      filter = "all";
+      location.hash = "series";
+      renderFilters();
+      renderEpisodes();
+      return;
+    }
+    const briefIdea = t.closest("[data-brief]");
+    if (briefIdea) {
+      const area = $("#epBrief");
+      area.value = area.value.trim() ? area.value.trim() + ". " + briefIdea.dataset.brief : briefIdea.dataset.brief;
+      area.focus();
+      return;
+    }
+    const brand = t.closest("[data-brand]");
+    if (brand) {
+      brandFilter = brand.dataset.brand;
+      pref.set("brand", brandFilter);
+      renderFilters();
+      renderEpisodes();
+      return;
+    }
+    const chip = t.closest("[data-filter]");
     if (chip) {
       filter = chip.dataset.filter;
       pref.set("filter", filter);
@@ -659,7 +918,7 @@ main { padding-block: 20px 48px; }
       renderEpisodes();
       return;
     }
-    const btn = event.target.closest("[data-act]");
+    const btn = t.closest("[data-act]");
     if (!btn) return;
     const id = btn.dataset.id;
     const base = "/api/episodes/" + id;
@@ -709,16 +968,47 @@ main { padding-block: 20px 48px; }
     if (node && ep) node._key = cardKey(ep);
   });
 
-  $("#newEpisode").addEventListener("click", async (event) => {
-    const btn = event.currentTarget;
+  $("#newEpisode").addEventListener("click", () => openSheet("episodeSheet"));
+
+  $("#episodeForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const btn = $("#epSubmit");
     btn.disabled = true;
-    const ok = await post("/api/episodes");
+    const ok = await post("/api/episodes", {
+      series: form.get("series") || "",
+      brief: String(form.get("brief") || "").trim(),
+      engine: form.get("engine") || "auto",
+    });
     btn.disabled = false;
     if (ok) {
-      toast("Агенты начали новую серию — она появится в списке");
+      $("#episodeSheet").close();
+      $("#epBrief").value = "";
+      toast("Агенты начали новую серию — она уже в списке");
       filter = "all";
       location.hash = "series";
-      setTimeout(load, 800);
+      setTimeout(load, 600);
+    }
+  });
+
+  $("#brandForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formEl = event.currentTarget;
+    const form = new FormData(formEl);
+    const btn = $("#brSubmit");
+    btn.disabled = true;
+    const body = Object.fromEntries([...form.entries()].map(([k, v]) => [k, String(v).trim()]));
+    const ok = await post("/api/brands", body);
+    btn.disabled = false;
+    if (ok) {
+      $("#brandSheet").close();
+      formEl.reset();
+      expectBrands = state.brands.length + 1;
+      toast("Дизайнер маскотов собирает бренд — это займёт около минуты");
+      location.hash = "brands";
+      renderBrands();
+      renderAgents();
+      schedule();
     }
   });
 

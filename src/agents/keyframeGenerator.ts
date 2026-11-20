@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { assertBudget, recordCost } from "../budget.js";
 import { log } from "../log.js";
+import { ENGINE_LABEL, type EngineChoice, resolveEngine } from "../providers/engines.js";
 import { generateImage } from "../providers/image.js";
 import { episodeFile, saveEpisode } from "../store.js";
 import type { Episode } from "../types.js";
@@ -12,6 +13,9 @@ const AGENT = agentInfo(35);
 export async function drawKeyframes(ep: Episode): Promise<void> {
   if (!ep.script || !ep.shots) throw new Error("Нет сценария или промптов кадров");
   ep.keyframes ??= {};
+  const engine = resolveEngine(ep.engineChoice as EngineChoice | undefined, "image");
+  ep.engines = { ...ep.engines, image: engine };
+  log.agent(AGENT, `рисую движком ${ENGINE_LABEL[engine]}`);
 
   for (const [i, shot] of ep.shots.entries()) {
     const rel = `keyframes/${shot.scene_id}.png`;
@@ -22,7 +26,7 @@ export async function drawKeyframes(ep: Episode): Promise<void> {
     const label = `${ep.script.title}\n\n${shot.scene_id}: ${scene?.lines.map((l) => l.text).join(" ") ?? ""}`;
     log.agent(AGENT, `кадр ${i + 1}/${ep.shots.length} (${shot.scene_id})`);
 
-    const result = await generateImage(shot.image_prompt, episodeFile(ep, rel), label, i);
+    const result = await generateImage({ prompt: shot.image_prompt, out: episodeFile(ep, rel), label, index: i, engine });
     recordCost({ agent: AGENT, kind: "image", usd: result.costUsd, detail: shot.scene_id, episodeId: ep.id });
     ep.costUsd += result.costUsd;
     ep.keyframes[shot.scene_id] = rel;

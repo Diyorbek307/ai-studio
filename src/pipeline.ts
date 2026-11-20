@@ -16,6 +16,7 @@ import { voiceEpisode } from "./agents/voiceUz.js";
 import { assertBudget, BudgetExceededError, budgetSummary, localDay } from "./budget.js";
 import { config } from "./config.js";
 import { sendMessage, telegramEnabled } from "./integrations/telegram.js";
+import { isEngine, resolveEngine } from "./providers/engines.js";
 import { errorMessage, log } from "./log.js";
 import { createEpisode, listEpisodes, loadEpisode, loadInsights, loadSeries, saveEpisode, saveState } from "./store.js";
 import type { Episode, QaReport, Series } from "./types.js";
@@ -119,7 +120,7 @@ async function runStep(ep: Episode, series: Series, step: Step): Promise<Series>
         .filter((e) => e.series === series.slug && e.id !== ep.id && e.script)
         .slice(0, 15)
         .map((e) => e.script!.title);
-      const result = await generateIdea({ series, recentTitles, insights: loadInsights(series.slug), episodeId: ep.id });
+      const result = await generateIdea({ series, recentTitles, insights: loadInsights(series.slug), brief: ep.brief, episodeId: ep.id });
       ep.idea = result.idea;
       ep.ideaAlternatives = result.alternatives;
       break;
@@ -227,11 +228,20 @@ export function runEpisode(id: string): Promise<Episode> {
   });
 }
 
-export async function newEpisode(series = config.series): Promise<Episode> {
+/** Проверки до запуска, чтобы не создавать эпизод, который сразу упадёт. */
+export function prepareEpisode(series = config.series, opts: { brief?: string; engine?: string } = {}): Episode {
   loadSeries(series); // упадёт сразу, если сериала нет
-  const ep = createEpisode(series);
-  log.agent(PRODUCER, `новый эпизод ${ep.id} (${series})`);
-  return runEpisode(ep.id);
+  if (opts.engine && opts.engine !== "auto") {
+    if (!isEngine(opts.engine)) throw new Error(`Нет движка «${opts.engine}»`);
+    resolveEngine(opts.engine, "video"); // упадёт, если у движка нет ключа
+  }
+  const ep = createEpisode(series, opts);
+  log.agent(PRODUCER, `новый эпизод ${ep.id} (${series})${ep.brief ? ` — задание: «${ep.brief}»` : ""}`);
+  return ep;
+}
+
+export async function newEpisode(series = config.series, opts: { brief?: string; engine?: string } = {}): Promise<Episode> {
+  return runEpisode(prepareEpisode(series, opts).id);
 }
 
 export function approveEpisode(id: string): Promise<Episode> {

@@ -38,8 +38,8 @@ test("/api/state отдаёт серии, шаги и агентов", async () 
   const res = await fetch(base + "/api/state", { headers: auth });
   const state = (await res.json()) as import("../src/studioState.js").StudioState;
   assert.equal(state.steps.length, 11);
-  assert.equal(state.agents.length, 15);
-  assert.equal(state.characters.length, 5);
+  assert.equal(state.agents.length, 16);
+  assert.equal(state.brands.find((b) => b.slug === "bozor-seriali")?.characters.length, 5);
   const ep = state.episodes.find((e) => e.id === id);
   assert.ok(ep);
   assert.equal(ep.status, "awaiting_approval");
@@ -69,4 +69,49 @@ test("превью собирает интерфейс с данными и ро
   assert.ok(html.includes("window.STUDIO_PREVIEW = "));
   assert.ok(result.media.includes(`media/${id}/final.mp4`));
   assert.ok(fs.existsSync(path.join(out, "media", id, "final.mp4")));
+});
+
+test("бренд для компании: Дизайнер маскотов собирает сериал, потом серия по заданию", async () => {
+  const res = await fetch(`${base}/api/brands`, {
+    method: "POST",
+    headers: { ...auth, "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ company: "Lazzat Somsa", product: "Самса из тандыра", language: "uz" }),
+  });
+  assert.equal(res.status, 202);
+  const { loadSeries } = await import("../src/store.js");
+  let brand;
+  for (let i = 0; i < 50 && !brand; i++) {
+    try {
+      brand = loadSeries("lazzat-somsa");
+    } catch {
+      await new Promise((r) => setTimeout(r, 100));
+    }
+  }
+  assert.ok(brand, "бренд не появился");
+  assert.equal(brand.client?.company, "Lazzat Somsa");
+  assert.ok(brand.characters.every((c) => c.voice.azure?.startsWith("uz-UZ-")));
+
+  const bad = await fetch(`${base}/api/brands`, { method: "POST", headers: auth, body: new URLSearchParams({ company: "" }) });
+  assert.equal(bad.status, 400);
+
+  const start = await fetch(`${base}/api/episodes`, {
+    method: "POST",
+    headers: { ...auth, "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ series: "lazzat-somsa", brief: "Серия к Наврузу", engine: "mock" }),
+  });
+  assert.equal(start.status, 202);
+  const { id: newId } = (await start.json()) as { id: string };
+  let ep = loadEpisode(newId);
+  for (let i = 0; i < 300 && ep.status === "in_progress"; i++) {
+    await new Promise((r) => setTimeout(r, 100));
+    ep = loadEpisode(newId);
+  }
+  assert.equal(ep.status, "awaiting_approval", ep.error);
+  assert.equal(ep.brief, "Серия к Наврузу");
+  assert.equal(ep.engines?.video, "mock");
+  assert.ok(ep.idea?.title.includes("Наврузу"));
+
+  const noKey = await fetch(`${base}/api/episodes`, { method: "POST", headers: auth, body: new URLSearchParams({ engine: "grok" }) });
+  assert.equal(noKey.status, 400);
+  assert.match(((await noKey.json()) as { error: string }).error, /Grok не подключён/);
 });

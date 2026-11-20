@@ -25,12 +25,16 @@ export async function generateIdea(opts: {
   series: Series;
   recentTitles: string[];
   insights?: Insights;
+  brief?: string;
   episodeId: string;
 }): Promise<{ idea: Idea; alternatives: Idea[] }> {
-  const { series, recentTitles, insights } = opts;
-  log.agent(AGENT, "придумываю 5 сюжетов");
+  const { series, recentTitles, insights, brief } = opts;
+  log.agent(AGENT, brief ? `придумываю 5 сюжетов по заданию: «${brief}»` : "придумываю 5 сюжетов");
 
   const prompt = [
+    brief
+      ? `ЗАДАНИЕ ПРОДЮСЕРА — все 5 идей должны его выполнить, это важнее рубрик и аналитики:\n${brief}`
+      : "",
     recentTitles.length
       ? `Недавние серии (не повторяй):\n${recentTitles.map((t) => `- ${t}`).join("\n")}`
       : "Это одна из первых серий: познакомь зрителя с героями.",
@@ -38,7 +42,9 @@ export async function generateIdea(opts: {
       ? `Что говорит аналитика:\n- заходит: ${insights.what_works.join("; ")}\n- избегать: ${insights.what_to_avoid.join("; ")}\n- подсказки: ${insights.next_ideas_hints.join("; ")}`
       : "Статистики пока нет.",
     "Предложи 5 идей и выбери лучшую.",
-  ].join("\n\n");
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 
   const batch = await askStructured({
     agent: AGENT,
@@ -48,7 +54,7 @@ export async function generateIdea(opts: {
     schema: IdeaBatchSchema,
     effort: "high",
     episodeId: opts.episodeId,
-    mock: () => mockIdeas(series, recentTitles.length),
+    mock: () => mockIdeas(series, recentTitles.length, brief),
   });
 
   if (batch.ideas.length === 0) throw new Error("Генератор идей не вернул ни одной идеи");
@@ -58,12 +64,13 @@ export async function generateIdea(opts: {
   return { idea, alternatives: batch.ideas.filter((_, i) => i !== index) };
 }
 
-function mockIdeas(series: Series, seed: number) {
+function mockIdeas(series: Series, seed: number, brief?: string) {
   const ids = series.characters.map((c) => c.id);
   const location = series.locations[0]?.id ?? "stall";
   const pick = (i: number) => ids[i % ids.length]!;
-  const ideas: Idea[] = (series.rubrics.length ? series.rubrics : ["Серия о героях"]).map((rubric, i) => ({
-    title: `${rubric.split(":")[0]} #${seed + 1}`,
+  const topics = brief ? [brief] : series.rubrics.length ? series.rubrics : ["Серия о героях"];
+  const ideas: Idea[] = topics.map((rubric, i) => ({
+    title: brief ? brief.slice(0, 60) : `${rubric.split(":")[0]} #${seed + 1}`,
     logline: `${rubric}. Демо-сюжет без Claude.`,
     characters: [pick(seed + i), pick(seed + i + 1)],
     location: series.locations[i % series.locations.length]?.id ?? location,

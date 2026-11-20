@@ -42,7 +42,7 @@ export function newEpisodeId(now = new Date()): string {
   return `ep-${day}-${crypto.randomBytes(4).toString("hex")}`;
 }
 
-export function createEpisode(series: string): Episode {
+export function createEpisode(series: string, opts: { brief?: string; engine?: string } = {}): Episode {
   const now = new Date().toISOString();
   const ep: Episode = {
     id: newEpisodeId(),
@@ -50,6 +50,8 @@ export function createEpisode(series: string): Episode {
     createdAt: now,
     updatedAt: now,
     status: "in_progress",
+    brief: opts.brief?.trim() || undefined,
+    engineChoice: opts.engine && opts.engine !== "auto" ? opts.engine : undefined,
     feedback: [],
     attempts: {},
     costUsd: 0,
@@ -112,6 +114,28 @@ export function loadSeries(slug: string): Series {
 
 export function saveSeries(series: Series): void {
   writeJsonAtomic(seriesFile(series.slug), series);
+}
+
+/** Все сериалы и бренды студии. Битый файл пропускается, а не роняет студию. */
+export function listSeries(): Series[] {
+  if (!fs.existsSync(config.seriesDir)) return [];
+  const out: Series[] = [];
+  for (const file of fs.readdirSync(config.seriesDir).filter((f) => f.endsWith(".json")).sort()) {
+    try {
+      out.push(loadSeries(file.replace(/\.json$/, "")));
+    } catch {
+      // неверное имя файла или схема — такой сериал не показываем
+    }
+  }
+  return out;
+}
+
+export function seriesExists(slug: string): boolean {
+  try {
+    return fs.existsSync(seriesFile(slug));
+  } catch {
+    return false;
+  }
 }
 
 // ---------- Выводы аналитика ----------

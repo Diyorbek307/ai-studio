@@ -45,6 +45,15 @@ export const SeriesSchema = z.object({
   rules: z.array(z.string()).default([]),
   target_duration_sec: z.number().default(30),
   hashtags: z.array(z.string()).default([]),
+  /** Компания-клиент, если сериал сделан под бренд. */
+  client: z
+    .object({
+      company: z.string(),
+      product: z.string(),
+      contact: z.string().optional(),
+    })
+    .optional(),
+  createdAt: z.string().optional(),
 });
 export type Series = z.infer<typeof SeriesSchema>;
 
@@ -212,6 +221,12 @@ export interface Episode {
   /** Шаг, на котором остановились (для «Продолжить»). */
   step?: string;
   error?: string;
+  /** Задание на серию от тебя: тема, повод, реклама. Генератор идей обязан его выполнить. */
+  brief?: string;
+  /** Какой движок просили для кадров и видео ("auto" — выбрать самому). */
+  engineChoice?: string;
+  /** Какие движки на самом деле нарисовали кадры и сделали видео. */
+  engines?: { image?: string; video?: string };
   /** Замечания от тебя и от контролёра качества: сценарист учитывает их при переделке. */
   feedback: string[];
   attempts: Record<string, number>;

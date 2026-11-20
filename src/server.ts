@@ -5,7 +5,8 @@ import { fileURLToPath } from "node:url";
 import { budgetSummary, localDay } from "./budget.js";
 import { config, describeProviders } from "./config.js";
 import { errorMessage, log } from "./log.js";
-import { approveEpisode, dailyJob, newEpisode, redoEpisode, rejectEpisode, runEpisode } from "./pipeline.js";
+import { designBrandSeries } from "./agents/mascotDesigner.js";
+import { approveEpisode, dailyJob, prepareEpisode, redoEpisode, rejectEpisode, runEpisode } from "./pipeline.js";
 import { episodeDir, loadState, saveState } from "./store.js";
 import { buildStudioState } from "./studioState.js";
 
@@ -126,7 +127,45 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse): Prom
   }
 
   if (url.pathname === "/api/episodes" && req.method === "POST") {
-    background("Новая серия", newEpisode());
+    const form = await readForm(req);
+    try {
+      const ep = prepareEpisode(form.get("series") || undefined, {
+        brief: form.get("brief") ?? undefined,
+        engine: form.get("engine") ?? undefined,
+      });
+      background("Новая серия", runEpisode(ep.id));
+      json(res, 202, { ok: true, id: ep.id });
+    } catch (error) {
+      json(res, 400, { error: errorMessage(error) });
+    }
+    return;
+  }
+
+  if (url.pathname === "/api/brands" && req.method === "POST") {
+    const form = await readForm(req);
+    const company = (form.get("company") ?? "").trim();
+    const product = (form.get("product") ?? "").trim();
+    const language = form.get("language") ?? "uz";
+    if (!company || !product) {
+      json(res, 400, { error: "Укажи название компании и что она продаёт" });
+      return;
+    }
+    if (language !== "uz" && language !== "ru" && language !== "en") {
+      json(res, 400, { error: "Язык сериала: uz, ru или en" });
+      return;
+    }
+    background(
+      `Бренд ${company}`,
+      designBrandSeries({
+        company,
+        product,
+        audience: (form.get("audience") ?? "").trim() || "Покупатели в Узбекистане, 18–45 лет",
+        tone: (form.get("tone") ?? "").trim() || "Тёплый семейный юмор",
+        language,
+        wishes: (form.get("wishes") ?? "").trim() || undefined,
+        contact: (form.get("contact") ?? "").trim() || undefined,
+      }),
+    );
     json(res, 202, { ok: true });
     return;
   }

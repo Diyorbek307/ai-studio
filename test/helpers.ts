@@ -12,12 +12,17 @@ export function isolate(extra: Record<string, string> = {}): string {
   Object.assign(process.env, {
     STUDIO_DATA_DIR: dir,
     STUDIO_MUSIC_DIR: path.join(dir, "no-music"),
+    STUDIO_SERIES_DIR: path.join(dir, "series"),
     LLM_PROVIDER: "mock",
-    IMAGE_PROVIDER: "mock",
-    VIDEO_PROVIDER: "mock",
+    IMAGE_ENGINE: "mock",
+    VIDEO_ENGINE: "mock",
     TTS_PROVIDER: "mock",
     ANTHROPIC_API_KEY: "",
     FAL_KEY: "",
+    GEMINI_API_KEY: "",
+    XAI_API_KEY: "",
+    HIGGSFIELD_KEY_ID: "",
+    HIGGSFIELD_KEY_SECRET: "",
     AZURE_SPEECH_KEY: "",
     TELEGRAM_BOT_TOKEN: "",
     TELEGRAM_ADMIN_CHAT_ID: "",
@@ -26,7 +31,10 @@ export function isolate(extra: Record<string, string> = {}): string {
     PUBLIC_BASE_URL: "",
     DAILY_BUDGET_USD: "5",
     DAILY_AT: "",
+    PROVIDER_POLL_MS: "5",
     ...extra,
   });
+  // Сериалы — копия из кода: тесты могут создавать бренды, не трогая папку series/ проекта.
+  fs.cpSync(path.resolve("series"), path.join(dir, "series"), { recursive: true });
   return dir;
 }

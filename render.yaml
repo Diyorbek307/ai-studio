@@ -30,6 +30,14 @@ services:
         sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: XAI_API_KEY
+        sync: false
+      - key: HIGGSFIELD_KEY_ID
+        sync: false
+      - key: HIGGSFIELD_KEY_SECRET
+        sync: false
       - key: FAL_KEY
         sync: false
       - key: AZURE_SPEECH_KEY

@@ -26,7 +26,6 @@ function oneOf<T extends string>(key: string, allowed: readonly T[], fallback: T
 }
 
 const hasClaudeKey = str("ANTHROPIC_API_KEY") !== "" || str("ANTHROPIC_AUTH_TOKEN") !== "";
-const hasFal = str("FAL_KEY") !== "";
 const hasAzure = str("AZURE_SPEECH_KEY") !== "";
 
 export const config = {
@@ -44,16 +43,43 @@ export const config = {
     priceCacheReadPerMTok: num("CLAUDE_PRICE_CACHE_READ_PER_MTOK", 0.2),
   },
 
+  // Движок картинок и видео: auto — первый подключённый по порядку gemini → grok → higgsfield → fal, иначе демо.
   image: {
-    provider: oneOf("IMAGE_PROVIDER", ["fal", "mock"] as const, hasFal ? "fal" : "mock"),
+    engine: oneOf("IMAGE_ENGINE", ["auto", "gemini", "grok", "higgsfield", "fal", "mock"] as const, "auto"),
     falModel: str("FAL_IMAGE_MODEL", "fal-ai/flux/dev"),
     costUsd: num("IMAGE_COST_USD", 0.03),
   },
 
   video: {
-    provider: oneOf("VIDEO_PROVIDER", ["fal", "mock"] as const, hasFal ? "fal" : "mock"),
+    engine: oneOf("VIDEO_ENGINE", ["auto", "gemini", "grok", "higgsfield", "fal", "mock"] as const, "auto"),
     falModel: str("FAL_VIDEO_MODEL", "fal-ai/kling-video/v2.1/standard/image-to-video"),
     costPerSecUsd: num("VIDEO_COST_PER_SEC_USD", 0.06),
+  },
+
+  gemini: {
+    apiKey: str("GEMINI_API_KEY"),
+    imageModel: str("GEMINI_IMAGE_MODEL", "gemini-nano-banana-2.1"),
+    videoModel: str("GEMINI_VIDEO_MODEL", "gemini-omni-1.2-flash"),
+    apiRevision: str("GEMINI_API_REVISION", "2026-05-20"),
+    imageCostUsd: num("GEMINI_IMAGE_COST_USD", 0.04),
+    // По прайсу Google: ~$0.07 за секунду видео 720p у Gemini Omni Flash.
+    videoCostPerSecUsd: num("GEMINI_VIDEO_COST_PER_SEC_USD", 0.07),
+  },
+
+  grok: {
+    apiKey: str("XAI_API_KEY"),
+    imageModel: str("GROK_IMAGE_MODEL", "grok-imagine-image-2.0"),
+    videoModel: str("GROK_VIDEO_MODEL", "grok-imagine-video-1.5"),
+    videoResolution: str("GROK_VIDEO_RESOLUTION", "720p"),
+  },
+
+  higgsfield: {
+    keyId: str("HIGGSFIELD_KEY_ID"),
+    keySecret: str("HIGGSFIELD_KEY_SECRET"),
+    imageEndpoint: str("HIGGSFIELD_IMAGE_ENDPOINT", "higgsfield-ai/soul/standard"),
+    videoEndpoint: str("HIGGSFIELD_VIDEO_ENDPOINT", "kling-video/v3.0/std/image-to-video"),
+    imageCostUsd: num("HIGGSFIELD_IMAGE_COST_USD", 0.09),
+    videoCostPerSecUsd: num("HIGGSFIELD_VIDEO_COST_PER_SEC_USD", 0.1),
   },
 
   tts: {
@@ -106,6 +132,9 @@ export const config = {
   },
 
   maxQaRetries: num("MAX_QA_RETRIES", 1),
+
+  /** Как часто спрашивать у движков готовность видео (мс). */
+  pollMs: num("PROVIDER_POLL_MS", 5000),
 };
 
 export type Config = typeof config;
@@ -113,10 +142,15 @@ export type Config = typeof config;
 /** Короткая сводка, какие сервисы настоящие, а какие в демо-режиме. */
 export function describeProviders(): string {
   const mark = (real: boolean) => (real ? "настоящий" : "демо");
+  const engines = [
+    config.gemini.apiKey && "Gemini",
+    config.grok.apiKey && "Grok",
+    config.higgsfield.keyId && config.higgsfield.keySecret && "Higgsfield",
+    config.falKey && "fal.ai",
+  ].filter(Boolean);
   return [
     `Claude: ${mark(config.llm.provider === "claude")}`,
-    `картинки: ${mark(config.image.provider === "fal")}`,
-    `видео: ${mark(config.video.provider === "fal")}`,
+    `кадры и видео: ${engines.length ? engines.join(", ") : "демо"}`,
     `голос: ${mark(config.tts.provider === "azure")}`,
     `Telegram: ${config.telegram.token ? "подключён" : "нет"}`,
     `Instagram: ${config.instagram.token ? "подключён" : "нет"}`,

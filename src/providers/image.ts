@@ -2,7 +2,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { config } from "../config.js";
 import { normalizeImage, placeholderImage } from "../media/ffmpeg.js";
-import { download, falRun, findFileUrl } from "./fal.js";
+import type { Engine } from "./engines.js";
+import { falRun, findFileUrl } from "./fal.js";
+import { geminiImage } from "./gemini.js";
+import { grokImage } from "./grok.js";
+import { higgsfieldImage } from "./higgsfield.js";
+import { type MediaResult, saveMedia } from "./media.js";
 
 export interface ImageResult {
   costUsd: number;
@@ -10,15 +15,7 @@ export interface ImageResult {
 
 const PALETTE = ["2d6a4f", "9d4edd", "e76f51", "264653", "c9184a", "3a86ff", "6a4c93", "bc6c25"];
 
-/** Генерирует вертикальный кадр 1080×1920 по промпту и сохраняет в PNG. */
-export async function generateImage(prompt: string, out: string, label: string, index: number): Promise<ImageResult> {
-  fs.mkdirSync(path.dirname(out), { recursive: true });
-
-  if (config.image.provider === "mock") {
-    await placeholderImage(label, PALETTE[index % PALETTE.length]!, out);
-    return { costUsd: 0 };
-  }
-
+async function falImage(prompt: string): Promise<MediaResult> {
   // Модели обычно рисуют размерами, кратными 16; рисуем 768×1344 и доводим до 1080×1920.
   const result = await falRun(config.image.falModel, {
     prompt,
@@ -28,12 +25,33 @@ export async function generateImage(prompt: string, out: string, label: string, 
   });
   const url = findFileUrl(result, "image");
   if (!url) throw new Error(`fal.ai ${config.image.falModel}: в ответе нет картинки`);
-  const raw = `${out}.raw`;
-  await download(url, raw);
+  return { url, costUsd: config.image.costUsd };
+}
+
+/** Рисует вертикальный кадр 1080×1920 выбранным движком и сохраняет в PNG. */
+export async function generateImage(opts: { prompt: string; out: string; label: string; index: number; engine: Engine }): Promise<ImageResult> {
+  fs.mkdirSync(path.dirname(opts.out), { recursive: true });
+
+  if (opts.engine === "mock") {
+    await placeholderImage(opts.label, PALETTE[opts.index % PALETTE.length]!, opts.out);
+    return { costUsd: 0 };
+  }
+
+  const result =
+    opts.engine === "gemini"
+      ? await geminiImage(opts.prompt)
+      : opts.engine === "grok"
+        ? await grokImage(opts.prompt)
+        : opts.engine === "higgsfield"
+          ? await higgsfieldImage(opts.prompt)
+          : await falImage(opts.prompt);
+
+  const raw = `${opts.out}.raw`;
+  await saveMedia(result, raw);
   try {
-    await normalizeImage(raw, out);
+    await normalizeImage(raw, opts.out);
   } finally {
     fs.rmSync(raw, { force: true });
   }
-  return { costUsd: config.image.costUsd };
+  return { costUsd: result.costUsd };
 }

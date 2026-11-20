@@ -2,6 +2,7 @@ import fs from "node:fs";
 import { assertBudget, recordCost } from "../budget.js";
 import { config } from "../config.js";
 import { log } from "../log.js";
+import { ENGINE_LABEL, type EngineChoice, resolveEngine } from "../providers/engines.js";
 import { animateImage } from "../providers/video.js";
 import { episodeFile, saveEpisode } from "../store.js";
 import type { Episode } from "../types.js";
@@ -13,6 +14,9 @@ const AGENT = agentInfo(42);
 export async function animateScenes(ep: Episode): Promise<void> {
   if (!ep.shots || !ep.keyframes || !ep.voice) throw new Error("Нет кадров или озвучки");
   ep.clips ??= {};
+  const engine = resolveEngine(ep.engineChoice as EngineChoice | undefined, "video");
+  ep.engines = { ...ep.engines, video: engine };
+  log.agent(AGENT, `оживляю движком ${ENGINE_LABEL[engine]}`);
 
   for (const [i, span] of ep.voice.scenes.entries()) {
     const rel = `clips/${span.sceneId}.mp4`;
@@ -30,6 +34,7 @@ export async function animateScenes(ep: Episode): Promise<void> {
       motionPrompt: shot.motion_prompt,
       seconds: span.end - span.start,
       out: episodeFile(ep, rel),
+      engine,
     });
     recordCost({ agent: AGENT, kind: "video", usd: result.costUsd, detail: span.sceneId, episodeId: ep.id });
     ep.costUsd += result.costUsd;

@@ -19,6 +19,7 @@ const HELP = [
   "🎬 AI-студия",
   "",
   "/new — сделать новую серию",
+  "/new <задание> — серия по заданию, например: /new серия к Наврузу, Somsa aka печёт сумаляк",
   "/daily — полный ежедневный цикл: статистика, выводы, новые серии",
   "/status — последние эпизоды",
   "/budget — сколько потрачено сегодня",
@@ -56,10 +57,12 @@ async function handleCommand(chat: string, text: string): Promise<void> {
     case "/help":
       await sendMessage(chat, HELP);
       break;
-    case "/new":
-      await sendMessage(chat, "⏳ Начинаю новую серию. Пришлю ролик, когда будет готов.");
-      background(chat, "Новая серия", () => newEpisode());
+    case "/new": {
+      const brief = text.replace(/^\/new(@\S+)?\s*/i, "").trim();
+      await sendMessage(chat, brief ? `⏳ Делаю серию по заданию: «${brief}». Пришлю ролик, когда будет готов.` : "⏳ Начинаю новую серию. Пришлю ролик, когда будет готов.");
+      background(chat, "Новая серия", () => newEpisode(undefined, { brief }));
       break;
+    }
     case "/daily":
       await sendMessage(chat, "⏳ Запускаю ежедневный цикл.");
       background(chat, "Ежедневный цикл", () => dailyJob());

@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import { designSeries, needsDesign } from "./agents/characterDesigner.js";
+import { designBrandSeries } from "./agents/mascotDesigner.js";
+import { engineStatus } from "./providers/engines.js";
 import { STARTER_AGENTS } from "./agents/index.js";
 import { analyzeStats, collectStats } from "./agents/statsAnalyst.js";
 import { runBot } from "./bot.js";
@@ -16,7 +18,11 @@ import { type Episode, STATUS_LABEL } from "./types.js";
 const HELP = `AI-студия — агенты, которые делают серии для Instagram Reels.
 
 Команды (npm run studio -- <команда>):
-  new [сериал]                  сделать новую серию и отправить на одобрение
+  new [сериал] [--brief "задание"] [--engine gemini|grok|higgsfield|fal]
+                                новая серия (по заданию и выбранным движком) → на одобрение
+  brand --company "…" --product "…" [--audience …] [--tone …] [--lang uz|ru|en] [--wishes …]
+                                Дизайнер маскотов: сериал под бренд компании-клиента
+  engines                       какие движки кадров и видео подключены
   list                          последние эпизоды
   show <id>                     подробности эпизода
   run <id>                      продолжить эпизод с места остановки
@@ -71,11 +77,37 @@ async function main(argv: string[]): Promise<number> {
       return 0;
 
     case "new": {
+      const brief = flag(args, "--brief");
+      const engine = flag(args, "--engine");
       log.info(describeProviders());
-      const ep = await newEpisode(args[0] ?? config.series);
+      const ep = await newEpisode(args[0] ?? config.series, { brief, engine });
       printEpisode(ep);
       return ep.status === "failed" ? 1 : 0;
     }
+
+    case "brand": {
+      const company = flag(args, "--company");
+      const product = flag(args, "--product");
+      if (!company || !product) throw new Error('Нужно: brand --company "Название" --product "что продаёт"');
+      const language = (flag(args, "--lang") ?? "uz") as "uz" | "ru" | "en";
+      if (!["uz", "ru", "en"].includes(language)) throw new Error("--lang: uz, ru или en");
+      const series = await designBrandSeries({
+        company,
+        product,
+        audience: flag(args, "--audience") ?? "Покупатели в Узбекистане, 18–45 лет",
+        tone: flag(args, "--tone") ?? "Тёплый семейный юмор",
+        language,
+        wishes: flag(args, "--wishes"),
+      });
+      console.log(`Бренд готов: ${series.title} (${series.slug})`);
+      for (const c of series.characters) console.log(`- ${c.name}: ${c.role}`);
+      console.log(`Первая серия: npm run studio -- new ${series.slug}`);
+      return 0;
+    }
+
+    case "engines":
+      for (const e of engineStatus()) console.log(`${e.label.padEnd(12)} ${e.available ? "подключён" : "нет ключа"}`);
+      return 0;
 
     case "list": {
       const eps = listEpisodes();
