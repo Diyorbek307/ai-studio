@@ -1,4 +1,5 @@
-# Render: веб-сервис с постоянным диском под ролики и библию сериала.
+# Render: веб-сервис с постоянным диском под ролики, сериалы, клиентов и счета.
+# Бесплатный старт: заполни только GEMINI_API_KEY, STUDIO_ADMIN_PASSWORD, PUBLIC_BASE_URL и Telegram.
 # Диск доступен на платных тарифах; без диска ролики пропадают при каждом деплое.
 services:
   - type: web
@@ -28,6 +29,9 @@ services:
         sync: false
       - key: STUDIO_ADMIN_PASSWORD
         sync: false
+      # Ключ подписи сессий кабинета — Render сгенерирует сам
+      - key: STUDIO_SESSION_SECRET
+        generateValue: true
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: GEMINI_API_KEY
@@ -47,6 +51,8 @@ services:
       - key: TELEGRAM_BOT_TOKEN
         sync: false
       - key: TELEGRAM_ADMIN_CHAT_ID
+        sync: false
+      - key: TELEGRAM_BOT_USERNAME
         sync: false
       - key: IG_USER_ID
         sync: false

@@ -25,13 +25,21 @@ before(async () => {
 });
 after(() => server.close());
 
-test("интерфейс закрыт паролем", async () => {
-  assert.equal((await fetch(base + "/")).status, 401);
-  const page = await fetch(base + "/", { headers: auth });
-  assert.equal(page.status, 200);
-  const html = await page.text();
+test("сайт открыт всем, пульт студии — только после входа", async () => {
+  const landing = await fetch(base + "/");
+  assert.equal(landing.status, 200);
+  const html = await landing.text();
   assert.ok(html.startsWith("<!doctype html>"));
-  assert.ok(html.includes("<title>AI-студия</title>"));
+  assert.ok(html.includes("window.STUDIO_PUBLIC = ") && html.includes('"priceUsd":590'));
+
+  const closed = await fetch(base + "/app", { redirect: "manual" });
+  assert.equal(closed.status, 303);
+  assert.equal(closed.headers.get("location"), "/login");
+  assert.equal((await fetch(base + "/api/state")).status, 401);
+
+  const page = await fetch(base + "/app", { headers: auth });
+  assert.equal(page.status, 200);
+  assert.ok((await page.text()).includes("<title>AI-студия</title>"));
 });
 
 test("/api/state отдаёт серии, шаги и агентов", async () => {

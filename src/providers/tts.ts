@@ -40,13 +40,48 @@ export function buildSsml(text: string, language: keyof typeof LOCALE, voice: Ch
 }
 
 /**
+ * Gemini TTS (aistudio.google.com/docs/speech-generation): generateContent с responseModalities AUDIO.
+ * Модели 3.8 возвращают готовый WAV (24 кГц, моно) в candidates[0].content.parts[0].inlineData.data.
+ * Узбекский (Northern Uzbek) и русский есть в списке языков; язык модель берёт из текста.
+ */
+export async function geminiSpeech(text: string, voice: Character["voice"], emotion?: string): Promise<Buffer> {
+  const style = [emotion, voice.style].filter(Boolean).join("; ");
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${config.tts.geminiModel}:generateContent`, {
+    method: "POST",
+    headers: { "x-goog-api-key": config.gemini.apiKey, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ role: "user", parts: [{ text, ...(style ? { speech_metadata: { style } } : {}) }] }],
+      generationConfig: {
+        responseModalities: ["AUDIO"],
+        speechConfig: { voiceConfig: { voice: voice.gemini ?? "Kore" } },
+      },
+    }),
+    signal: AbortSignal.timeout(2 * 60_000),
+  });
+  const raw = await res.text();
+  let data: { candidates?: { content?: { parts?: { inlineData?: { data?: string } }[] } }[]; error?: { message?: string } } | undefined;
+  try {
+    const parsed = JSON.parse(raw) as typeof data | (typeof data)[];
+    data = Array.isArray(parsed) ? parsed[0] : parsed;
+  } catch {
+    throw new Error(`Gemini TTS: ${res.status} ${raw.slice(0, 300)}`);
+  }
+  if (!res.ok) throw new Error(`Gemini TTS: ${res.status} ${data?.error?.message ?? raw.slice(0, 300)}`);
+  const audio = data?.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data)?.inlineData?.data;
+  if (!audio) throw new Error("Gemini TTS: в ответе нет звука");
+  return Buffer.from(audio, "base64");
+}
+
+/**
  * Озвучивает реплику голосом персонажа. Файл без расширения в outBase:
- * провайдер сам выбирает .mp3 (Azure) или .wav (демо).
+ * провайдер сам выбирает .mp3 (Azure) или .wav (Gemini, демо).
  */
 export async function speak(opts: {
   text: string;
   language: keyof typeof LOCALE;
   voice: Character["voice"];
+  /** Эмоция реплики из сценария — Gemini TTS играет её голосом. */
+  emotion?: string;
   outBase: string;
 }): Promise<SpeechResult> {
   fs.mkdirSync(path.dirname(opts.outBase), { recursive: true });
@@ -55,6 +90,12 @@ export async function speak(opts: {
     const file = `${opts.outBase}.wav`;
     await silence(estimateSpeechSeconds(opts.text), file);
     return { file, costUsd: 0 };
+  }
+
+  if (config.tts.provider === "gemini") {
+    const file = `${opts.outBase}.wav`;
+    fs.writeFileSync(file, await geminiSpeech(opts.text, opts.voice, opts.emotion));
+    return { file, costUsd: opts.text.length * config.tts.geminiCostPerCharUsd };
   }
 
   const res = await fetch(`https://${config.tts.azureRegion}.tts.speech.microsoft.com/cognitiveservices/v1`, {

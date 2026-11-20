@@ -35,23 +35,33 @@ export const config = {
   musicDir: path.resolve(str("STUDIO_MUSIC_DIR", "music")),
 
   llm: {
-    provider: oneOf("LLM_PROVIDER", ["claude", "mock"] as const, hasClaudeKey ? "claude" : "mock"),
+    // Мозг студии: Claude (лучшее качество), Gemini (есть бесплатный тариф) или демо.
+    provider: oneOf(
+      "LLM_PROVIDER",
+      ["claude", "gemini", "mock"] as const,
+      hasClaudeKey ? "claude" : str("GEMINI_API_KEY") !== "" ? "gemini" : "mock",
+    ),
     model: str("CLAUDE_MODEL", "claude-opus-5-5"),
+    geminiModel: str("GEMINI_TEXT_MODEL", "gemini-3.8-flash"),
+    // На бесплатном тарифе Gemini текстовая модель ничего не стоит; на платном — задай цены.
+    geminiPriceInPerMTok: num("GEMINI_TEXT_PRICE_IN_PER_MTOK", 0),
+    geminiPriceOutPerMTok: num("GEMINI_TEXT_PRICE_OUT_PER_MTOK", 0),
     // Цены за 1M токенов, по ним считается расход (Claude Opus 5.5).
     priceInPerMTok: num("CLAUDE_PRICE_IN_PER_MTOK", 4),
     priceOutPerMTok: num("CLAUDE_PRICE_OUT_PER_MTOK", 20),
     priceCacheReadPerMTok: num("CLAUDE_PRICE_CACHE_READ_PER_MTOK", 0.2),
   },
 
-  // Движок картинок и видео: auto — первый подключённый по порядку gemini → grok → higgsfield → fal, иначе демо.
+  // Движок картинок и видео: auto — первый подключённый платный (grok → higgsfield → gemini → fal),
+  // иначе бесплатная перекладка (cutout) из картинок героев и фонов сериала.
   image: {
-    engine: oneOf("IMAGE_ENGINE", ["auto", "gemini", "grok", "higgsfield", "fal", "mock"] as const, "auto"),
+    engine: oneOf("IMAGE_ENGINE", ["auto", "cutout", "gemini", "grok", "higgsfield", "fal", "mock"] as const, "auto"),
     falModel: str("FAL_IMAGE_MODEL", "fal-ai/flux/dev"),
     costUsd: num("IMAGE_COST_USD", 0.03),
   },
 
   video: {
-    engine: oneOf("VIDEO_ENGINE", ["auto", "gemini", "grok", "higgsfield", "fal", "mock"] as const, "auto"),
+    engine: oneOf("VIDEO_ENGINE", ["auto", "cutout", "gemini", "grok", "higgsfield", "fal", "mock"] as const, "auto"),
     falModel: str("FAL_VIDEO_MODEL", "fal-ai/kling-video/v2.1/standard/image-to-video"),
     costPerSecUsd: num("VIDEO_COST_PER_SEC_USD", 0.06),
   },
@@ -61,6 +71,8 @@ export const config = {
     imageModel: str("GEMINI_IMAGE_MODEL", "gemini-nano-banana-2.1"),
     videoModel: str("GEMINI_VIDEO_MODEL", "gemini-omni-1.2-flash"),
     apiRevision: str("GEMINI_API_REVISION", "2026-05-20"),
+    // Картинки (Nano Banana) и видео (Omni Flash) у Gemini только на платном тарифе — включаются явно.
+    paidMedia: ["on", "true", "1"].includes(str("GEMINI_MEDIA").toLowerCase()),
     imageCostUsd: num("GEMINI_IMAGE_COST_USD", 0.04),
     // По прайсу Google: ~$0.07 за секунду видео 720p у Gemini Omni Flash.
     videoCostPerSecUsd: num("GEMINI_VIDEO_COST_PER_SEC_USD", 0.07),
@@ -83,7 +95,14 @@ export const config = {
   },
 
   tts: {
-    provider: oneOf("TTS_PROVIDER", ["azure", "mock"] as const, hasAzure ? "azure" : "mock"),
+    // Голоса: Azure Speech, Gemini TTS (бесплатный тариф, понимает узбекский) или демо-тишина.
+    provider: oneOf(
+      "TTS_PROVIDER",
+      ["azure", "gemini", "mock"] as const,
+      hasAzure ? "azure" : str("GEMINI_API_KEY") !== "" ? "gemini" : "mock",
+    ),
+    geminiModel: str("GEMINI_TTS_MODEL", "gemini-3.8-flash-tts"),
+    geminiCostPerCharUsd: num("GEMINI_TTS_COST_PER_CHAR_USD", 0),
     azureKey: str("AZURE_SPEECH_KEY"),
     azureRegion: str("AZURE_SPEECH_REGION", "westeurope"),
     costPerCharUsd: num("TTS_COST_PER_CHAR_USD", 0.000016),
@@ -94,6 +113,8 @@ export const config = {
   telegram: {
     token: str("TELEGRAM_BOT_TOKEN"),
     adminChatId: str("TELEGRAM_ADMIN_CHAT_ID"),
+    /** Имя бота без @ — для ссылки, по которой клиент подключает Telegram (иначе узнаём у Telegram). */
+    botUsername: str("TELEGRAM_BOT_USERNAME"),
   },
 
   instagram: {
@@ -143,15 +164,15 @@ export type Config = typeof config;
 export function describeProviders(): string {
   const mark = (real: boolean) => (real ? "настоящий" : "демо");
   const engines = [
-    config.gemini.apiKey && "Gemini",
+    config.gemini.apiKey && config.gemini.paidMedia && "Gemini",
     config.grok.apiKey && "Grok",
     config.higgsfield.keyId && config.higgsfield.keySecret && "Higgsfield",
     config.falKey && "fal.ai",
   ].filter(Boolean);
   return [
-    `Claude: ${mark(config.llm.provider === "claude")}`,
-    `кадры и видео: ${engines.length ? engines.join(", ") : "демо"}`,
-    `голос: ${mark(config.tts.provider === "azure")}`,
+    `мозг: ${config.llm.provider === "claude" ? "Claude" : config.llm.provider === "gemini" ? "Gemini (бесплатно)" : "демо"}`,
+    `кадры и видео: ${engines.length ? engines.join(", ") : "перекладка (бесплатно)"}`,
+    `голос: ${config.tts.provider === "azure" ? "Azure" : config.tts.provider === "gemini" ? "Gemini TTS (бесплатно)" : "демо"}`,
     `Telegram: ${config.telegram.token ? "подключён" : "нет"}`,
     `Instagram: ${config.instagram.token ? "подключён" : "нет"}`,
   ].join(" · ");

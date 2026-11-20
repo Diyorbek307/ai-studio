@@ -130,6 +130,7 @@ main { padding-block: 20px 48px; }
 .st-in_progress { background: var(--accent-soft); color: var(--accent); }
 .st-in_progress::before { animation: pulse 1.2s ease-in-out infinite; }
 .st-awaiting_approval, .st-awaiting_feedback { background: var(--saffron-soft); color: var(--saffron); }
+.st-awaiting_client { background: var(--accent-soft); color: var(--accent); }
 .st-approved, .st-published { background: var(--good-soft); color: var(--good); }
 .st-paused_budget { background: var(--saffron-soft); color: var(--saffron); }
 .st-failed { background: var(--bad-soft); color: var(--bad); }
@@ -264,6 +265,96 @@ main { padding-block: 20px 48px; }
 .brief { background: var(--saffron-soft); border-radius: 10px; padding: 8px 12px; font-size: 14px; }
 .brief b { display: block; font-size: 12px; color: var(--saffron); text-transform: uppercase; letter-spacing: .05em; }
 
+/* ---------- Учётная запись ---------- */
+.btn.icon { padding: 9px; }
+.btn.small { padding: 6px 10px; font-size: 13px; border-radius: 9px; }
+.seg { display: inline-flex; gap: 4px; margin-left: 8px; vertical-align: middle; }
+.seg button { border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 3px 10px; font-size: 12px; font-weight: 700; cursor: pointer; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+
+/* ---------- История согласования ---------- */
+.history { font-size: 13px; color: var(--muted); }
+.history summary { cursor: pointer; font-weight: 600; }
+.history ol { list-style: none; margin: 8px 0 0; padding: 0 0 0 12px; border-left: 2px solid var(--line); display: grid; gap: 6px; }
+.history li b { color: var(--ink); font-weight: 600; }
+.history q { color: var(--ink); }
+.note.info { background: var(--accent-soft); }
+
+/* ---------- Картинки героев ---------- */
+.ava-img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; object-position: top; background: var(--c, var(--surface-2)); flex: none; }
+.assets { border-top: 1px solid var(--line); padding-top: 10px; }
+.assets summary { cursor: pointer; font-size: 13px; font-weight: 700; }
+.asset-grid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); margin-top: 10px; }
+.asset { margin: 0; display: grid; gap: 6px; justify-items: center; text-align: center; font-size: 12px; }
+.asset-img { width: 100%; aspect-ratio: 2 / 3; border-radius: 10px; overflow: hidden; display: grid; place-items: center; background: repeating-conic-gradient(var(--surface-2) 0 25%, var(--surface) 0 50%) 0 0 / 14px 14px; border: 1px solid var(--line); }
+.asset.locations .asset-img { aspect-ratio: 9 / 16; }
+.asset-img img { width: 100%; height: 100%; object-fit: contain; }
+.asset.locations .asset-img img { object-fit: cover; }
+.asset figcaption { display: grid; gap: 2px; font-weight: 600; }
+.asset .tag { justify-self: center; font-size: 11px; padding: 1px 7px; }
+.hint { margin: 8px 0 0; font-size: 12.5px; color: var(--muted); }
+.gallery { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+.gallery figure { margin: 0; background: var(--surface-2); border-radius: 12px; padding: 10px; display: grid; gap: 6px; text-align: center; }
+.gallery .asset-img { border: 0; background: transparent; }
+.gallery b { font-size: 14px; }
+.gallery span { font-size: 12px; color: var(--muted); }
+
+/* ---------- Клиенты, тариф, настройки ---------- */
+.stack { display: grid; gap: 24px; }
+.block-title { margin: 0 0 10px; font: 700 16px/1.3 var(--font-display); display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.clients { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
+.client-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; display: grid; gap: 12px; align-content: start; }
+.client-head { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+.client-card h3 { margin: 0; font: 700 18px/1.25 var(--font-display); }
+.usage { display: grid; gap: 6px; }
+.flags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag.ok { background: var(--good-soft); color: var(--good); }
+.tag.warn { background: var(--saffron-soft); color: var(--saffron); }
+.tag.bad { background: var(--bad-soft); color: var(--bad); }
+.contact { font-size: 12.5px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; overflow-wrap: anywhere; }
+.rows { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.row { display: grid; gap: 4px 12px; padding: 12px 14px; border-top: 1px solid var(--line); align-items: center; grid-template-columns: minmax(0, 1fr) auto; }
+.row:first-child { border-top: 0; }
+.row-main { display: grid; gap: 2px; min-width: 0; }
+.row-main b { font-weight: 700; overflow-wrap: anywhere; }
+.row-main span { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.row-side { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.row .msg { grid-column: 1 / -1; font-size: 13.5px; background: var(--surface-2); border-radius: 8px; padding: 8px 10px; }
+.audit-row { display: grid; grid-template-columns: 124px minmax(0, 1fr); gap: 10px; padding: 8px 14px; border-top: 1px solid var(--line); font-size: 13px; }
+.audit-row:first-child { border-top: 0; }
+.audit-row time { color: var(--muted); font: 500 12px var(--font-mono); }
+.plan-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; display: grid; gap: 14px; }
+.plan-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.plan-name { font: 700 24px/1.1 var(--font-display); }
+.plan-price { font: 600 20px var(--font-mono); }
+.plan-price small { font: 500 13px var(--font-body); color: var(--muted); }
+.features { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.features li { display: flex; gap: 8px; align-items: baseline; }
+.features li::before { content: "✓"; color: var(--good); font-weight: 700; }
+.plans-mini { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); }
+.plans-mini div { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 2px; }
+.plans-mini b { font-family: var(--font-display); }
+.plans-mini span { font-size: 13px; color: var(--muted); }
+.settings { display: grid; gap: 12px; }
+.setting { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 10px; }
+.setting-head { display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap; }
+.setting-head b { font-size: 15px; }
+.setting p { margin: 0; color: var(--muted); font-size: 14px; }
+.code { font: 600 26px/1 var(--font-mono); letter-spacing: .12em; background: var(--surface-2); border-radius: 10px; padding: 12px 14px; text-align: center; }
+.copy { display: flex; gap: 8px; }
+.copy input { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--bg); font: 13px var(--font-mono); }
+.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; font-size: 14px; margin: 0; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; overflow-wrap: anywhere; }
+.pw { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); align-items: end; }
+.pw input { width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--bg); }
+
+@media (max-width: 560px) {
+  .top-actions { width: 100%; flex-wrap: nowrap; }
+  .top-actions .budget { flex: 1; min-width: 0; }
+}
+.client-card .brand-actions .btn { padding: 7px 11px; font-size: 13px; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before { animation: none !important; transition: none !important; }
 }
@@ -278,31 +369,30 @@ main { padding-block: 20px 48px; }
         <path d="M17 15.5v7l6-3.5z" fill="var(--saffron)"></path>
       </svg>
       <div>
-        <div class="brand-name">AI-студия</div>
+        <div class="brand-name" id="brandName">AI-студия</div>
         <div class="brand-sub" id="seriesName">&nbsp;</div>
       </div>
     </div>
     <div class="top-actions">
       <div class="budget" id="budget" aria-live="polite">
-        <div class="budget-label"><span>Расход сегодня</span><b class="mono" id="budgetText">—</b></div>
+        <div class="budget-label"><span id="budgetLabel">Расход сегодня</span><b class="mono" id="budgetText">—</b></div>
         <div class="meter" id="budgetMeter"><span style="width:0"></span></div>
       </div>
       <button class="btn primary" id="newEpisode" type="button">
         <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
-        Новая серия
+        <span id="newEpisodeLabel">Новая серия</span>
+      </button>
+      <button class="btn icon" id="logout" type="button" title="Выйти" aria-label="Выйти">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2.5H3.5a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1H6M10.5 11l3-3-3-3M13.5 8H6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
       </button>
     </div>
   </div>
-  <nav class="wrap tabs" role="tablist" aria-label="Разделы студии">
-    <a href="#series" role="tab" data-tab="series">Серии <span class="count" id="countYou"></span></a>
-    <a href="#brands" role="tab" data-tab="brands">Бренды</a>
-    <a href="#agents" role="tab" data-tab="agents">Агенты</a>
-    <a href="#connections" role="tab" data-tab="connections">Подключения</a>
-  </nav>
+  <nav class="wrap tabs" role="tablist" aria-label="Разделы" id="tabs"></nav>
 </header>
 
 <div class="banner" id="previewBanner" hidden>
-  <div class="wrap">Это превью интерфейса на демо-серии. Кнопки здесь ничего не меняют: они работают в студии, запущенной на сервере.</div>
+  <div class="wrap">Это превью на демо-данных: кнопки здесь ничего не меняют.<span class="seg" id="previewRoles" hidden>Смотреть как:
+    <button type="button" data-preview-role="owner">Студия</button><button type="button" data-preview-role="client">Клиент</button></span></div>
 </div>
 
 <main class="wrap">
@@ -315,10 +405,10 @@ main { padding-block: 20px 48px; }
   <section data-view="brands" hidden aria-label="Бренды">
     <div class="section-head split">
       <div>
-        <h2>Бренды и сериалы</h2>
-        <p>У каждого бренда свой сериал: маскот, герои, локации и рубрики. Компания-клиент получает серию каждый день, а ты одобряешь её в один тап.</p>
+        <h2 id="brandsTitle">Бренды и сериалы</h2>
+        <p id="brandsText">У каждого бренда свой сериал: маскот, герои, локации и рубрики. Компания-клиент получает серии по тарифу, а ты одобряешь их в один тап.</p>
       </div>
-      <button class="btn primary" type="button" data-open="brandSheet">
+      <button class="btn primary" type="button" data-open="brandSheet" id="newBrand">
         <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
         Новый бренд
       </button>
@@ -346,20 +436,45 @@ main { padding-block: 20px 48px; }
     <div class="conns" id="conns"></div>
     <div class="facts" id="facts"></div>
   </section>
+
+  <section data-view="clients" hidden aria-label="Клиенты">
+    <div class="section-head split">
+      <div>
+        <h2>Клиенты</h2>
+        <p>Компании, которые купили сериал. У каждой — личный кабинет: серии на согласование, тариф и счета. Ссылку-приглашение отправь клиенту в WhatsApp или Telegram.</p>
+      </div>
+      <button class="btn primary" type="button" data-open="clientSheet">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
+        Новый клиент
+      </button>
+    </div>
+    <div class="facts" id="clientFacts"></div>
+    <div class="stack" id="clientsBox" style="margin-top:20px"></div>
+  </section>
+
+  <section data-view="plan" hidden aria-label="Тариф и счета">
+    <div class="section-head"><h2>Тариф и счета</h2><p>Сколько серий осталось в этом периоде и что оплачено.</p></div>
+    <div class="stack" id="planBox"></div>
+  </section>
+
+  <section data-view="settings" hidden aria-label="Настройки">
+    <div class="section-head"><h2>Настройки</h2><p>Куда приходят серии на согласование, где их публикуем и как войти в кабинет.</p></div>
+    <div class="settings" id="settingsBox"></div>
+  </section>
 </main>
 
 <dialog class="sheet" id="episodeSheet" aria-labelledby="episodeSheetTitle">
   <form id="episodeForm" class="sheet-body">
     <div class="sheet-head">
       <h2 id="episodeSheetTitle">Новая серия</h2>
-      <p class="sheet-note">Агенты придумают сюжет, нарисуют кадры, озвучат и пришлют ролик на одобрение.</p>
+      <p class="sheet-note" id="episodeSheetNote">Агенты придумают сюжет, нарисуют кадры, озвучат и пришлют ролик на одобрение.</p>
     </div>
-    <label class="field" for="epBrand"><span>Бренд</span><select id="epBrand" name="series"></select></label>
-    <label class="field" for="epBrief"><span>Задание агентам <small>необязательно</small></span>
+    <label class="field" for="epBrand" id="epBrandField"><span>Бренд</span><select id="epBrand" name="series"></select></label>
+    <label class="field" for="epBrief"><span id="epBriefLabel">Задание агентам <small>необязательно</small></span>
       <textarea id="epBrief" name="brief" rows="3" placeholder="Например: серия к Наврузу — Somsa aka печёт сумаляк на весь базар"></textarea>
     </label>
     <div class="quick" id="briefIdeas"></div>
-    <fieldset class="field">
+    <fieldset class="field" id="epEngineField">
       <legend>Чем рисовать и оживлять кадры</legend>
       <div class="engines" id="epEngines"></div>
     </fieldset>
@@ -406,6 +521,80 @@ main { padding-block: 20px 48px; }
   </form>
 </dialog>
 
+<dialog class="sheet" id="clientSheet" aria-labelledby="clientSheetTitle">
+  <form id="clientForm" class="sheet-body">
+    <div class="sheet-head">
+      <h2 id="clientSheetTitle">Новый клиент</h2>
+      <p class="sheet-note">Компания получит личный кабинет своего сериала: серии на согласование, тариф и счета. Почта — её логин.</p>
+    </div>
+    <label class="field" for="clBrand"><span>Сериал бренда</span><select id="clBrand" name="brand" required></select></label>
+    <div class="field-row">
+      <label class="field" for="clCompany"><span>Компания</span><input id="clCompany" name="company" maxlength="80" placeholder="Lazzat Somsa"></label>
+      <label class="field" for="clContact"><span>Контактное лицо</span><input id="clContact" name="contactName" required maxlength="80" placeholder="Дилноза, маркетинг"></label>
+    </div>
+    <div class="field-row">
+      <label class="field" for="clEmail"><span>Почта (логин)</span><input id="clEmail" name="email" type="email" required maxlength="120" placeholder="marketing@company.uz"></label>
+      <label class="field" for="clPhone"><span>Телефон <small>необязательно</small></span><input id="clPhone" name="phone" type="tel" maxlength="40" placeholder="+998 90 123 45 67"></label>
+    </div>
+    <div class="field-row">
+      <label class="field" for="clPlan"><span>Тариф</span><select id="clPlan" name="plan"></select></label>
+      <label class="field" for="clStart"><span>Старт тарифа</span><input id="clStart" name="periodStart" type="date"></label>
+    </div>
+    <label class="field" for="clApproval"><span>Кто согласует серии</span><select id="clApproval" name="approval"></select></label>
+    <div class="sheet-actions">
+      <button class="btn" type="button" data-close>Отмена</button>
+      <button class="btn primary" type="submit" id="clSubmit">Добавить клиента</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="sheet" id="clientEditSheet" aria-labelledby="clientEditTitle">
+  <form id="clientEditForm" class="sheet-body">
+    <div class="sheet-head">
+      <h2 id="clientEditTitle">Клиент</h2>
+      <p class="sheet-note" id="clientEditNote"></p>
+    </div>
+    <input type="hidden" name="id" id="ceId">
+    <div class="field-row">
+      <label class="field" for="cePlan"><span>Тариф</span><select id="cePlan" name="plan"></select></label>
+      <label class="field" for="ceStatus"><span>Статус</span>
+        <select id="ceStatus" name="status"><option value="active">Активен</option><option value="paused">Пауза — без новых серий и счетов</option></select>
+      </label>
+    </div>
+    <label class="field" for="ceApproval"><span>Кто согласует серии</span><select id="ceApproval" name="approval"></select></label>
+    <div class="field-row">
+      <label class="field" for="ceContact"><span>Контактное лицо</span><input id="ceContact" name="contactName" maxlength="80"></label>
+      <label class="field" for="cePhone"><span>Телефон</span><input id="cePhone" name="phone" type="tel" maxlength="40"></label>
+    </div>
+    <fieldset class="field">
+      <legend>Instagram клиента <small id="ceIgState"></small></legend>
+      <div class="field-row">
+        <label class="field" for="ceIgUser"><span>IG User ID</span><input id="ceIgUser" name="instagramUserId" inputmode="numeric" autocomplete="off" placeholder="17841400000000000"></label>
+        <label class="field" for="ceIgToken"><span>Токен доступа</span><input id="ceIgToken" name="instagramToken" type="password" autocomplete="off" placeholder="оставь пустым, чтобы не менять"></label>
+      </div>
+      <label class="engine" style="grid-auto-flow:column;justify-content:start;gap:8px"><input type="checkbox" name="disconnectInstagram" value="1" style="position:static;opacity:1;pointer-events:auto"><span>Отключить Instagram клиента</span></label>
+    </fieldset>
+    <div class="sheet-actions">
+      <button class="btn" type="button" data-close>Отмена</button>
+      <button class="btn primary" type="submit" id="ceSubmit">Сохранить</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="sheet" id="inviteSheet" aria-labelledby="inviteTitle">
+  <div class="sheet-body">
+    <div class="sheet-head">
+      <h2 id="inviteTitle">Ссылка в кабинет</h2>
+      <p class="sheet-note" id="inviteNote"></p>
+    </div>
+    <div class="copy"><input id="inviteUrl" readonly aria-label="Ссылка-приглашение"><button class="btn primary" type="button" id="inviteCopy">Скопировать</button></div>
+    <p class="hint">По ссылке клиент задаёт свой пароль и сразу попадает в кабинет. Ссылка одноразовая и действует 7 дней; новая ссылка отменяет старую.</p>
+    <div class="sheet-actions"><button class="btn" type="button" data-close>Готово</button></div>
+  </div>
+</dialog>
+
+<input type="file" id="assetInput" accept="image/png,image/jpeg,image/webp" hidden>
+
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script>
@@ -422,6 +611,16 @@ main { padding-block: 20px 48px; }
 
   let state = null;
   let timer = null;
+  let previewRole = pref.get("previewRole", "owner");
+  let renderedRole = "";
+  let tgLink = null; // код привязки Telegram, который клиент только что получил
+  let uploadTarget = null; // куда загружаем картинку: { slug, kind, id }
+  const isClient = () => state?.role === "client";
+  const clientOfBrand = (slug) => (state.clients || []).find((c) => c.brand === slug);
+  const day = (iso) => new Date(iso.length === 10 ? iso + "T00:00:00" : iso).toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+  const dayBefore = (iso) => { const d = new Date(iso + "T00:00:00"); d.setDate(d.getDate() - 1); return d.toLocaleDateString("ru-RU", { day: "numeric", month: "short" }); };
+  const usd = (n) => "$" + Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: 0 });
+  const waitingClient = (e) => e.status === "awaiting_client" || (e.status === "awaiting_feedback" && e.feedbackFrom === "client");
   let filter = pref.get("filter", "all");
   let brandFilter = pref.get("brand", "all");
   let expectBrands = 0; // сколько брендов должно стать, пока Дизайнер маскотов работает
@@ -435,25 +634,39 @@ main { padding-block: 20px 48px; }
     return many;
   }
 
-  const FILTERS = [
+  const OWNER_FILTERS = [
     ["all", "Все", () => true],
-    ["you", "Ждут тебя", (e) => e.status === "awaiting_approval" || e.status === "awaiting_feedback"],
+    ["you", "Ждут тебя", (e) => e.status === "awaiting_approval" || (e.status === "awaiting_feedback" && e.feedbackFrom !== "client")],
+    ["client", "У клиента", waitingClient],
     ["work", "В работе", (e) => e.status === "in_progress"],
     ["done", "Готово", (e) => e.status === "approved" || e.status === "published"],
     ["issues", "Проблемы", (e) => e.status === "failed" || e.status === "paused_budget"],
     ["rejected", "Отклонены", (e) => e.status === "rejected"],
   ];
+  const CLIENT_FILTERS = [
+    ["all", "Все", () => true],
+    ["you", "Ждут вас", waitingClient],
+    ["work", "В работе у студии", (e) => !waitingClient(e) && e.status !== "approved" && e.status !== "published"],
+    ["done", "Готово", (e) => e.status === "approved" || e.status === "published"],
+  ];
+  const filters = () => (isClient() ? CLIENT_FILTERS : OWNER_FILTERS);
   const QUICK_FIXES = ["Сделай смешнее", "Короче, до 20 секунд", "Другая концовка", "Сильнее первая фраза", "Больше главного героя"];
+  const CLIENT_FIXES = ["Смешнее", "Короче", "Больше о нашем товаре", "Другая концовка", "Добавьте нашу акцию"];
   const BRIEF_IDEAS = ["Серия к Наврузу", "Свадебный сезон", "Начало учебного года", "Рамадан: ифтар у соседей", "Футбол: вся махалля болеет"];
+  const CLIENT_IDEAS = ["Скидка выходного дня", "Новинка в меню", "Праздник: Навруз", "Отзыв довольного покупателя", "Открытие нового филиала"];
 
   // ---------- Данные ----------
   async function load() {
     try {
       if (PREVIEW) {
-        state = PREVIEW;
+        state = PREVIEW.views ? PREVIEW.views[previewRole] || PREVIEW.views.owner : PREVIEW;
       } else {
         const res = await fetch("/api/state", { headers: { Accept: "application/json" } });
-        if (!res.ok) throw new Error(res.status === 401 ? "Нужно войти: обнови страницу и введи пароль." : "Сервер ответил " + res.status);
+        if (res.status === 401) {
+          location.href = "/login";
+          return;
+        }
+        if (!res.ok) throw new Error("Сервер ответил " + res.status);
         state = await res.json();
       }
       if (expectBrands && state.brands.length >= expectBrands) {
@@ -471,7 +684,7 @@ main { padding-block: 20px 48px; }
   function schedule() {
     clearTimeout(timer);
     if (PREVIEW || !state) return;
-    const busy = state.episodes.some((e) => e.status === "in_progress") || expectBrands > 0;
+    const busy = state.episodes.some((e) => e.status === "in_progress") || expectBrands > 0 || uploadTarget;
     timer = setTimeout(load, busy ? 4000 : 15000);
   }
 
@@ -485,12 +698,16 @@ main { padding-block: 20px 48px; }
       headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
       body: new URLSearchParams(body || {}),
     });
+    if (res.status === 401) {
+      location.href = "/login";
+      return false;
+    }
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
       toast(data.error || "Не получилось: сервер ответил " + res.status);
       return false;
     }
-    return true;
+    return data;
   }
 
   let toastTimer = null;
@@ -503,10 +720,17 @@ main { padding-block: 20px 48px; }
   }
 
   // ---------- Шапка и вкладки ----------
-  const TABS = ["series", "brands", "agents", "connections"];
+  const OWNER_TABS = [["series", "Серии", "countYou"], ["brands", "Бренды"], ["clients", "Клиенты", "countClients"], ["agents", "Агенты"], ["connections", "Подключения"]];
+  const CLIENT_TABS = [["series", "Серии", "countYou"], ["brands", "Ваш сериал"], ["plan", "Тариф и счета", "countUnpaid"], ["settings", "Настройки"]];
+  const tabs = () => (isClient() ? CLIENT_TABS : OWNER_TABS);
   function currentTab() {
     const h = location.hash.slice(1);
-    return TABS.includes(h) ? h : "series";
+    return state && tabs().some((t) => t[0] === h) ? h : "series";
+  }
+  function renderTabs() {
+    $("#tabs").innerHTML = tabs()
+      .map(([key, label, count]) => `<a href="#${key}" role="tab" data-tab="${key}">${esc(label)}${count ? ` <span class="count" id="${count}"></span>` : ""}</a>`)
+      .join("");
   }
   function showTab() {
     const tab = currentTab();
@@ -518,18 +742,38 @@ main { padding-block: 20px 48px; }
     requestAnimationFrame(() => window.scrollTo(0, 0));
   });
 
+  function setCount(id, n) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = n ? String(n) : "";
+  }
+
   function renderHeader() {
-    const n = state.brands.length;
-    $("#seriesName").textContent = `${n} ${plural(n, "бренд", "бренда", "брендов")} · ${state.episodes.length} ${plural(state.episodes.length, "серия", "серии", "серий")}`;
-    const { spent, limit } = state.budget;
-    const share = limit > 0 ? Math.min(1, spent / limit) : 1;
-    $("#budgetText").textContent = `${money(spent)} из ${money(limit)}`;
+    let share;
+    if (isClient()) {
+      const me = state.me;
+      $("#brandName").textContent = me.company;
+      $("#seriesName").textContent = `Сериал «${me.brandTitle}» · AI-студия`;
+      $("#budgetLabel").textContent = "Серии";
+      $("#budgetText").textContent = `${me.usage.used} из ${me.usage.limit}`;
+      share = me.usage.limit > 0 ? Math.min(1, me.usage.used / me.usage.limit) : 1;
+      $("#newEpisodeLabel").textContent = "Новое задание";
+      setCount("countUnpaid", me.invoices.filter((i) => i.status === "unpaid").length);
+    } else {
+      const n = state.brands.length;
+      $("#brandName").textContent = "AI-студия";
+      $("#seriesName").textContent = `${n} ${plural(n, "бренд", "бренда", "брендов")} · ${state.episodes.length} ${plural(state.episodes.length, "серия", "серии", "серий")}`;
+      const { spent, limit } = state.budget;
+      share = limit > 0 ? Math.min(1, spent / limit) : 1;
+      $("#budgetLabel").textContent = "Расход сегодня";
+      $("#budgetText").textContent = `${money(spent)} из ${money(limit)}`;
+      $("#newEpisodeLabel").textContent = "Новая серия";
+      setCount("countClients", (state.invoices || []).filter((i) => i.status === "unpaid").length);
+    }
     const meter = $("#budgetMeter");
     meter.firstElementChild.style.width = (share * 100).toFixed(1) + "%";
     meter.classList.toggle("hot", share >= 0.75 && share < 1);
     meter.classList.toggle("full", share >= 1);
-    const waiting = state.episodes.filter(FILTERS[1][2]).length;
-    $("#countYou").textContent = waiting ? String(waiting) : "";
+    setCount("countYou", state.episodes.filter(filters()[1][2]).length);
   }
 
   // ---------- Серии ----------
@@ -559,6 +803,7 @@ main { padding-block: 20px 48px; }
 
     let caption;
     if (done >= total) caption = `<span><b>${total} из ${total}</b> · ролик собран и проверен</span>`;
+    else if (isClient()) caption = `<span><b>Шаг ${nowIndex + 1} из ${total}: ${esc(steps[nowIndex].label)}</b> · студия работает над серией</span>`;
     else {
       const step = steps[nowIndex];
       const who = step.agents.map((no) => state.agents.find((a) => a.no === no)).filter(Boolean).map((a) => `№ ${a.no} ${a.name}`).join(", ");
@@ -575,7 +820,33 @@ main { padding-block: 20px 48px; }
     return `<div class="note warn"><strong>Контролёр качества нашёл замечания</strong><span>${esc(ep.qa.summary)}</span>${issues ? `<ul>${issues}</ul>` : ""}</div>`;
   }
 
+  function clientStatusBlock(ep) {
+    if (ep.status === "awaiting_feedback") return `<div class="note warn"><strong>Напишите, что поменять</strong><span>Студия переделает серию и пришлёт новый вариант.</span></div>`;
+    if (ep.status === "awaiting_client") return `<div class="note info"><strong>Серия ждёт вашего решения</strong><span>Одобрите — и она выйдет в Instagram. Или попросите правки.</span></div>`;
+    if (ep.status === "approved") return `<div class="note good"><strong>Одобрено</strong><span>${esc(ep.publish?.note || "Серия уходит в публикацию.")}</span></div>`;
+    if (ep.status === "published") return `<div class="note good"><strong>Опубликовано в Instagram</strong></div>`;
+    return "";
+  }
+
+  function historyBlock(ep) {
+    if (!ep.approvalLog?.length) return "";
+    const verb = { approved: "одобрил(а)", redo: "попросил(а) правки", rejected: "отклонил(а)", sent_to_client: "передала серию на согласование" };
+    const items = ep.approvalLog
+      .map((a) => {
+        const who = a.by === "client" ? (isClient() ? "Вы" : ep.clientCompany || "Клиент") : "Студия";
+        const when = new Date(a.ts).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+        return `<li><b>${esc(who)}</b> ${esc(verb[a.decision] || a.decision)}${a.note ? ` <q>${esc(a.note)}</q>` : ""} · <span class="mono">${esc(when)}</span></li>`;
+      })
+      .join("");
+    return `<details class="history"><summary>История согласования · ${ep.approvalLog.length}</summary><ol>${items}</ol></details>`;
+  }
+
   function statusBlock(ep) {
+    if (isClient()) return clientStatusBlock(ep);
+    if (ep.status === "awaiting_client")
+      return `<div class="note info"><strong>Ждёт решения клиента${ep.clientCompany ? ` «${esc(ep.clientCompany)}»` : ""}</strong><span>Ролик у клиента в кабинете${clientOfBrand(ep.series)?.telegramLinked ? " и в Telegram" : ""}. Можно одобрить за клиента, если он ответил по телефону.</span></div>`;
+    if (ep.status === "awaiting_feedback" && ep.feedbackFrom === "client")
+      return `<div class="note info"><strong>Клиент пишет правки в Telegram</strong><span>Серия переделается сама, как только придёт его сообщение.</span></div>`;
     if (ep.status === "failed") return `<div class="note bad"><strong>Остановилась с ошибкой</strong><span>${esc(ep.error)}</span></div>`;
     if (ep.status === "paused_budget") return `<div class="note warn"><strong>Пауза: кончился дневной бюджет</strong><span>Продолжится завтра или после кнопки «Продолжить».</span></div>`;
     if (ep.status === "approved" && ep.publish?.dryRun)
@@ -602,7 +873,36 @@ main { padding-block: 20px 48px; }
     return `<div class="script"><div class="script-title"><span>Сценарий</span>${hook}</div>${lines}</div>`;
   }
 
+  function clientActions(ep) {
+    const st = ui[ep.id] || {};
+    const busy = st.busy ? "disabled" : "";
+    if (waitingClient(ep)) {
+      if (st.redo || ep.status === "awaiting_feedback")
+        return `<div class="panel">
+          <label for="fix-${ep.id}"><strong>Что поменять в серии?</strong></label>
+          <textarea id="fix-${ep.id}" data-draft="${ep.id}" placeholder="Например: добавьте в конце нашу акцию — вторая самса бесплатно">${esc(drafts[ep.id] || "")}</textarea>
+          <div class="quick">${CLIENT_FIXES.map((q) => `<button type="button" data-act="quick" data-id="${ep.id}" data-text="${esc(q)}">${esc(q)}</button>`).join("")}</div>
+          <div class="panel-row">
+            <button class="btn primary" type="button" data-act="redo-send" data-id="${ep.id}" ${busy}>Отправить правки</button>
+            ${ep.status === "awaiting_feedback" ? "" : `<button class="btn" type="button" data-act="redo-cancel" data-id="${ep.id}">Отмена</button>`}
+          </div>
+        </div>`;
+      return `<div class="actions">
+          <button class="btn primary" type="button" data-act="approve" data-id="${ep.id}" ${busy}>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            Одобрить и опубликовать</button>
+          <button class="btn" type="button" data-act="redo-open" data-id="${ep.id}">Попросить правки</button>
+        </div>`;
+    }
+    if (ep.status === "published" && ep.publish?.permalink)
+      return `<div class="actions"><a class="btn" href="${esc(ep.publish.permalink)}" target="_blank" rel="noopener">Открыть в Instagram</a></div>`;
+    if ((ep.status === "approved" || ep.status === "published") && ep.video && !PREVIEW)
+      return `<div class="actions"><a class="btn" href="${esc(ep.video)}" download="${esc(ep.id)}.mp4">Скачать ролик</a></div>`;
+    return "";
+  }
+
   function actionsBlock(ep) {
+    if (isClient()) return clientActions(ep);
     const st = ui[ep.id] || {};
     const busy = st.busy ? "disabled" : "";
     const redoPanel = `<div class="panel">
@@ -615,6 +915,18 @@ main { padding-block: 20px 48px; }
         </div>
       </div>`;
 
+    if (ep.status === "awaiting_client") {
+      if (st.redo) return redoPanel;
+      if (st.confirmReject)
+        return `<div class="panel"><strong>Отклонить серию? Клиент её больше не увидит.</strong>
+          <div class="panel-row"><button class="btn danger solid" type="button" data-act="reject" data-id="${ep.id}" ${busy}>Да, отклонить</button>
+          <button class="btn" type="button" data-act="reject-cancel" data-id="${ep.id}">Нет</button></div></div>`;
+      return `<div class="actions">
+          <button class="btn" type="button" data-act="approve" data-id="${ep.id}" ${busy}>Одобрить за клиента</button>
+          <button class="btn" type="button" data-act="redo-open" data-id="${ep.id}">Переделать</button>
+          <button class="btn danger" type="button" data-act="reject-ask" data-id="${ep.id}">Отклонить</button>
+        </div>`;
+    }
     if (ep.status === "awaiting_approval" || ep.status === "awaiting_feedback") {
       if (st.redo || ep.status === "awaiting_feedback") return redoPanel;
       if (st.confirmReject)
@@ -624,7 +936,7 @@ main { padding-block: 20px 48px; }
       return `<div class="actions">
           <button class="btn primary" type="button" data-act="approve" data-id="${ep.id}" ${busy}>
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-            Одобрить и опубликовать</button>
+            ${clientOfBrand(ep.series)?.approval === "studio_then_client" ? "Одобрить и отправить клиенту" : "Одобрить и опубликовать"}</button>
           <button class="btn" type="button" data-act="redo-open" data-id="${ep.id}">Переделать</button>
           <button class="btn danger" type="button" data-act="reject-ask" data-id="${ep.id}">Отклонить</button>
         </div>`;
@@ -643,26 +955,37 @@ main { padding-block: 20px 48px; }
   function card(ep) {
     const media = ep.video
       ? `<video src="${esc(ep.video)}" ${ep.poster ? `poster="${esc(ep.poster)}"` : ""} controls playsinline preload="metadata"></video>`
-      : `<div class="screen">${ep.status === "in_progress" ? '<span class="spin" aria-hidden="true"></span><span>Агенты собирают ролик</span>' : "<span>Ролика нет</span>"}</div>`;
+      : `<div class="screen">${
+          isClient() && !waitingClient(ep)
+            ? '<span class="spin" aria-hidden="true"></span><span>Студия готовит серию</span>'
+            : ep.status === "in_progress"
+              ? '<span class="spin" aria-hidden="true"></span><span>Агенты собирают ролик</span>'
+              : "<span>Ролика нет</span>"
+        }</div>`;
     const date = new Date(ep.createdAt).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
     const tags = [
       state.brands.length > 1 ? `<span class="tag">${esc(ep.seriesTitle)}</span>` : "",
       ep.engine ? `<span class="tag engine-tag">${esc(ep.engine)}</span>` : "",
+      !isClient() && ep.orderedBy && ep.orderedBy !== "Студия" ? `<span class="tag">${ep.orderedBy === "Автопилот" ? "автопилот" : "заказ клиента"}</span>` : "",
     ].join("");
+    const meta = isClient()
+      ? `<span>${esc(date)}</span>${ep.duration ? `<span>${Math.round(ep.duration)} с</span>` : ""}`
+      : `<span>${esc(date)}</span>${ep.duration ? `<span>${Math.round(ep.duration)} с</span>` : ""}<span>${money(ep.costUsd)}</span><span>${esc(ep.id)}</span>`;
     return `<article class="ep" data-id="${ep.id}">
       <div class="ep-head">
         <div class="ep-top"><span class="pill st-${ep.status}">${esc(ep.statusLabel.replace(/^\S+\s/, ""))}</span>${tags}</div>
         <h3>${esc(ep.title)}</h3>
         ${ep.logline ? `<p class="logline">${esc(ep.logline)}</p>` : ""}
-        <div class="meta mono"><span>${esc(date)}</span>${ep.duration ? `<span>${Math.round(ep.duration)} с</span>` : ""}<span>${money(ep.costUsd)}</span><span>${esc(ep.id)}</span></div>
+        <div class="meta mono">${meta}</div>
       </div>
       <div class="ep-media"><div class="phone">${media}</div></div>
       <div class="ep-body">
-        ${ep.brief ? `<div class="brief"><b>Задание</b>${esc(ep.brief)}</div>` : ""}
-        ${pipeline(ep)}
+        ${ep.brief ? `<div class="brief"><b>${isClient() ? "Ваше задание" : "Задание"}</b>${esc(ep.brief)}</div>` : ""}
+        ${isClient() && ep.stepsDone >= state.steps.length ? "" : pipeline(ep)}
         ${statusBlock(ep)}
-        ${qaBlock(ep)}
+        ${isClient() ? "" : qaBlock(ep)}
         ${scriptBlock(ep)}
+        ${historyBlock(ep)}
         ${actionsBlock(ep)}
       </div>
     </article>`;
@@ -680,7 +1003,7 @@ main { padding-block: 20px 48px; }
       ...state.brands.map((b) => `<button class="chip" type="button" data-brand="${esc(b.slug)}" aria-pressed="${brandFilter === b.slug}">${esc(b.title)} <b>${b.stats.episodes}</b></button>`),
     ].join("");
     const pool = visibleEpisodes();
-    $("#filters").innerHTML = FILTERS.map(([key, label, test]) => {
+    $("#filters").innerHTML = filters().map(([key, label, test]) => {
       const n = pool.filter(test).length;
       if (key !== "all" && n === 0 && filter !== key) return "";
       const attn = key === "you" && n > 0 ? " attn" : "";
@@ -690,15 +1013,17 @@ main { padding-block: 20px 48px; }
 
   // Перерисовываем только изменившиеся карточки, чтобы не сбивать видео и набранный текст.
   function cardKey(ep) {
-    return JSON.stringify([ep, ui[ep.id] || {}, drafts[ep.id] || "", state.brands.length > 1]);
+    return JSON.stringify([ep, ui[ep.id] || {}, drafts[ep.id] || "", state.brands.length > 1, state.role, clientOfBrand(ep.series)?.approval]);
   }
 
   function renderEpisodes() {
     const box = $("#episodes");
-    const test = (FILTERS.find((f) => f[0] === filter) || FILTERS[0])[2];
+    const test = (filters().find((f) => f[0] === filter) || filters()[0])[2];
     const list = visibleEpisodes().filter(test);
     if (state.episodes.length === 0) {
-      box.innerHTML = `<div class="empty"><h3>Серий пока нет</h3><p>Нажми «Новая серия»: агенты придумают сюжет, нарисуют кадры, озвучат и пришлют ролик сюда на одобрение.</p><button class="btn primary" type="button" data-open="episodeSheet">Новая серия</button></div>`;
+      box.innerHTML = isClient()
+        ? `<div class="empty"><h3>Серий пока нет</h3><p>Студия уже работает над первой серией вашего сериала. Можно сразу дать задание: акция, новинка, праздник.</p><button class="btn primary" type="button" data-open="episodeSheet">Новое задание</button></div>`
+        : `<div class="empty"><h3>Серий пока нет</h3><p>Нажми «Новая серия»: агенты придумают сюжет, нарисуют кадры, озвучат и пришлют ролик сюда на одобрение.</p><button class="btn primary" type="button" data-open="episodeSheet">Новая серия</button></div>`;
       return;
     }
     if (list.length === 0) {
@@ -728,34 +1053,224 @@ main { padding-block: 20px 48px; }
   }
 
   // ---------- Бренды ----------
+  function avatar(c) {
+    return c.art && !c.placeholder
+      ? `<img class="ava-img" src="${esc(c.art)}" alt="" style="--c:${esc(c.color)}">`
+      : `<span class="ava" style="--c:${esc(c.color)}" aria-hidden="true">${esc(c.name.charAt(0))}</span>`;
+  }
+
+  function assetTiles(b) {
+    const tile = (kind, a) => `<figure class="asset ${kind}">
+        <div class="asset-img">${a.art ? `<img src="${esc(a.art)}" alt="${esc(a.name)}" loading="lazy">` : ""}</div>
+        <figcaption>${esc(a.name)}${a.placeholder ? '<span class="tag warn">заглушка</span>' : '<span class="tag ok">готово</span>'}</figcaption>
+        <button class="btn small" type="button" data-upload="${esc(b.slug)}|${kind}|${esc(a.id)}">${a.placeholder ? "Загрузить" : "Заменить"}</button>
+      </figure>`;
+    const all = [...b.characters, ...b.locations];
+    const ready = all.filter((a) => !a.placeholder).length;
+    return `<details class="assets"${ready < all.length ? "" : ""}>
+        <summary>Картинки для перекладки · ${ready} из ${all.length} готовы</summary>
+        <div class="asset-grid">${b.characters.map((c) => tile("characters", c)).join("")}${b.locations.map((l) => tile("locations", l)).join("")}</div>
+        <p class="hint">Бесплатная анимация собирает кадр из этих картинок. Героя — PNG с прозрачным фоном (белый фон уберётся сам), место — вертикальная картинка. Нарисовать можно в Gemini, Grok или Higgsfield один раз — дальше серии бесплатные.</p>
+      </details>`;
+  }
+
+  function renderClientBrand() {
+    $("#brandsTitle").textContent = "Ваш сериал";
+    $("#brandsText").textContent = "Герои, места и рубрики вашего сериала. Студия делает серии по тарифу, а вы одобряете их в один тап.";
+    $("#newBrand").hidden = true;
+    $("#brands").innerHTML = state.brands
+      .map((b) => {
+        const gallery = b.characters
+          .map((c) => `<figure><div class="asset-img">${c.art && !c.placeholder ? `<img src="${esc(c.art)}" alt="${esc(c.name)}" loading="lazy">` : `<span class="ava" style="--c:${esc(c.color)};width:64px;height:64px;font-size:26px">${esc(c.name.charAt(0))}</span>`}</div><b>${esc(c.name)}</b><span>${esc(c.role)}</span></figure>`)
+          .join("");
+        return `<article class="brand-card" style="grid-column:1/-1">
+          <div><h3>${esc(b.title)}</h3><div class="brand-client">${esc(b.client?.product || "")}</div></div>
+          <p class="logline">${esc(b.logline)}</p>
+          <div class="gallery">${gallery}</div>
+          ${b.rubrics.length ? `<div class="rubrics">${b.rubrics.map((r) => `<span>${esc(r.split(":")[0])}</span>`).join("")}</div>` : ""}
+          <div class="brand-stats" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+            <div><b>${b.stats.episodes}</b><span>серий</span></div>
+            <div><b>${b.stats.waiting}</b><span>ждут вас</span></div>
+            <div><b>${b.stats.published}</b><span>в Instagram</span></div>
+          </div>
+          <div class="brand-actions"><button class="btn primary" type="button" data-open="episodeSheet">Новое задание</button></div>
+        </article>`;
+      })
+      .join("");
+  }
+
   function renderBrands() {
+    if (isClient()) return renderClientBrand();
+    $("#brandsTitle").textContent = "Бренды и сериалы";
+    $("#brandsText").textContent = "У каждого бренда свой сериал: маскот, герои, локации и рубрики. Компания-клиент получает серии по тарифу, а ты одобряешь их в один тап.";
+    $("#newBrand").hidden = false;
+    // Не перерисовываем, пока открыт выбор файла или раскрыт блок картинок: иначе он схлопнется.
+    const open = [...document.querySelectorAll("#brands details[open]")].map((d) => d.closest("[data-brand-card]")?.dataset.brandCard);
     const waiting = expectBrands > 0 ? `<div class="brand-card empty"><span class="spin" aria-hidden="true"></span><p>Дизайнер маскотов собирает новый бренд…</p></div>` : "";
     $("#brands").innerHTML = state.brands
       .map((b) => {
-        const cast = b.characters
-          .map((c) => `<span class="who"><span class="ava" style="--c:${esc(c.color)}" aria-hidden="true">${esc(c.name.charAt(0))}</span>${esc(c.name)}</span>`)
-          .join("");
-        const client = b.client
-          ? `<div class="brand-client">Клиент: <b>${esc(b.client.company)}</b> · ${esc(b.client.product)}</div>`
-          : `<div class="brand-client">Собственный сериал студии</div>`;
-        return `<article class="brand-card">
+        const cast = b.characters.map((c) => `<span class="who">${avatar(c)}${esc(c.name)}</span>`).join("");
+        const account = clientOfBrand(b.slug);
+        const client = account
+          ? `<div class="brand-client">Клиент: <b>${esc(account.company)}</b> · тариф ${esc(account.planName)} · ${account.status === "active" ? "активен" : "пауза"}</div>`
+          : b.client
+            ? `<div class="brand-client">Для компании <b>${esc(b.client.company)}</b> · ${esc(b.client.product)}</div>`
+            : `<div class="brand-client">Собственный сериал студии</div>`;
+        return `<article class="brand-card" data-brand-card="${esc(b.slug)}">
           <div><h3>${esc(b.title)}</h3>${client}</div>
           <p class="logline">${esc(b.logline)}</p>
           <div class="cast">${cast}</div>
           ${b.rubrics.length ? `<div class="rubrics">${b.rubrics.slice(0, 4).map((r) => `<span>${esc(r.split(":")[0])}</span>`).join("")}</div>` : ""}
           <div class="brand-stats">
             <div><b>${b.stats.episodes}</b><span>серий</span></div>
-            <div><b>${b.stats.waiting}</b><span>ждут тебя</span></div>
+            <div><b>${b.stats.waiting}</b><span>на решении</span></div>
             <div><b>${b.stats.published}</b><span>в Instagram</span></div>
             <div><b>${money(b.stats.costUsd)}</b><span>расход</span></div>
           </div>
+          ${assetTiles(b)}
           <div class="brand-actions">
             <button class="btn primary" type="button" data-new-for="${esc(b.slug)}">Новая серия</button>
             <button class="btn" type="button" data-show-brand="${esc(b.slug)}">Серии бренда</button>
+            ${account ? "" : `<button class="btn" type="button" data-new-client="${esc(b.slug)}">Подключить клиента</button>`}
           </div>
         </article>`;
       })
       .join("") + waiting;
+    for (const slug of open) document.querySelector(`[data-brand-card="${CSS.escape(slug || "")}"] details`)?.setAttribute("open", "");
+  }
+
+  // ---------- Клиенты (владелец) ----------
+  function clientCard(c) {
+    const u = c.usage;
+    const share = u.limit ? Math.min(1, u.used / u.limit) : 1;
+    const login = c.hasLogin ? '<span class="tag ok">кабинет открыт</span>' : c.inviteActive ? '<span class="tag warn">приглашение отправлено</span>' : '<span class="tag">без входа</span>';
+    return `<article class="client-card">
+      <div class="client-head">
+        <div><h3>${esc(c.company)}</h3><div class="brand-client">${esc(c.brandTitle)} · ${esc(c.contactName)}</div></div>
+        <span class="state ${c.status === "active" ? "on" : "off"}">${c.status === "active" ? "Активен" : "Пауза"}</span>
+      </div>
+      <div class="usage">
+        <div class="budget-label"><span>${esc(c.planName)} · ${usd(c.priceUsd)}${c.plan === "pilot" ? " разово" : " в месяц"}</span><b class="mono">${u.used} из ${u.limit}</b></div>
+        <div class="meter${share >= 1 ? " full" : share >= 0.75 ? " hot" : ""}"><span style="width:${(share * 100).toFixed(1)}%"></span></div>
+        <div class="meta"><span>период ${esc(day(u.periodStart))} — ${esc(dayBefore(u.periodEnd))}</span><span>осталось ${u.daysLeft} ${plural(u.daysLeft, "день", "дня", "дней")}</span></div>
+      </div>
+      <div class="flags">
+        ${login}
+        <span class="tag ${c.telegramLinked ? "ok" : ""}">Telegram ${c.telegramLinked ? "✓" : "—"}</span>
+        <span class="tag ${c.instagramConnected ? "ok" : ""}">Instagram ${c.instagramConnected ? "✓" : "—"}</span>
+        <span class="tag">${esc(c.approvalLabel)}</span>
+        ${c.unpaidUsd ? `<span class="tag bad">не оплачено ${usd(c.unpaidUsd)}</span>` : ""}
+      </div>
+      <div class="contact mono"><span>${esc(c.email)}</span>${c.phone ? `<a href="tel:${esc(c.phone.replace(/[^+\d]/g, ""))}">${esc(c.phone)}</a>` : ""}</div>
+      <div class="brand-actions">
+        <button class="btn primary" type="button" data-invite="${esc(c.id)}">${c.hasLogin ? "Новая ссылка входа" : "Ссылка в кабинет"}</button>
+        <button class="btn" type="button" data-edit-client="${esc(c.id)}">Изменить</button>
+        <button class="btn" type="button" data-show-brand="${esc(c.brand)}">Серии</button>
+      </div>
+    </article>`;
+  }
+
+  function renderClients() {
+    const clients = state.clients || [];
+    const invoices = state.invoices || [];
+    const leads = state.leads || [];
+    const active = clients.filter((c) => c.status === "active");
+    const mrr = active.filter((c) => c.plan !== "pilot").reduce((sum, c) => sum + c.priceUsd, 0);
+    const unpaid = invoices.filter((i) => i.status === "unpaid");
+    $("#clientFacts").innerHTML = [
+      ["Активных клиентов", String(active.length)],
+      ["Подписки в месяц", usd(mrr)],
+      ["Ждёт оплаты", unpaid.length ? `${usd(unpaid.reduce((s, i) => s + i.amountUsd, 0))} · ${unpaid.length} ${plural(unpaid.length, "счёт", "счёта", "счетов")}` : "$0"],
+      ["Заявок с сайта", String(leads.length)],
+    ].map(([k, v]) => `<div class="fact"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("");
+
+    const cards = clients.length
+      ? `<div class="clients">${clients.map(clientCard).join("")}</div>`
+      : `<div class="empty"><h3>Клиентов пока нет</h3><p>Порядок: создай бренд во вкладке «Бренды» → подключи компанию к нему здесь → отправь ссылку в кабинет. Дальше серии идут по тарифу сами.</p><button class="btn primary" type="button" data-open="clientSheet">Новый клиент</button></div>`;
+
+    const invoiceRows = invoices
+      .map((i) => `<div class="row">
+          <div class="row-main"><b>Счёт № ${esc(i.number)} · ${esc(i.company)}</b><span>${esc(i.planName)} · ${esc(day(i.periodStart))} — ${esc(dayBefore(i.periodEnd))}</span></div>
+          <div class="row-side"><b class="mono">${usd(i.amountUsd)}</b>
+            ${i.status === "paid" ? `<span class="tag ok">оплачен ${i.paidAt ? esc(day(i.paidAt)) : ""}</span><button class="btn small" type="button" data-paid="${esc(i.id)}" data-value="0">Снять</button>` : `<span class="tag warn">ждёт оплаты</span><button class="btn small primary" type="button" data-paid="${esc(i.id)}" data-value="1">Оплачен</button>`}
+          </div>
+        </div>`)
+      .join("");
+
+    const leadRows = leads
+      .map((l, i) => `<div class="row">
+          <div class="row-main"><b>${esc(l.company)}</b><span>${esc(l.name)} · <a href="tel:${esc(l.phone.replace(/[^+\d]/g, ""))}">${esc(l.phone)}</a>${l.plan ? ` · тариф ${esc((state.plans.find((p) => p.id === l.plan) || {}).name || l.plan)}` : ""} · ${esc(day(l.ts))}</span></div>
+          <div class="row-side"><button class="btn small" type="button" data-lead="${i}">Сделать бренд</button></div>
+          ${l.message ? `<div class="msg">${esc(l.message)}</div>` : ""}
+        </div>`)
+      .join("");
+
+    const auditRows = (state.audit || [])
+      .slice(0, 30)
+      .map((a) => `<div class="audit-row"><time>${esc(new Date(a.ts).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }))}</time><span><b>${esc(a.actor)}</b> ${esc(a.action)}${a.target ? ` · ${esc(a.target)}` : ""}${a.detail ? ` · <span style="color:var(--muted)">${esc(a.detail)}</span>` : ""}</span></div>`)
+      .join("");
+
+    $("#clientsBox").innerHTML = `
+      ${cards}
+      <div><h3 class="block-title">Счета</h3>${invoiceRows ? `<div class="rows">${invoiceRows}</div>` : '<p class="hint">Счета выставляются сами в начале каждого периода тарифа.</p>'}</div>
+      <div><h3 class="block-title">Заявки с сайта</h3>${leadRows ? `<div class="rows">${leadRows}</div>` : '<p class="hint">Заявки с главной страницы студии появятся здесь и придут тебе в Telegram.</p>'}</div>
+      <div><h3 class="block-title">Журнал действий</h3>${auditRows ? `<div class="rows">${auditRows}</div>` : '<p class="hint">Здесь видно, кто что одобрил, оплатил и поменял.</p>'}</div>`;
+  }
+
+  // ---------- Тариф и настройки (клиент) ----------
+  function renderPlan() {
+    const me = state.me;
+    const u = me.usage;
+    const share = u.limit ? Math.min(1, u.used / u.limit) : 1;
+    const others = state.plans.filter((p) => p.id !== me.plan && p.id !== "pilot");
+    const invoices = me.invoices
+      .map((i) => `<div class="row">
+          <div class="row-main"><b>Счёт № ${esc(i.number)}</b><span>${esc(i.planName)} · ${esc(day(i.periodStart))} — ${esc(dayBefore(i.periodEnd))}</span></div>
+          <div class="row-side"><b class="mono">${usd(i.amountUsd)}</b>${i.status === "paid" ? `<span class="tag ok">оплачен</span>` : `<span class="tag warn">ждёт оплаты</span>`}</div>
+        </div>`)
+      .join("");
+    $("#planBox").innerHTML = `
+      <div class="plan-card">
+        <div class="plan-top">
+          <div><span class="tag">Ваш тариф</span><div class="plan-name">${esc(me.planName)}</div></div>
+          <div class="plan-price">${usd(me.priceUsd)} <small>${me.plan === "pilot" ? "разово" : "в месяц"}</small></div>
+        </div>
+        <div class="usage">
+          <div class="budget-label"><span>Серий в этом периоде</span><b class="mono">${u.used} из ${u.limit}</b></div>
+          <div class="meter${share >= 1 ? " full" : share >= 0.75 ? " hot" : ""}"><span style="width:${(share * 100).toFixed(1)}%"></span></div>
+          <div class="meta"><span>период ${esc(day(u.periodStart))} — ${esc(dayBefore(u.periodEnd))}</span><span>осталось ${u.left} ${plural(u.left, "серия", "серии", "серий")} и ${u.daysLeft} ${plural(u.daysLeft, "день", "дня", "дней")}</span></div>
+        </div>
+        <ul class="features">${me.features.map((f) => `<li>${esc(f)}</li>`).join("")}</ul>
+      </div>
+      <div><h3 class="block-title">Счета</h3>${invoices ? `<div class="rows">${invoices}</div>` : '<p class="hint">Счетов пока нет.</p>'}</div>
+      ${others.length ? `<div><h3 class="block-title">Другие тарифы</h3><div class="plans-mini">${others.map((p) => `<div><b>${esc(p.name)}</b><span>${usd(p.priceUsd)} в месяц · ${p.episodes} серий</span></div>`).join("")}</div><p class="hint">Чтобы сменить тариф, напишите студии — новый начнётся со следующего периода.</p></div>` : ""}`;
+  }
+
+  function renderSettings() {
+    const me = state.me;
+    const tg = me.telegramLinked
+      ? `<p>Подключён. Новые серии приходят в Telegram с кнопками «Одобрить» и «Попросить правки».</p>`
+      : tgLink
+        ? `<p>Откройте бота студии и отправьте ему этот код — или просто нажмите кнопку.</p><div class="code">${esc(tgLink.code)}</div>${tgLink.link ? `<a class="btn primary" href="${esc(tgLink.link)}" target="_blank" rel="noopener">Открыть бота в Telegram</a>` : ""}<p>Код действует сутки.</p>`
+        : `<p>Серии будут приходить в Telegram — одобрять можно прямо в чате.</p><div><button class="btn primary" type="button" id="tgConnect">Подключить Telegram</button></div>`;
+    const approval = {
+      studio_then_client: "Сначала серию проверяет студия, потом она приходит вам. Без вашего «Одобрить» серия не выйдет.",
+      client: "Готовые серии сразу приходят вам. Без вашего «Одобрить» серия не выйдет.",
+      studio: "Серии проверяет и публикует студия. Вы видите их в кабинете и можете дать задание.",
+    }[me.approval];
+    $("#settingsBox").innerHTML = `
+      <div class="setting"><div class="setting-head"><b>Telegram</b><span class="state ${me.telegramLinked ? "on" : "off"}">${me.telegramLinked ? "Подключён" : "Не подключён"}</span></div>${tg}</div>
+      <div class="setting"><div class="setting-head"><b>Instagram</b><span class="state ${me.instagramConnected ? "on" : "off"}">${me.instagramConnected ? "Подключён" : "Не подключён"}</span></div>
+        <p>${me.instagramConnected ? "Одобренные серии сами выходят в ваш Instagram." : "Пока Instagram не подключён, одобренные серии студия публикует вручную. Чтобы серии выходили сами, попросите студию подключить ваш аккаунт."}</p></div>
+      <div class="setting"><div class="setting-head"><b>Согласование</b><span class="tag">${esc(me.approvalLabel)}</span></div><p>${esc(approval)}</p></div>
+      <div class="setting"><b>Компания</b><dl class="kv"><dt>Компания</dt><dd>${esc(me.company)}</dd><dt>Контакт</dt><dd>${esc(me.contactName)}</dd><dt>Логин</dt><dd class="mono">${esc(me.email)}</dd>${me.phone ? `<dt>Телефон</dt><dd>${esc(me.phone)}</dd>` : ""}</dl></div>
+      <form class="setting" id="pwForm"><b>Пароль</b>
+        <div class="pw">
+          <label class="field"><span>Текущий пароль</span><input type="password" name="current" required autocomplete="current-password"></label>
+          <label class="field"><span>Новый пароль</span><input type="password" name="next" required minlength="8" autocomplete="new-password"></label>
+          <button class="btn" type="submit">Сменить пароль</button>
+        </div>
+      </form>`;
   }
 
   // ---------- Агенты и подключения ----------
@@ -783,7 +1298,7 @@ main { padding-block: 20px 48px; }
   }
 
   const ENGINE_INFO = {
-    gemini: ["Gemini", "Nano Banana для кадров, Omni Flash для видео", ["GEMINI_API_KEY"]],
+    gemini: ["Gemini", "Nano Banana для кадров, Omni Flash для видео — платно, включается GEMINI_MEDIA=on", ["GEMINI_API_KEY", "GEMINI_MEDIA"]],
     grok: ["Grok", "Grok Imagine: кадры и видео до 15 секунд", ["XAI_API_KEY"]],
     higgsfield: ["Higgsfield", "Soul для кадров, Kling 3.0 для видео", ["HIGGSFIELD_KEY_ID", "HIGGSFIELD_KEY_SECRET"]],
     fal: ["fal.ai", "Flux для кадров, Kling для видео", ["FAL_KEY"]],
@@ -793,18 +1308,20 @@ main { padding-block: 20px 48px; }
     const p = state.providers;
     const engineOn = (e) => state.engines.find((x) => x.engine === e)?.available;
     const rows = [
-      ["Claude", "Мозг студии: идеи, сценарии, хуки, промпты кадров, проверка качества, маскоты брендов", p.claude, ["ANTHROPIC_API_KEY"], true],
+      ["Мозг — Claude", "Лучшее качество: идеи, сценарии, хуки, промпты кадров, проверка роликов, маскоты брендов", p.llm === "claude", ["ANTHROPIC_API_KEY"], true],
+      ["Мозг и голос — Gemini, бесплатный тариф", "Без Claude: сценарии и проверка на Gemini Flash, озвучка героев на узбекском и русском через Gemini TTS", p.llm === "gemini" || p.voice === "gemini", ["GEMINI_API_KEY"], true],
+      ["Перекладка — бесплатная анимация", "Герои и фоны бренда двигаются в такт озвучке прямо на сервере студии: $0 за серию", "free", [], false],
       ...Object.entries(ENGINE_INFO).map(([e, [name, what, keys]]) => [`${name} — кадры и видео`, what, engineOn(e), keys, true]),
-      ["Голос — Azure Speech", "Узбекская, русская и английская озвучка героев", p.tts, ["AZURE_SPEECH_KEY", "AZURE_SPEECH_REGION"], true],
+      ["Голос — Azure Speech", "Узбекская, русская и английская озвучка героев", p.voice === "azure", ["AZURE_SPEECH_KEY", "AZURE_SPEECH_REGION"], true],
       ["Telegram", "Ролики на одобрение с кнопками прямо в чат, задания командой /new", p.telegram, ["TELEGRAM_BOT_TOKEN", "TELEGRAM_ADMIN_CHAT_ID"], false],
       ["Instagram", "Публикация Reels и статистика роликов", p.instagram, ["IG_USER_ID", "IG_ACCESS_TOKEN"], false],
       ["Публичный адрес", "По этой ссылке Instagram скачивает готовый ролик", p.publicUrl, ["PUBLIC_BASE_URL"], false],
     ];
     $("#conns").innerHTML = rows
       .map(([name, what, on, keys, hasDemo]) => {
-        const chip = on ? '<span class="state on">Подключено</span>' : hasDemo ? '<span class="state demo">Демо-режим</span>' : '<span class="state off">Не подключено</span>';
+        const chip = on === "free" ? '<span class="state on">Всегда включено</span>' : on ? '<span class="state on">Подключено</span>' : hasDemo ? '<span class="state demo">Демо-режим</span>' : '<span class="state off">Не подключено</span>';
         return `<div class="conn"><div><div class="conn-name">${esc(name)}</div><div class="conn-what">${esc(what)}</div></div>${chip}
-          <div class="conn-keys">${keys.map((k) => `<code>${esc(k)}</code>`).join("")}</div></div>`;
+          ${keys.length ? `<div class="conn-keys">${keys.map((k) => `<code>${esc(k)}</code>`).join("")}</div>` : ""}</div>`;
       })
       .join("");
     const s = state.schedule;
@@ -819,12 +1336,26 @@ main { padding-block: 20px 48px; }
   }
 
   function render() {
+    if (renderedRole !== state.role) {
+      renderedRole = state.role;
+      renderTabs();
+      // Карточки серий другой роли выглядят иначе — собираем заново.
+      $("#episodes").innerHTML = "";
+      if (!filters().some((f) => f[0] === filter)) filter = "all";
+    }
+    showTab();
     renderHeader();
     renderFilters();
     renderEpisodes();
-    renderBrands();
-    renderAgents();
-    renderConnections();
+    if (!document.querySelector("#brands :focus")) renderBrands();
+    if (isClient()) {
+      renderPlan();
+      if (!document.querySelector("#settingsBox :focus")) renderSettings();
+    } else {
+      renderAgents();
+      renderConnections();
+      renderClients();
+    }
   }
 
   // ---------- Окна ----------
@@ -832,20 +1363,68 @@ main { padding-block: 20px 48px; }
     const dialog = document.getElementById(id);
     if (!dialog || dialog.open) return;
     if (id === "episodeSheet") fillEpisodeSheet();
+    if (id === "clientSheet") fillClientSheet();
     dialog.showModal();
   }
 
+  const options = (list, current) => list.map((o) => `<option value="${esc(o.id)}" ${o.id === current ? "selected" : ""}>${esc(o.label)}</option>`).join("");
+  const planOptions = (current) => options(state.plans.map((p) => ({ id: p.id, label: `${p.name} — $${p.priceUsd}${p.period === "once" ? " разово" : " в месяц"}, ${p.episodes} серий` })), current);
+
+  function fillClientSheet(slug) {
+    const free = state.brands.filter((b) => !clientOfBrand(b.slug));
+    $("#clBrand").innerHTML = free.length
+      ? free.map((b) => `<option value="${esc(b.slug)}" ${b.slug === slug ? "selected" : ""}>${esc(b.title)}${b.client ? ` — ${esc(b.client.company)}` : ""}</option>`).join("")
+      : `<option value="">Все бренды уже с клиентами — сначала создай новый бренд</option>`;
+    const brand = state.brands.find((b) => b.slug === ($("#clBrand").value || slug));
+    if (brand?.client && !$("#clCompany").value) $("#clCompany").value = brand.client.company;
+    $("#clPlan").innerHTML = planOptions($("#clPlan").value || "pilot");
+    $("#clApproval").innerHTML = options(state.approvalModes, $("#clApproval").value || "studio_then_client");
+    if (!$("#clStart").value) $("#clStart").value = new Date().toLocaleDateString("en-CA");
+  }
+
+  function openClientEdit(id) {
+    const c = (state.clients || []).find((x) => x.id === id);
+    if (!c) return;
+    $("#ceId").value = c.id;
+    $("#clientEditTitle").textContent = c.company;
+    $("#clientEditNote").textContent = `${c.brandTitle} · логин ${c.email}`;
+    $("#cePlan").innerHTML = planOptions(c.plan);
+    $("#ceApproval").innerHTML = options(state.approvalModes, c.approval);
+    $("#ceStatus").value = c.status;
+    $("#ceContact").value = c.contactName;
+    $("#cePhone").value = c.phone || "";
+    $("#ceIgUser").value = "";
+    $("#ceIgToken").value = "";
+    $("#ceIgState").textContent = c.instagramConnected ? "· подключён" : "· не подключён";
+    $("#clientEditForm").querySelector('[name="disconnectInstagram"]').checked = false;
+    $("#clientEditSheet").showModal();
+  }
+
   function fillEpisodeSheet(slug) {
+    const client = isClient();
+    $("#epBrandField").hidden = client;
+    $("#epEngineField").hidden = client;
+    $("#episodeSheetTitle").textContent = client ? "Новое задание" : "Новая серия";
+    $("#episodeSheetNote").textContent = client
+      ? `Опишите, о чём серия: акция, новинка, праздник. Студия сделает серию и пришлёт вам на согласование. По тарифу осталось ${state.me.usage.left} ${plural(state.me.usage.left, "серия", "серии", "серий")}.`
+      : "Агенты придумают сюжет, нарисуют кадры, озвучат и пришлют ролик на одобрение.";
+    $("#epBriefLabel").innerHTML = client ? "Задание" : "Задание агентам <small>необязательно</small>";
+    $("#epBrief").required = client;
+    $("#epSubmit").textContent = client ? "Отправить задание" : "Запустить агентов";
+    $("#briefIdeas").innerHTML = (client ? CLIENT_IDEAS : BRIEF_IDEAS).map((t) => `<button type="button" data-brief="${esc(t)}">${esc(t)}</button>`).join("");
+    if (client) return;
     const select = $("#epBrand");
     const current = slug || select.value || (brandFilter !== "all" ? brandFilter : state.defaultSeries);
     select.innerHTML = state.brands
       .map((b) => `<option value="${esc(b.slug)}" ${b.slug === current ? "selected" : ""}>${esc(b.title)}${b.client ? ` — ${esc(b.client.company)}` : ""}</option>`)
       .join("");
-    $("#briefIdeas").innerHTML = BRIEF_IDEAS.map((t) => `<button type="button" data-brief="${esc(t)}">${esc(t)}</button>`).join("");
     const chosen = document.querySelector('input[name="engine"]:checked')?.value || "auto";
     $("#epEngines").innerHTML = [
       { engine: "auto", label: "Авто", available: true, note: `сейчас: ${state.autoEngine}` },
-      ...state.engines.map((e) => ({ ...e, note: e.available ? "подключён" : "нет ключа" })),
+      ...state.engines.map((e) => ({
+        ...e,
+        note: e.free ? "бесплатно" : e.available ? "подключён" : e.engine === "gemini" ? "нужен GEMINI_MEDIA=on" : "нет ключа",
+      })),
     ]
       .map(
         (e) => `<label class="engine"><input type="radio" name="engine" value="${esc(e.engine)}" ${e.engine === chosen && e.available ? "checked" : ""} ${e.available ? "" : "disabled"}>
@@ -918,14 +1497,70 @@ main { padding-block: 20px 48px; }
       renderEpisodes();
       return;
     }
+    const role = t.closest("[data-preview-role]");
+    if (role) {
+      previewRole = role.dataset.previewRole;
+      pref.set("previewRole", previewRole);
+      markPreviewRole();
+      load();
+      return;
+    }
+    const newClient = t.closest("[data-new-client]");
+    if (newClient) {
+      $("#clientForm").reset();
+      openSheet("clientSheet");
+      fillClientSheet(newClient.dataset.newClient);
+      return;
+    }
+    const edit = t.closest("[data-edit-client]");
+    if (edit) return openClientEdit(edit.dataset.editClient);
+    const invite = t.closest("[data-invite]");
+    if (invite) return makeInvite(invite.dataset.invite, invite);
+    const paid = t.closest("[data-paid]");
+    if (paid) {
+      paid.disabled = true;
+      post(`/api/invoices/${paid.dataset.paid}/paid`, { paid: paid.dataset.value }).then((ok) => {
+        if (ok) toast(paid.dataset.value === "1" ? "Оплата отмечена" : "Отметка снята");
+        load();
+      });
+      return;
+    }
+    const lead = t.closest("[data-lead]");
+    if (lead) {
+      const l = state.leads[Number(lead.dataset.lead)];
+      openSheet("brandSheet");
+      $("#brCompany").value = l.company;
+      $("#brWishes").value = [l.message, `Контакт: ${l.name}, ${l.phone}`].filter(Boolean).join(". ");
+      $("#brProduct").focus();
+      return;
+    }
+    const upload = t.closest("[data-upload]");
+    if (upload) {
+      if (PREVIEW) return toast("В превью загрузка не работает — запусти студию на сервере");
+      const [slug, kind, id] = upload.dataset.upload.split("|");
+      uploadTarget = { slug, kind, id };
+      $("#assetInput").value = "";
+      $("#assetInput").click();
+      return;
+    }
+    if (t.closest("#tgConnect")) return connectTelegram(t.closest("#tgConnect"));
+    if (t.closest("#inviteCopy")) {
+      const input = $("#inviteUrl");
+      input.select();
+      navigator.clipboard?.writeText(input.value).then(() => toast("Ссылка скопирована"), () => toast("Выдели ссылку и скопируй вручную"));
+      return;
+    }
+
     const btn = t.closest("[data-act]");
     if (!btn) return;
     const id = btn.dataset.id;
     const base = "/api/episodes/" + id;
     switch (btn.dataset.act) {
-      case "approve":
-        run(id, base + "/approve", null, "Одобрено — публикую");
+      case "approve": {
+        const toClient = !isClient() && state.episodes.find((e) => e.id === id)?.status === "awaiting_approval" && clientOfBrand(state.episodes.find((e) => e.id === id).series)?.approval === "studio_then_client";
+        run(id, base + "/approve", null, isClient() ? "Спасибо! Серия уходит в публикацию" : toClient ? "Отправлено клиенту на согласование" : "Одобрено — публикую");
         break;
+      }
       case "redo-open":
         setUi(id, { redo: true, confirmReject: false });
         document.getElementById("fix-" + id)?.focus();
@@ -941,7 +1576,12 @@ main { padding-block: 20px 48px; }
         break;
       }
       case "redo-send":
-        run(id, base + "/redo", { feedback: drafts[id] || "" }, "Отправлено на переделку — агенты начали заново");
+        if (isClient() && !(drafts[id] || "").trim()) {
+          toast("Напишите, что поменять в серии");
+          document.getElementById("fix-" + id)?.focus();
+          break;
+        }
+        run(id, base + "/redo", { feedback: drafts[id] || "" }, isClient() ? "Правки отправлены — студия переделает серию" : "Отправлено на переделку — агенты начали заново");
         break;
       case "reject-ask":
         setUi(id, { confirmReject: true, redo: false });
@@ -968,6 +1608,105 @@ main { padding-block: 20px 48px; }
     if (node && ep) node._key = cardKey(ep);
   });
 
+  async function makeInvite(id, btn) {
+    btn.disabled = true;
+    const data = await post(`/api/clients/${id}/invite`);
+    btn.disabled = false;
+    if (!data) return;
+    const c = state.clients.find((x) => x.id === id);
+    $("#inviteNote").textContent = `Для ${c ? c.company : "клиента"}: логин — ${c ? c.email : "почта клиента"}. Действует до ${day(data.expiresAt)}.`;
+    $("#inviteUrl").value = data.url;
+    $("#inviteSheet").showModal();
+    load();
+  }
+
+  async function connectTelegram(btn) {
+    btn.disabled = true;
+    const data = await post("/api/me/telegram");
+    btn.disabled = false;
+    if (!data) return;
+    tgLink = data;
+    renderSettings();
+  }
+
+  function markPreviewRole() {
+    document.querySelectorAll("[data-preview-role]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.previewRole === previewRole)));
+  }
+
+  $("#assetInput").addEventListener("change", async (event) => {
+    const file = event.target.files?.[0];
+    const target = uploadTarget;
+    if (!file || !target) return (uploadTarget = null);
+    if (file.size > 12 * 1024 * 1024) {
+      uploadTarget = null;
+      return toast("Картинка больше 12 МБ");
+    }
+    toast("Загружаю «" + file.name + "»…");
+    try {
+      const res = await fetch(`/api/brands/${target.slug}/${target.kind}/${target.id}`, { method: "POST", headers: { "Content-Type": file.type }, body: file });
+      const data = await res.json().catch(() => ({}));
+      toast(res.ok ? "Картинка на месте — следующие серии будут с ней" : data.error || "Не получилось загрузить");
+    } catch {
+      toast("Не получилось загрузить — проверь соединение");
+    }
+    uploadTarget = null;
+    load();
+  });
+
+  $("#logout").addEventListener("click", async () => {
+    if (PREVIEW) return toast("В превью выход не работает");
+    await fetch("/api/logout", { method: "POST" }).catch(() => undefined);
+    location.href = "/login";
+  });
+
+  document.addEventListener("submit", async (event) => {
+    if (event.target.id !== "pwForm") return;
+    event.preventDefault();
+    const form = new FormData(event.target);
+    const ok = await post("/api/me/password", { current: form.get("current"), next: form.get("next") });
+    if (ok) {
+      event.target.reset();
+      toast("Пароль изменён");
+    }
+  });
+
+  $("#clBrand").addEventListener("change", () => {
+    const brand = state.brands.find((b) => b.slug === $("#clBrand").value);
+    if (brand?.client) $("#clCompany").value = brand.client.company;
+  });
+
+  $("#clientForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formEl = event.currentTarget;
+    const body = Object.fromEntries([...new FormData(formEl).entries()].map(([k, v]) => [k, String(v).trim()]));
+    const btn = $("#clSubmit");
+    btn.disabled = true;
+    const data = await post("/api/clients", body);
+    btn.disabled = false;
+    if (!data) return;
+    $("#clientSheet").close();
+    formEl.reset();
+    toast("Клиент добавлен — теперь отправь ему ссылку в кабинет");
+    location.hash = "clients";
+    load();
+  });
+
+  $("#clientEditForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const id = form.get("id");
+    const body = Object.fromEntries([...form.entries()].filter(([k]) => k !== "id").map(([k, v]) => [k, String(v).trim()]));
+    if (!body.disconnectInstagram) delete body.disconnectInstagram;
+    const btn = $("#ceSubmit");
+    btn.disabled = true;
+    const ok = await post(`/api/clients/${id}`, body);
+    btn.disabled = false;
+    if (!ok) return;
+    $("#clientEditSheet").close();
+    toast("Сохранено");
+    load();
+  });
+
   $("#newEpisode").addEventListener("click", () => openSheet("episodeSheet"));
 
   $("#episodeForm").addEventListener("submit", async (event) => {
@@ -975,16 +1714,17 @@ main { padding-block: 20px 48px; }
     const form = new FormData(event.currentTarget);
     const btn = $("#epSubmit");
     btn.disabled = true;
-    const ok = await post("/api/episodes", {
-      series: form.get("series") || "",
-      brief: String(form.get("brief") || "").trim(),
-      engine: form.get("engine") || "auto",
-    });
+    const ok = await post(
+      "/api/episodes",
+      isClient()
+        ? { brief: String(form.get("brief") || "").trim() }
+        : { series: form.get("series") || "", brief: String(form.get("brief") || "").trim(), engine: form.get("engine") || "auto" },
+    );
     btn.disabled = false;
     if (ok) {
       $("#episodeSheet").close();
       $("#epBrief").value = "";
-      toast("Агенты начали новую серию — она уже в списке");
+      toast(isClient() ? "Задание принято — серия уже в работе" : "Агенты начали новую серию — она уже в списке");
       filter = "all";
       location.hash = "series";
       setTimeout(load, 600);
@@ -1012,8 +1752,13 @@ main { padding-block: 20px 48px; }
     }
   });
 
-  if (PREVIEW) $("#previewBanner").hidden = false;
-  showTab();
+  if (PREVIEW) {
+    $("#previewBanner").hidden = false;
+    if (PREVIEW.views) {
+      $("#previewRoles").hidden = false;
+      markPreviewRole();
+    }
+  }
   load();
 })();
 </script>

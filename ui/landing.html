@@ -1,0 +1,309 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Manrope:wght@400;500;600;700&display=swap">
+<style>
+/* Сайт студии для компаний: что получаете → как это работает → тарифы → заявка.
+   Палитра — риштанская керамика, как в пульте студии. */
+:root {
+  --bg: #F4F1EA; --surface: #FFFFFF; --surface-2: #EAE4D8; --line: #DDD4C4; --ink: #121A2B; --muted: #5C6475;
+  --accent: #0B6E8E; --accent-ink: #FFFFFF; --accent-soft: #D7ECF3; --saffron: #B87411; --saffron-soft: #FBEBCF;
+  --good: #1E7D50; --bad: #B83A33; --bad-soft: #F8E0DD; --deep: #0E2A47;
+  --shadow: 0 1px 2px rgba(18, 26, 43, .05), 0 12px 32px rgba(18, 26, 43, .08);
+  --font-display: "Unbounded", "Manrope", system-ui, sans-serif;
+  --font-body: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0B111D; --surface: #131B2B; --surface-2: #1A2438; --line: #26324A; --ink: #E7ECF5; --muted: #A0AABD;
+    --accent: #43B6D6; --accent-ink: #04202B; --accent-soft: #10323F; --saffron: #F0B656; --saffron-soft: #3A2A10;
+    --good: #4CC48D; --bad: #F2786E; --bad-soft: #3B1A19; --deep: #08182B;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 32px rgba(0, 0, 0, .3);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0B111D; --surface: #131B2B; --surface-2: #1A2438; --line: #26324A; --ink: #E7ECF5; --muted: #A0AABD;
+  --accent: #43B6D6; --accent-ink: #04202B; --accent-soft: #10323F; --saffron: #F0B656; --saffron-soft: #3A2A10;
+  --good: #4CC48D; --bad: #F2786E; --bad-soft: #3B1A19; --deep: #08182B;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.6 var(--font-body); -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+a { color: var(--accent); }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+h1, h2, h3 { font-family: var(--font-display); letter-spacing: -.015em; margin: 0; text-wrap: balance; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--line); background: var(--surface); padding: 12px 18px; border-radius: 12px; font-weight: 700; cursor: pointer; text-decoration: none; color: var(--ink); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.06); }
+.btn[disabled] { opacity: .6; cursor: progress; }
+
+/* Шапка */
+.top { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+.top-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 12px; }
+.logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+.logo svg { width: 36px; height: 36px; flex: none; }
+.logo b { font: 700 16px/1 var(--font-display); }
+.top nav { display: flex; gap: 6px; align-items: center; }
+.top nav a.link { color: var(--muted); text-decoration: none; font-weight: 600; font-size: 14px; padding: 8px 10px; }
+@media (max-width: 640px) { .top nav a.link { display: none; } }
+
+/* Первый экран */
+.hero { padding-block: 48px 32px; display: grid; gap: 36px; align-items: center; }
+@media (min-width: 900px) { .hero { grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); padding-block: 72px 56px; } }
+.kicker { display: inline-flex; gap: 8px; align-items: center; background: var(--saffron-soft); color: var(--saffron); font-weight: 700; font-size: 13px; padding: 6px 12px; border-radius: 99px; }
+.hero h1 { font-size: clamp(30px, 5.4vw, 52px); line-height: 1.08; margin-top: 16px; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero p { color: var(--muted); font-size: 18px; max-width: 54ch; margin: 18px 0 0; }
+.cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 26px; }
+.proof { display: flex; gap: 22px; flex-wrap: wrap; margin-top: 28px; color: var(--muted); font-size: 14px; }
+.proof b { display: block; color: var(--ink); font: 700 20px var(--font-display); }
+
+/* Телефон с серией: мультсцена на CSS */
+.phone { justify-self: center; width: min(300px, 78vw); aspect-ratio: 9 / 16; background: #0A0F1A; border-radius: 34px; padding: 8px; box-shadow: var(--shadow); position: relative; }
+.screen { position: relative; height: 100%; border-radius: 27px; overflow: hidden; background: linear-gradient(180deg, #F6C478 0%, #E8955A 58%, #B9663A 100%); }
+.screen > img.bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.toon { position: absolute; bottom: 22.4%; height: 46%; transform: translateX(-50%); }
+.toon.talk { animation: bob 1.1s ease-in-out infinite; }
+.bubble { position: absolute; top: 9%; left: 10%; right: 10%; background: #FFFFFF; color: #121A2B; border-radius: 16px; padding: 10px 12px; font: 700 13px/1.35 var(--font-body); box-shadow: 0 6px 16px rgba(0, 0, 0, .18); }
+.bubble::after { content: ""; position: absolute; bottom: -9px; left: 28%; border: 10px solid transparent; border-top-color: #FFFFFF; border-bottom: 0; }
+.bubble small { display: block; font-weight: 600; color: #5C6475; }
+.subs { position: absolute; left: 8%; right: 8%; bottom: 6%; background: rgba(0, 0, 0, .55); color: #FFF; border-radius: 10px; padding: 6px 10px; font: 700 13px/1.3 var(--font-body); text-align: center; }
+.reel { position: absolute; top: 14px; right: 16px; color: #fff; background: rgba(0, 0, 0, .35); padding: 3px 8px; border-radius: 99px; font: 700 12px var(--font-body); display: flex; gap: 6px; align-items: center; text-shadow: 0 1px 3px rgba(0, 0, 0, .4); }
+.approve { position: absolute; right: -14px; bottom: 18%; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; box-shadow: var(--shadow); font-size: 13px; display: grid; gap: 6px; width: 170px; }
+.approve b { font-size: 12px; color: var(--muted); }
+.approve span { background: var(--accent); color: var(--accent-ink); border-radius: 9px; padding: 6px 10px; font-weight: 700; text-align: center; }
+@media (max-width: 420px) { .approve { right: -6px; width: 150px; } }
+@keyframes bob { 50% { transform: translateX(-50%) translateY(-10px); } }
+
+/* Разделы */
+section { padding-block: 56px; }
+.head { display: grid; gap: 10px; margin-bottom: 28px; max-width: 70ch; }
+.head h2 { font-size: clamp(24px, 3.6vw, 34px); line-height: 1.15; }
+.head p { margin: 0; color: var(--muted); font-size: 17px; }
+.steps { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); counter-reset: step; }
+.step { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 20px; display: grid; gap: 8px; align-content: start; }
+.step::before { counter-increment: step; content: counter(step); width: 34px; height: 34px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font: 700 15px var(--font-display); }
+.step h3 { font-size: 17px; }
+.step p { margin: 0; color: var(--muted); font-size: 15px; }
+
+.band { background: var(--deep); color: #EAF1F8; }
+.band .head p { color: #B7C6D8; }
+.perks { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); }
+.perk { border: 1px solid rgba(255, 255, 255, .12); border-radius: 18px; padding: 20px; display: grid; gap: 6px; }
+.perk b { font: 700 26px var(--font-display); color: #F0B656; }
+.perk span { color: #C9D6E5; font-size: 15px; }
+
+.plans { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); align-items: stretch; }
+.plan { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 22px; display: grid; gap: 14px; grid-template-rows: auto auto 1fr auto; box-shadow: var(--shadow); position: relative; }
+.plan.hit { border: 2px solid var(--accent); }
+.plan .badge { position: absolute; top: -12px; left: 20px; background: var(--accent); color: var(--accent-ink); font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 99px; }
+.plan h3 { font-size: 20px; }
+.price { font: 700 32px/1 var(--font-display); }
+.price small { font: 600 14px var(--font-body); color: var(--muted); }
+.plan ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; align-content: start; }
+.plan li { display: flex; gap: 8px; align-items: baseline; font-size: 15px; }
+.plan li::before { content: "✓"; color: var(--good); font-weight: 700; }
+.note { color: var(--muted); font-size: 14px; margin-top: 16px; }
+
+.faq { display: grid; gap: 10px; max-width: 800px; }
+.faq details { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 18px; }
+.faq summary { cursor: pointer; font-weight: 700; }
+.faq p { margin: 10px 0 0; color: var(--muted); }
+
+.order { display: grid; gap: 28px; align-items: start; }
+@media (min-width: 900px) { .order { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); } }
+.form { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 22px; display: grid; gap: 14px; box-shadow: var(--shadow); }
+.form label { display: grid; gap: 6px; font-size: 13px; font-weight: 700; }
+.form input, .form select, .form textarea { width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; background: var(--bg); font-weight: 500; min-width: 0; }
+.form textarea { resize: vertical; min-height: 90px; }
+.row2 { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+.error { background: var(--bad-soft); border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+.done { text-align: center; display: grid; gap: 10px; justify-items: center; padding: 20px 0; }
+.done b { font: 700 22px var(--font-display); }
+.done span { color: var(--muted); }
+
+footer { border-top: 1px solid var(--line); padding-block: 28px; color: var(--muted); font-size: 14px; }
+footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+@media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; } html { scroll-behavior: auto; } }
+</style>
+
+<header class="top">
+  <div class="wrap top-row">
+    <a class="logo" href="/">
+      <svg viewBox="0 0 38 38" aria-hidden="true">
+        <rect x="1" y="1" width="36" height="36" rx="11" fill="var(--accent)"></rect>
+        <rect x="11" y="7" width="16" height="24" rx="4" fill="none" stroke="var(--accent-ink)" stroke-width="2"></rect>
+        <path d="M17 15.5v7l6-3.5z" fill="var(--saffron)"></path>
+      </svg>
+      <b>AI-студия</b>
+    </a>
+    <nav aria-label="Разделы">
+      <a class="link" href="#how">Как это работает</a>
+      <a class="link" href="#plans">Тарифы</a>
+      <a class="btn" href="/login">Войти</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <div>
+      <span class="kicker">Мультсериал для бренда · Instagram Reels</span>
+      <h1>Ваш маскот выходит в Reels <em>каждый день</em> — без съёмок и монтажёров</h1>
+      <p>AI-студия придумывает героя вашего бренда, пишет серии на узбекском и русском, рисует, озвучивает и присылает вам в Telegram. Вы нажимаете «Одобрить» — серия выходит в Instagram.</p>
+      <div class="cta">
+        <a class="btn primary" href="#order">Хочу сериал</a>
+        <a class="btn" href="#plans">Тарифы</a>
+      </div>
+      <div class="proof">
+        <div><b>5 серий</b>за первую неделю</div>
+        <div><b>1 тап</b>на согласование</div>
+        <div><b>uz · ru</b>язык и юмор ваших клиентов</div>
+      </div>
+    </div>
+    <div class="phone" aria-label="Пример серии: Somsa aka объявляет пятничную акцию, Non bobo хочет третью самсу">
+      <div class="screen">
+        <img class="bg" src="showcase/locations/tandir.png" alt="">
+        <div class="reel"><span>▶</span> Reels · 0:24</div>
+        <div class="bubble">Bugun juma — ikkinchi somsa bepul!<small>Сегодня пятница — вторая самса бесплатно!</small></div>
+        <img class="toon talk" src="showcase/characters/somsa.png" alt="Somsa aka" style="left:33%">
+        <img class="toon" src="showcase/characters/non.png" alt="Non bobo" style="left:68%">
+        <div class="subs">Non bobo: Unda uchinchisini ham olaman!</div>
+      </div>
+      <div class="approve"><b>Новая серия на согласование</b><span>✅ Одобрить</span></div>
+    </div>
+  </div>
+
+  <section id="how">
+    <div class="wrap">
+      <div class="head">
+        <h2>Как это работает</h2>
+        <p>Вы рассказываете о бизнесе один раз. Дальше серии идут сами: по расписанию и по вашим заданиям.</p>
+      </div>
+      <div class="steps">
+        <div class="step"><h3>Бриф за 10 минут</h3><p>Что продаёте, кому, какой тон: семейный юмор, дерзко или премиально.</p></div>
+        <div class="step"><h3>Маскот и герои</h3><p>Студия придумывает персонажа бренда, его друзей, места и рубрики сериала.</p></div>
+        <div class="step"><h3>Серии по расписанию</h3><p>Сценарий, кадры, голоса героев, монтаж и субтитры — без вашего участия.</p></div>
+        <div class="step"><h3>Вы одобряете</h3><p>Ролик приходит в Telegram и личный кабинет. «Одобрить» — и он в вашем Instagram.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <div class="head">
+        <h2>Почему сериал, а не реклама</h2>
+        <p>Рекламу пролистывают. Героя, которого знают, ждут — и с ним запоминают ваш бренд.</p>
+      </div>
+      <div class="perks">
+        <div class="perk"><b>Каждый день</b><span>Регулярность, которую не даст ни одно агентство за эти деньги</span></div>
+        <div class="perk"><b>Ваши акции</b><span>Напишите задание — «скидка в пятницу» — и выйдет серия про неё</span></div>
+        <div class="perk"><b>Один герой</b><span>Маскот выглядит одинаково в каждой серии: зрители его узнают</span></div>
+        <div class="perk"><b>Без риска</b><span>Ничего не выходит без вашего «Одобрить». Каждый ролик помечен как сделанный с AI</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="plans">
+    <div class="wrap">
+      <div class="head">
+        <h2>Тарифы</h2>
+        <p>Начните с пилота: неделя, 5 серий, без подписки. Понравится — переходите на месячный тариф.</p>
+      </div>
+      <div class="plans" id="plans-list"></div>
+      <p class="note">Цены в долларах США. Переделка серии по вашим правкам не тратит новую серию из тарифа.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="head"><h2>Вопросы</h2></div>
+      <div class="faq">
+        <details><summary>Кто рисует и озвучивает серии?</summary><p>Команда AI-агентов студии: сценарист, художник, аниматор, актёры озвучки, монтажёр и контролёр качества. По умолчанию каждую серию сначала смотрит человек из студии и только потом отправляет вам.</p></details>
+        <details><summary>Можно попросить исправить серию?</summary><p>Да. Нажмите «Попросить правки» и напишите одним сообщением, что поменять. Студия переделает и пришлёт новый вариант.</p></details>
+        <details><summary>В чей Instagram выходят серии?</summary><p>В ваш. Пока аккаунт не подключён, одобренные серии вы получаете готовым файлом для публикации.</p></details>
+        <details><summary>Как быстро будет первая серия?</summary><p>Маскот и сериал — в день заявки, первая серия — на следующий день после брифа.</p></details>
+        <details><summary>На каком языке серии?</summary><p>На узбекском или русском, с субтитрами. Для сетей — две языковые версии.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section id="order">
+    <div class="wrap order">
+      <div class="head">
+        <h2>Оставьте заявку</h2>
+        <p>Перезвоним в течение дня, зададим пару вопросов о бизнесе и покажем первые наброски маскота.</p>
+      </div>
+      <form class="form" id="lead" novalidate>
+        <div class="row2">
+          <label>Компания<input name="company" required maxlength="120" autocomplete="organization" placeholder="Lazzat Somsa"></label>
+          <label>Ваше имя<input name="name" required maxlength="80" autocomplete="name" placeholder="Дилноза"></label>
+        </div>
+        <div class="row2">
+          <label>Телефон<input name="phone" required type="tel" maxlength="40" autocomplete="tel" placeholder="+998 90 123 45 67"></label>
+          <label>Тариф<select name="plan" id="lead-plan"><option value="">Пока не знаю</option></select></label>
+        </div>
+        <label>Что продаёте <small style="font-weight:500;color:var(--muted)">необязательно</small><textarea name="message" maxlength="1000" placeholder="Самса из тандыра, 5 точек в Ташкенте. Хотим больше молодёжи по вечерам."></textarea></label>
+        <div class="error" id="lead-error" role="alert" hidden></div>
+        <button class="btn primary" type="submit" id="lead-submit">Отправить заявку</button>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap"><span>AI-студия · Ташкент</span><a href="/login">Вход для клиентов</a></div>
+</footer>
+
+<script>
+(() => {
+  const DATA = window.STUDIO_PUBLIC || { plans: [] };
+  const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const list = document.getElementById("plans-list");
+  list.innerHTML = DATA.plans
+    .map((p) => `<article class="plan${p.id === "business" ? " hit" : ""}">
+        ${p.id === "business" ? '<span class="badge">Чаще всего берут</span>' : ""}
+        <h3>${esc(p.name)}</h3>
+        <div class="price">$${esc(p.priceUsd)} <small>${p.period === "once" ? `за ${p.days || 7} дней` : "в месяц"}</small></div>
+        <ul>${p.features.map((f) => `<li>${esc(f)}</li>`).join("")}</ul>
+        <a class="btn${p.id === "business" ? " primary" : ""}" href="#order" data-plan="${esc(p.id)}">${p.id === "pilot" ? "Начать с пилота" : "Выбрать"}</a>
+      </article>`)
+    .join("");
+  const select = document.getElementById("lead-plan");
+  select.insertAdjacentHTML("beforeend", DATA.plans.map((p) => `<option value="${esc(p.id)}">${esc(p.name)} — $${esc(p.priceUsd)}</option>`).join(""));
+  list.addEventListener("click", (e) => {
+    const a = e.target.closest("[data-plan]");
+    if (a) select.value = a.dataset.plan;
+  });
+
+  const form = document.getElementById("lead");
+  const error = document.getElementById("lead-error");
+  const submit = document.getElementById("lead-submit");
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    error.hidden = true;
+    const body = Object.fromEntries([...new FormData(form).entries()].map(([k, v]) => [k, String(v).trim()]));
+    if (!body.company || !body.name) return show("Укажите компанию и имя");
+    if (!/^[+\d][\d\s()-]{6,}$/.test(body.phone)) return show("Укажите телефон, например +998 90 123 45 67");
+    submit.disabled = true;
+    try {
+      const res = await fetch("/api/leads", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" }, body: new URLSearchParams(body) });
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(out.error || "Не получилось отправить");
+      form.innerHTML = `<div class="done"><b>Спасибо, ${esc(body.name)}!</b><span>Заявка у нас. Перезвоним на ${esc(body.phone)} в течение дня.</span></div>`;
+    } catch (e) {
+      show(e.message === "Failed to fetch" ? "Нет связи с сервером — позвоните нам или попробуйте позже" : e.message);
+      submit.disabled = false;
+    }
+  });
+  function show(text) {
+    error.textContent = text;
+    error.hidden = false;
+  }
+})();
+</script>

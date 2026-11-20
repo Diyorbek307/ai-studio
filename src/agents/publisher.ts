@@ -1,5 +1,6 @@
 import { config } from "../config.js";
-import { instagramEnabled, publishReel } from "../integrations/instagram.js";
+import { clientForBrand, instagramFor } from "../clients.js";
+import { publishReel } from "../integrations/instagram.js";
 import { log } from "../log.js";
 import { episodeFile } from "../store.js";
 import type { Episode } from "../types.js";
@@ -19,8 +20,10 @@ export async function publishEpisode(ep: Episode): Promise<NonNullable<Episode["
   if (!ep.final) throw new Error("Нет готового ролика");
   const at = new Date().toISOString();
 
-  if (!instagramEnabled()) {
-    const note = `Instagram не подключён — ролик готов к ручной публикации: ${episodeFile(ep, ep.final)}`;
+  const account = instagramFor(ep.series);
+  if (!account) {
+    const whose = clientForBrand(ep.series) ? "Instagram клиента не подключён" : "Instagram не подключён";
+    const note = `${whose} — ролик готов к ручной публикации: ${episodeFile(ep, ep.final)}`;
     log.agent(AGENT, note);
     return { at, dryRun: true, note };
   }
@@ -30,7 +33,7 @@ export async function publishEpisode(ep: Episode): Promise<NonNullable<Episode["
 
   const videoUrl = `${config.server.publicBaseUrl}/media/${ep.id}/${ep.final}`;
   log.agent(AGENT, "загружаю ролик в Instagram");
-  const result = await publishReel(videoUrl, postCaption(ep));
+  const result = await publishReel(account, videoUrl, postCaption(ep));
   log.agent(AGENT, `опубликовано: ${result.permalink ?? result.mediaId}`);
   return { at, mediaId: result.mediaId, permalink: result.permalink };
 }

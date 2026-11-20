@@ -56,6 +56,12 @@ export async function probe(file: string): Promise<ProbeResult> {
   };
 }
 
+/** Формат пикселей первой картинки/видео (rgba, rgb24, yuvj420p…) — по нему видно, есть ли прозрачность. */
+export async function pixelFormat(file: string): Promise<string> {
+  const { stdout } = await exec("ffprobe", ["-v", "error", "-select_streams", "v:0", "-show_entries", "stream=pix_fmt", "-of", "csv=p=0", file]);
+  return stdout.trim();
+}
+
 export async function mediaDuration(file: string): Promise<number> {
   return (await probe(file)).duration;
 }

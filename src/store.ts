@@ -99,6 +99,9 @@ export function seedSeries(): void {
     const target = path.join(config.seriesDir, file);
     if (!fs.existsSync(target)) fs.copyFileSync(path.join(BUNDLED_SERIES_DIR, file), target);
   }
+  // Картинки героев и мест для бесплатной перекладки: докладываем недостающие, свои не трогаем.
+  const assets = path.join(BUNDLED_SERIES_DIR, "assets");
+  if (fs.existsSync(assets)) fs.cpSync(assets, path.join(config.seriesDir, "assets"), { recursive: true, force: false, errorOnExist: false });
 }
 
 export function seriesFile(slug: string): string {

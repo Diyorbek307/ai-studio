@@ -18,6 +18,10 @@ export const CharacterSchema = z.object({
       azure: z.string().optional(),
       rate: z.string().optional(),
       pitch: z.string().optional(),
+      /** Голос Gemini TTS (Kore, Puck, Charon, Leda, Fenrir…). */
+      gemini: z.string().optional(),
+      /** Манера речи для Gemini TTS: «пожилой, медленно, мудро». */
+      style: z.string().optional(),
     })
     .default({}),
 });
@@ -161,6 +165,7 @@ export const EPISODE_STATUSES = [
   "in_progress",
   "awaiting_approval",
   "awaiting_feedback",
+  "awaiting_client",
   "approved",
   "published",
   "rejected",
@@ -173,12 +178,21 @@ export const STATUS_LABEL: Record<EpisodeStatus, string> = {
   in_progress: "⚙️ в работе",
   awaiting_approval: "👀 ждёт одобрения",
   awaiting_feedback: "✍️ ждёт правок",
+  awaiting_client: "🤝 ждёт клиента",
   approved: "✅ одобрен",
   published: "📢 опубликован",
   rejected: "🗑 отклонён",
   paused_budget: "⏸ пауза: бюджет",
   failed: "❌ ошибка",
 };
+
+export interface ApprovalEntry {
+  ts: string;
+  /** "studio" — команда студии, "client" — компания-клиент. */
+  by: "studio" | "client";
+  decision: "approved" | "redo" | "rejected" | "sent_to_client";
+  note?: string;
+}
 
 export interface VoiceLine {
   sceneId: string;
@@ -249,7 +263,15 @@ export interface Episode {
     telegramMessageId?: number;
     decidedAt?: string;
     decision?: "approved" | "redo" | "rejected";
+    /** Когда ролик ушёл клиенту на согласование. */
+    clientRequestedAt?: string;
   };
+  /** История решений: студия и клиент, кто что одобрил или попросил переделать. */
+  approvalLog?: ApprovalEntry[];
+  /** Кто заказал серию: студия, расписание или клиент из кабинета. */
+  orderedBy?: string;
+  /** Чьи правки ждём после «Переделать»: студии или клиента. */
+  feedbackFrom?: "studio" | "client";
   publish?: {
     at: string;
     mediaId?: string;

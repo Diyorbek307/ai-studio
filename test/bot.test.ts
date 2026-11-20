@@ -69,8 +69,42 @@ test("«Одобрить» публикует (без Instagram — готови
   assert.equal(loadEpisode(id).publish?.dryRun, true);
 });
 
-test("сообщения от чужих бот игнорирует", async () => {
+test("сообщения от чужих бот игнорирует, на /start — только подсказка про кабинет", async () => {
   const before = calls.length;
   await handleUpdate({ update_id: 5, message: { message_id: 6, chat: { id: 777 }, text: "/new" } });
   assert.equal(calls.length, before);
+  await handleUpdate({ update_id: 6, message: { message_id: 7, chat: { id: 777 }, text: "/start" } });
+  assert.equal(calls.length, before + 1);
+  assert.match(String((calls.at(-1)!.body as { text: string }).text), /кабинет/);
+});
+
+test("клиент привязывает Telegram кодом, получает серию и одобряет её в чате", async () => {
+  const { createClient, telegramLinkCode, getClient } = await import("../src/clients.js");
+  const { approveEpisode } = await import("../src/pipeline.js");
+  const client = createClient({ brand: "bozor-seriali", contactName: "Дилноза", email: "client@example.uz", plan: "start" });
+  const code = telegramLinkCode(client.id);
+
+  await handleUpdate({ update_id: 10, message: { message_id: 10, chat: { id: 555 }, text: "/start 00000000" } });
+  assert.match(String((calls.at(-1)!.body as { text: string }).text), /не подошёл/);
+  await handleUpdate({ update_id: 11, message: { message_id: 11, chat: { id: 555 }, text: `/start ${code}` } });
+  assert.equal(getClient(client.id).telegram?.chatId, "555");
+
+  // Студия одобряет — серия уходит клиенту в его чат с его кнопками.
+  const ep = await newEpisode("bozor-seriali");
+  assert.equal(ep.status, "awaiting_approval", ep.error);
+  const sent = await approveEpisode(ep.id);
+  assert.equal(sent.status, "awaiting_client");
+  const video = calls.findLast((c) => c.method === "sendVideo")!.body as FormData;
+  assert.equal(video.get("chat_id"), "555");
+  assert.match(String(video.get("reply_markup")), new RegExp(`capprove:${ep.id}`));
+  assert.doesNotMatch(String(video.get("caption")), /\$/); // клиенту не показываем расходы студии
+
+  // Чужой чат не может нажать кнопку клиента.
+  await handleUpdate({ update_id: 12, callback_query: { id: "cb9", from: { id: 777 }, data: `capprove:${ep.id}`, message: { message_id: 3, chat: { id: 777 } } } });
+  assert.equal(loadEpisode(ep.id).status, "awaiting_client");
+
+  await handleUpdate({ update_id: 13, callback_query: { id: "cb10", from: { id: 555 }, data: `capprove:${ep.id}`, message: { message_id: 3, chat: { id: 555 } } } });
+  await waitFor(() => loadEpisode(ep.id).status === "approved");
+  const log = loadEpisode(ep.id).approvalLog ?? [];
+  assert.deepEqual(log.map((a) => `${a.by}:${a.decision}`), ["studio:approved", "studio:sent_to_client", "client:approved"]);
 });

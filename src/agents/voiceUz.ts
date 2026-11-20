@@ -65,6 +65,7 @@ export async function voiceEpisode(ep: Episode, series: Series): Promise<VoiceTi
         text: line.text,
         language: series.language,
         voice: character?.voice ?? {},
+        emotion: line.emotion,
         outBase: episodeFile(ep, `voice/${scene.id}-${i + 1}`),
       });
       recordCost({ agent: AGENT, kind: "tts", usd: result.costUsd, detail: `${scene.id}-${i + 1}`, episodeId: ep.id });

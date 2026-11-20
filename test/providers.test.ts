@@ -159,8 +159,11 @@ test("Higgsfield: кадр загружается в их хранилище б�
   assert.deepEqual(submit.body, { prompt: "Non bobo nods", image_url: "https://cdn.hf/in.png", duration: 3, sound: "off" });
 });
 
-test("выбор движка: явный без ключа — ошибка, авто — первый подключённый", async () => {
-  assert.equal(resolveEngine("auto", "video"), "gemini");
+test("выбор движка: явный без ключа — ошибка, авто — первый подключённый платный", async () => {
+  assert.equal(resolveEngine("auto", "video"), "grok");
   assert.equal(resolveEngine("grok", "video"), "grok");
+  assert.equal(resolveEngine("cutout", "video"), "cutout");
   assert.throws(() => resolveEngine("fal", "video"), /fal\.ai не подключён/);
+  // Ключ Gemini есть, но картинки и видео у Gemini платные — без GEMINI_MEDIA=on их не трогаем.
+  assert.throws(() => resolveEngine("gemini", "image"), /GEMINI_MEDIA=on/);
 });

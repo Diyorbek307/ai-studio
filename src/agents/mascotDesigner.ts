@@ -93,6 +93,12 @@ const AGE_VOICE = {
   adult: { pitch: "+0%", rate: "+0%" },
   elder: { pitch: "-10%", rate: "-12%" },
 } as const;
+/** Голоса Gemini TTS по полу и возрасту героя. */
+const GEMINI_VOICES = {
+  female: { child: "Leda", young: "Leda", adult: "Kore", elder: "Aoede" },
+  male: { child: "Puck", young: "Puck", adult: "Orus", elder: "Charon" },
+} as const;
+const AGE_STYLE = { child: "ребёнок, звонко", young: "молодой голос, живо", adult: "уверенно", elder: "пожилой голос, неторопливо" } as const;
 const COLORS = ["#0B6E8E", "#C2185B", "#C9772B", "#5B6BD8", "#2E8B57", "#8E44AD"];
 
 const BASE_RULES = [
@@ -139,7 +145,12 @@ export async function designBrandSeries(brief: BrandBrief): Promise<Series> {
       personality: c.personality,
       look: c.look,
       catchphrases: c.catchphrases,
-      voice: { azure: VOICES[brief.language][c.gender], ...AGE_VOICE[c.age] },
+      voice: {
+        azure: VOICES[brief.language][c.gender],
+        ...AGE_VOICE[c.age],
+        gemini: GEMINI_VOICES[c.gender][c.age],
+        style: AGE_STYLE[c.age],
+      },
     })),
     rubrics: raw.rubrics,
     rules: [...BASE_RULES, ...raw.rules],

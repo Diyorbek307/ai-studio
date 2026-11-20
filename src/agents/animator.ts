@@ -5,13 +5,14 @@ import { log } from "../log.js";
 import { ENGINE_LABEL, type EngineChoice, resolveEngine } from "../providers/engines.js";
 import { animateImage } from "../providers/video.js";
 import { episodeFile, saveEpisode } from "../store.js";
-import type { Episode } from "../types.js";
+import { cutoutClip } from "../media/cutout.js";
+import type { Episode, Series } from "../types.js";
 import { agentInfo } from "./index.js";
 
 const AGENT = agentInfo(42);
 
 /** Оживляет каждый ключевой кадр в клип длиной со сцену. Готовые клипы не переделывает. */
-export async function animateScenes(ep: Episode): Promise<void> {
+export async function animateScenes(ep: Episode, series: Series): Promise<void> {
   if (!ep.shots || !ep.keyframes || !ep.voice) throw new Error("Нет кадров или озвучки");
   ep.clips ??= {};
   const engine = resolveEngine(ep.engineChoice as EngineChoice | undefined, "video");
@@ -28,6 +29,18 @@ export async function animateScenes(ep: Episode): Promise<void> {
 
     assertBudget();
     log.agent(AGENT, `клип ${i + 1}/${ep.voice.scenes.length} (${span.sceneId})`);
+    const scene = ep.script?.scenes.find((s) => s.id === span.sceneId);
+    if (engine === "cutout" && scene) {
+      // Перекладка: герои двигаются по таймингу озвучки, бесплатно.
+      const speaking: Record<string, [number, number][]> = {};
+      for (const line of ep.voice.lines.filter((l) => l.sceneId === span.sceneId)) {
+        (speaking[line.character] ??= []).push([line.start - span.start, line.end - span.start]);
+      }
+      await cutoutClip({ series, scene, sceneIndex: i, seconds: span.end - span.start, speaking, out: episodeFile(ep, rel) });
+      ep.clips[span.sceneId] = rel;
+      saveEpisode(ep);
+      continue;
+    }
     const result = await animateImage({
       image: episodeFile(ep, keyframe),
       imageUrl: config.server.publicBaseUrl ? `${config.server.publicBaseUrl}/media/${ep.id}/${keyframe}` : undefined,

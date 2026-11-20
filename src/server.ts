@@ -1,29 +1,71 @@
 import fs from "node:fs";
 import http from "node:http";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { audit } from "./audit.js";
+import {
+  clearSessionCookie,
+  clientIp,
+  createSession,
+  login,
+  rateLimit,
+  resetRateLimit,
+  sameOrigin,
+  sessionCookie,
+  type Viewer,
+  viewerFrom,
+} from "./auth.js";
 import { budgetSummary, localDay } from "./budget.js";
+import {
+  acceptInvite,
+  assertCanOrder,
+  changePassword,
+  clientByInvite,
+  createClient,
+  createInvite,
+  getClient,
+  markInvoicePaid,
+  telegramLinkCode,
+  updateClient,
+} from "./clients.js";
 import { config, describeProviders } from "./config.js";
+import { addLead } from "./leads.js";
 import { errorMessage, log } from "./log.js";
 import { designBrandSeries } from "./agents/mascotDesigner.js";
-import { approveEpisode, dailyJob, prepareEpisode, redoEpisode, rejectEpisode, runEpisode } from "./pipeline.js";
-import { episodeDir, loadState, saveState } from "./store.js";
+import { botUsername, sendMessage, telegramEnabled } from "./integrations/telegram.js";
+import { type AssetKind, characterAsset, locationAsset, saveAsset } from "./media/cutout.js";
+import { approveEpisode, dailyAll, prepareEpisode, redoEpisode, rejectEpisode, runEpisode } from "./pipeline.js";
+import { PLAN_IDS, PLANS } from "./plans.js";
+import { BUNDLED_SERIES_DIR, episodeDir, loadEpisode, loadSeries, loadState, saveState } from "./store.js";
 import { buildStudioState } from "./studioState.js";
 
-/** Интерфейс студии — один HTML-файл в ui/ (от dist/src/ это ../../ui). */
+/** Страницы студии — фрагменты HTML в ui/ (от dist/src/ это ../../ui). */
 export const UI_FILE = fileURLToPath(new URL("../../ui/app.html", import.meta.url));
+export const LANDING_FILE = fileURLToPath(new URL("../../ui/landing.html", import.meta.url));
+export const LOGIN_FILE = fileURLToPath(new URL("../../ui/login.html", import.meta.url));
 
-/** Обёртка документа вокруг ui/app.html (сам файл — фрагмент, его же публикуем как превью). */
-export function renderAppPage(fragment: string): string {
+/** Обёртка документа вокруг фрагмента из ui/ (сами фрагменты публикуются и как превью). */
+export function renderAppPage(fragment: string, title = "AI-студия", inject?: Record<string, unknown>): string {
+  let body = fragment;
+  if (inject) {
+    const at = body.lastIndexOf("<script>");
+    const data = Object.entries(inject)
+      .map(([k, v]) => `window.${k} = ${JSON.stringify(v).replace(/</g, "\\u003c")};`)
+      .join("\n");
+    if (at !== -1) body = `${body.slice(0, at)}<script>${data}</script>\n${body.slice(at)}`;
+  }
   return `<!doctype html>
 <html lang="ru">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="referrer" content="same-origin">
+<title>${title}</title>
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
-${fragment}
+${body}
 </body>
 </html>`;
 }
@@ -39,7 +81,13 @@ export function publicMediaPath(id: string, file: string): string | undefined {
   }
 }
 
-function sendFile(req: http.IncomingMessage, res: http.ServerResponse, file: string): void {
+/** Картинка демо-сериала из кода студии (не из данных клиентов). */
+export function showcaseFile(kind: string, id: string): string | undefined {
+  const file = path.join(BUNDLED_SERIES_DIR, "assets", "bozor-seriali", kind, `${id}.png`);
+  return fs.existsSync(file) ? file : undefined;
+}
+
+function sendFile(req: http.IncomingMessage, res: http.ServerResponse, file: string, cache = "no-cache"): void {
   const size = fs.statSync(file).size;
   const type = file.endsWith(".mp4") ? "video/mp4" : "image/png";
   const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range ?? "");
@@ -55,24 +103,33 @@ function sendFile(req: http.IncomingMessage, res: http.ServerResponse, file: str
       "Content-Length": end - start + 1,
       "Content-Range": `bytes ${start}-${end}/${size}`,
       "Accept-Ranges": "bytes",
+      "Cache-Control": cache,
     });
     fs.createReadStream(file, { start, end }).pipe(res);
     return;
   }
-  res.writeHead(200, { "Content-Type": type, "Content-Length": size, "Accept-Ranges": "bytes" });
+  res.writeHead(200, { "Content-Type": type, "Content-Length": size, "Accept-Ranges": "bytes", "Cache-Control": cache });
   fs.createReadStream(file).pipe(res);
 }
 
-function authorized(req: http.IncomingMessage): boolean {
-  if (!config.server.adminPassword) return !config.server.production;
-  const header = req.headers.authorization ?? "";
-  if (!header.startsWith("Basic ")) return false;
-  const [user, pass] = Buffer.from(header.slice(6), "base64").toString().split(":");
-  return user === "admin" && pass === config.server.adminPassword;
+const SECURITY_HEADERS = {
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Referrer-Policy": "same-origin",
+};
+
+function json(res: http.ServerResponse, status: number, body: unknown, headers: Record<string, string> = {}): void {
+  res
+    .writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", ...SECURITY_HEADERS, ...headers })
+    .end(JSON.stringify(body));
 }
 
-function json(res: http.ServerResponse, status: number, body: unknown): void {
-  res.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" }).end(JSON.stringify(body));
+function html(res: http.ServerResponse, page: string, status = 200): void {
+  res.writeHead(status, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", ...SECURITY_HEADERS }).end(page);
+}
+
+function redirect(res: http.ServerResponse, to: string): void {
+  res.writeHead(303, { Location: to, "Cache-Control": "no-store" }).end();
 }
 
 async function readForm(req: http.IncomingMessage): Promise<URLSearchParams> {
@@ -84,17 +141,73 @@ async function readForm(req: http.IncomingMessage): Promise<URLSearchParams> {
   return new URLSearchParams(body);
 }
 
+/** Тело запроса во временный файл (загрузка картинок), не больше limit байт. */
+async function readUpload(req: http.IncomingMessage, limit = 12 * 1024 * 1024): Promise<string> {
+  const type = String(req.headers["content-type"] ?? "");
+  if (!/^image\/(png|jpeg|webp)$/.test(type)) throw new Error("Нужна картинка PNG, JPG или WEBP");
+  const chunks: Buffer[] = [];
+  let size = 0;
+  for await (const chunk of req) {
+    size += (chunk as Buffer).length;
+    if (size > limit) throw new Error("Картинка больше 12 МБ");
+    chunks.push(chunk as Buffer);
+  }
+  if (size === 0) throw new Error("Пустой файл");
+  const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "studio-upload-")), `in.${type.split("/")[1]}`);
+  fs.writeFileSync(file, Buffer.concat(chunks));
+  return file;
+}
+
 /** Запускает долгую задачу в фоне: интерфейс сразу получает ответ, а ход работы видит через /api/state. */
 function background(label: string, task: Promise<unknown>): void {
   task.catch((e) => log.error(`${label}: ${errorMessage(e)}`));
 }
 
-async function handle(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
-  const url = new URL(req.url ?? "/", "http://localhost");
+function page(file: string, title: string, inject?: Record<string, unknown>): string {
+  return renderAppPage(fs.readFileSync(file, "utf8"), title, inject);
+}
 
+function publicInfo(): Record<string, unknown> {
+  return { plans: PLAN_IDS.map((id) => PLANS[id]) };
+}
+
+/** Короткое имя для журнала действий. */
+function actorName(viewer: Viewer): string {
+  return viewer.role === "owner" ? "Студия" : viewer.client.company;
+}
+
+/** Уведомление владельцу в Telegram — без ошибок наружу. */
+async function notifyOwner(text: string): Promise<void> {
+  if (!telegramEnabled()) return;
+  await sendMessage(config.telegram.adminChatId, text).catch((e) => log.warn(`Telegram: ${errorMessage(e)}`));
+}
+
+class HttpError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+function ownerOnly(viewer: Viewer): void {
+  if (viewer.role !== "owner") throw new HttpError(403, "Нет доступа");
+}
+
+/** Клиент может решать только по своим сериям, которые ждут его решения. */
+function assertClientEpisode(viewer: Viewer, id: string): void {
+  if (viewer.role !== "client") return;
+  const ep = loadEpisode(id);
+  if (ep.series !== viewer.client.brand) throw new HttpError(404, "Серия не найдена");
+  const waiting = ep.status === "awaiting_client" || (ep.status === "awaiting_feedback" && ep.feedbackFrom === "client");
+  if (!waiting) throw new HttpError(409, "Эта серия сейчас не ждёт вашего решения");
+}
+
+async function handlePublic(req: http.IncomingMessage, res: http.ServerResponse, url: URL): Promise<boolean> {
   if (url.pathname === "/health") {
     json(res, 200, { ok: true, providers: describeProviders(), budget: budgetSummary() });
-    return;
+    return true;
   }
 
   const media = /^\/media\/(ep-\d{8}-[0-9a-f]{8})\/(.+)$/.exec(url.pathname);
@@ -102,58 +215,243 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse): Prom
     const file = publicMediaPath(media[1]!, media[2]!);
     if (!file) json(res, 404, { error: "not found" });
     else sendFile(req, res, file);
-    return;
+    return true;
   }
 
-  if (!authorized(req)) {
-    if (!config.server.adminPassword && config.server.production) {
-      res.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" }).end("Задай STUDIO_ADMIN_PASSWORD, чтобы открыть панель.");
-    } else {
-      res.writeHead(401, { "WWW-Authenticate": 'Basic realm="ai-studio", charset="UTF-8"' }).end();
-    }
-    return;
+  // Герои демо-сериала студии — картинки для сайта, они публичные.
+  const showcase = /^\/showcase\/(characters|locations)\/([a-z0-9-]+)\.png$/.exec(url.pathname);
+  if (showcase && req.method === "GET") {
+    const file = showcaseFile(showcase[1]!, showcase[2]!);
+    if (!file) json(res, 404, { error: "not found" });
+    else sendFile(req, res, file, "public, max-age=86400");
+    return true;
   }
 
   if (url.pathname === "/" && req.method === "GET") {
-    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" }).end(
-      renderAppPage(fs.readFileSync(UI_FILE, "utf8")),
+    html(res, page(LANDING_FILE, "AI-студия — мультсериал для вашего бренда", { STUDIO_PUBLIC: publicInfo() }));
+    return true;
+  }
+
+  if (url.pathname === "/login" && req.method === "GET") {
+    if (viewerFrom(req) && !url.searchParams.has("switch")) {
+      redirect(res, "/app");
+      return true;
+    }
+    html(res, page(LOGIN_FILE, "Вход — AI-студия", { STUDIO_AUTH: { mode: "login" } }));
+    return true;
+  }
+
+  const invite = /^\/invite\/([A-Za-z0-9_-]{20,64})$/.exec(url.pathname);
+  if (invite && req.method === "GET") {
+    const client = clientByInvite(invite[1]!);
+    html(
+      res,
+      page(LOGIN_FILE, "Приглашение — AI-студия", {
+        STUDIO_AUTH: client ? { mode: "invite", token: invite[1], company: client.company, email: client.email } : { mode: "invite-expired" },
+      }),
+      client ? 200 : 410,
     );
+    return true;
+  }
+
+  if (req.method === "POST" && ["/api/login", "/api/logout", "/api/invite", "/api/leads"].includes(url.pathname)) {
+    if (!sameOrigin(req)) {
+      json(res, 403, { error: "Запрос с чужого сайта" });
+      return true;
+    }
+    const form = await readForm(req);
+    const ip = clientIp(req);
+
+    if (url.pathname === "/api/logout") {
+      json(res, 200, { ok: true }, { "Set-Cookie": clearSessionCookie() });
+      return true;
+    }
+
+    if (url.pathname === "/api/login") {
+      if (!rateLimit(`login:${ip}`)) {
+        json(res, 429, { error: "Слишком много попыток. Подождите 15 минут." });
+        return true;
+      }
+      const viewer = login(form.get("login") ?? "", form.get("password") ?? "");
+      if (!viewer) {
+        json(res, 401, { error: "Неверный логин или пароль" });
+        return true;
+      }
+      resetRateLimit(`login:${ip}`);
+      audit(actorName(viewer), "вошёл(а) в кабинет");
+      json(res, 200, { ok: true, role: viewer.role }, { "Set-Cookie": sessionCookie(createSession(viewer)) });
+      return true;
+    }
+
+    if (url.pathname === "/api/invite") {
+      if (!rateLimit(`invite:${ip}`)) {
+        json(res, 429, { error: "Слишком много попыток. Подождите 15 минут." });
+        return true;
+      }
+      try {
+        const client = acceptInvite(form.get("token") ?? "", form.get("password") ?? "");
+        audit(client.company, "открыл(а) кабинет по приглашению");
+        await notifyOwner(`🔑 ${client.company} открыл(а) кабинет клиента.`);
+        json(res, 200, { ok: true }, { "Set-Cookie": sessionCookie(createSession({ role: "client", client })) });
+      } catch (error) {
+        json(res, 400, { error: errorMessage(error) });
+      }
+      return true;
+    }
+
+    // Заявка с сайта
+    if (!rateLimit(`lead:${ip}`, 5)) {
+      json(res, 429, { error: "Слишком много заявок. Попробуйте позже или позвоните нам." });
+      return true;
+    }
+    try {
+      const lead = addLead({
+        company: form.get("company"),
+        name: form.get("name"),
+        phone: form.get("phone"),
+        plan: form.get("plan"),
+        message: form.get("message"),
+      });
+      audit("Сайт", "новая заявка", lead.company, `${lead.name}, ${lead.phone}`);
+      await notifyOwner(
+        `📩 Заявка с сайта\n${lead.company} — ${lead.name}, ${lead.phone}${lead.plan ? `\nТариф: ${PLANS[lead.plan as keyof typeof PLANS]?.name ?? lead.plan}` : ""}${lead.message ? `\n${lead.message}` : ""}`,
+      );
+      json(res, 200, { ok: true });
+    } catch (error) {
+      json(res, 400, { error: errorMessage(error) });
+    }
+    return true;
+  }
+
+  return false;
+}
+
+async function handlePrivate(req: http.IncomingMessage, res: http.ServerResponse, url: URL, viewer: Viewer): Promise<void> {
+  if (url.pathname === "/app" && req.method === "GET") {
+    html(res, page(UI_FILE, viewer.role === "owner" ? "AI-студия" : `${viewer.client.company} — AI-студия`));
     return;
   }
 
   if (url.pathname === "/api/state" && req.method === "GET") {
-    json(res, 200, buildStudioState());
+    json(res, 200, buildStudioState({ viewer }));
     return;
   }
 
-  if (url.pathname === "/api/episodes" && req.method === "POST") {
-    const form = await readForm(req);
+  const asset = /^\/assets\/([a-z0-9-]+)\/(characters|locations)\/([a-z0-9-]+)\.png$/.exec(url.pathname);
+  if (asset && req.method === "GET") {
+    const [, slug, kind, id] = asset as unknown as [string, string, AssetKind, string];
+    if (viewer.role === "client" && viewer.client.brand !== slug) throw new HttpError(404, "not found");
+    const file = kind === "characters" ? characterAsset(slug, id) : locationAsset(slug, id);
+    if (!fs.existsSync(file)) throw new HttpError(404, "not found");
+    sendFile(req, res, file, "private, max-age=86400");
+    return;
+  }
+
+  if (req.method !== "POST") throw new HttpError(404, "not found");
+  if (!sameOrigin(req)) throw new HttpError(403, "Запрос с чужого сайта");
+
+  const upload = /^\/api\/brands\/([a-z0-9-]+)\/(characters|locations)\/([a-z0-9-]+)$/.exec(url.pathname);
+  if (upload) {
+    ownerOnly(viewer);
+    const [, slug, kind, id] = upload as unknown as [string, string, AssetKind, string];
+    const series = loadSeries(slug);
+    const known = kind === "characters" ? series.characters.some((c) => c.id === id) : series.locations.some((l) => l.id === id);
+    if (!known) throw new HttpError(404, "Нет такого героя или места");
+    const tmp = await readUpload(req);
     try {
-      const ep = prepareEpisode(form.get("series") || undefined, {
-        brief: form.get("brief") ?? undefined,
-        engine: form.get("engine") ?? undefined,
-      });
-      background("Новая серия", runEpisode(ep.id));
-      json(res, 202, { ok: true, id: ep.id });
-    } catch (error) {
-      json(res, 400, { error: errorMessage(error) });
+      await saveAsset(slug, kind, id, tmp);
+    } finally {
+      fs.rmSync(path.dirname(tmp), { recursive: true, force: true });
     }
+    audit("Студия", kind === "characters" ? "загрузила героя" : "загрузила локацию", slug, id);
+    json(res, 200, { ok: true });
     return;
   }
 
-  if (url.pathname === "/api/brands" && req.method === "POST") {
-    const form = await readForm(req);
+  const form = await readForm(req);
+
+  if (url.pathname === "/api/episodes") {
+    if (viewer.role === "client") {
+      const client = getClient(viewer.client.id);
+      assertCanOrder(client);
+      const brief = (form.get("brief") ?? "").trim();
+      if (brief.length < 5) throw new HttpError(400, "Опишите задание: о чём серия, какая акция или повод");
+      const ep = prepareEpisode(client.brand, { brief: brief.slice(0, 1000), orderedBy: client.company });
+      audit(client.company, "заказал(а) серию", ep.id, brief.slice(0, 120));
+      await notifyOwner(`📝 ${client.company} заказал(а) серию: «${brief.slice(0, 300)}»`);
+      background("Серия клиента", runEpisode(ep.id));
+      json(res, 202, { ok: true, id: ep.id });
+      return;
+    }
+    const ep = prepareEpisode(form.get("series") || undefined, {
+      brief: form.get("brief") ?? undefined,
+      engine: form.get("engine") ?? undefined,
+      orderedBy: "Студия",
+    });
+    background("Новая серия", runEpisode(ep.id));
+    json(res, 202, { ok: true, id: ep.id });
+    return;
+  }
+
+  const action = /^\/api\/episodes\/(ep-\d{8}-[0-9a-f]{8})\/(approve|reject|redo|run)$/.exec(url.pathname);
+  if (action) {
+    const id = action[1]!;
+    const verb = action[2]!;
+    if (viewer.role === "client") {
+      if (verb !== "approve" && verb !== "redo") throw new HttpError(403, "Нет доступа");
+      assertClientEpisode(viewer, id);
+      const who = { by: "client" as const, clientId: viewer.client.id };
+      if (verb === "approve") {
+        background(`Одобрение клиентом ${id}`, approveEpisode(id, who));
+        await notifyOwner(`✅ ${viewer.client.company} одобрил(а) серию ${id}.`);
+      } else {
+        const feedback = (form.get("feedback") ?? "").trim();
+        if (!feedback) throw new HttpError(400, "Напишите, что поменять в серии");
+        background(`Правки клиента ${id}`, redoEpisode(id, feedback.slice(0, 1000), "script", who));
+        await notifyOwner(`✏️ ${viewer.client.company} просит правки в ${id}: «${feedback.slice(0, 300)}»`);
+      }
+      json(res, 202, { ok: true });
+      return;
+    }
+    if (verb === "reject") {
+      await rejectEpisode(id);
+    } else if (verb === "approve") {
+      background(`Одобрение ${id}`, approveEpisode(id));
+    } else if (verb === "redo") {
+      background(`Переделка ${id}`, redoEpisode(id, form.get("feedback") ?? ""));
+    } else {
+      background(`Продолжение ${id}`, runEpisode(id));
+    }
+    json(res, 202, { ok: true });
+    return;
+  }
+
+  if (url.pathname === "/api/me/telegram") {
+    if (viewer.role !== "client") throw new HttpError(403, "Нет доступа");
+    const code = telegramLinkCode(viewer.client.id);
+    const bot = await botUsername();
+    json(res, 200, { ok: true, code, link: bot ? `https://t.me/${bot}?start=${code}` : undefined, bot });
+    return;
+  }
+
+  if (url.pathname === "/api/me/password") {
+    if (viewer.role !== "client") throw new HttpError(403, "Нет доступа");
+    changePassword(viewer.client.id, form.get("current") ?? "", form.get("next") ?? "");
+    const client = getClient(viewer.client.id);
+    audit(client.company, "сменил(а) пароль");
+    // Старые сессии с прежним паролем больше не действуют — выдаём новую этому браузеру.
+    json(res, 200, { ok: true }, { "Set-Cookie": sessionCookie(createSession({ role: "client", client })) });
+    return;
+  }
+
+  ownerOnly(viewer);
+
+  if (url.pathname === "/api/brands") {
     const company = (form.get("company") ?? "").trim();
     const product = (form.get("product") ?? "").trim();
     const language = form.get("language") ?? "uz";
-    if (!company || !product) {
-      json(res, 400, { error: "Укажи название компании и что она продаёт" });
-      return;
-    }
-    if (language !== "uz" && language !== "ru" && language !== "en") {
-      json(res, 400, { error: "Язык сериала: uz, ru или en" });
-      return;
-    }
+    if (!company || !product) throw new HttpError(400, "Укажи название компании и что она продаёт");
+    if (language !== "uz" && language !== "ru" && language !== "en") throw new HttpError(400, "Язык сериала: uz, ru или en");
     background(
       `Бренд ${company}`,
       designBrandSeries({
@@ -170,29 +468,89 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse): Prom
     return;
   }
 
-  const action = /^\/api\/episodes\/(ep-\d{8}-[0-9a-f]{8})\/(approve|reject|redo|run)$/.exec(url.pathname);
-  if (action && req.method === "POST") {
-    const id = action[1]!;
-    const verb = action[2]!;
-    const form = await readForm(req);
-    try {
-      if (verb === "reject") {
-        await rejectEpisode(id);
-      } else if (verb === "approve") {
-        background(`Публикация ${id}`, approveEpisode(id));
-      } else if (verb === "redo") {
-        background(`Переделка ${id}`, redoEpisode(id, form.get("feedback") ?? ""));
-      } else {
-        background(`Продолжение ${id}`, runEpisode(id));
-      }
-      json(res, 202, { ok: true });
-    } catch (error) {
-      json(res, 400, { error: errorMessage(error) });
-    }
+  if (url.pathname === "/api/clients") {
+    const client = createClient({
+      brand: form.get("brand") ?? "",
+      company: form.get("company") ?? undefined,
+      contactName: form.get("contactName") ?? "",
+      phone: form.get("phone") ?? undefined,
+      email: form.get("email") ?? "",
+      plan: form.get("plan") ?? "pilot",
+      approval: form.get("approval") ?? undefined,
+      periodStart: form.get("periodStart") || undefined,
+    });
+    audit("Студия", "добавила клиента", client.company, PLANS[client.plan].name);
+    json(res, 200, { ok: true, id: client.id });
     return;
   }
 
-  json(res, 404, { error: "not found" });
+  const clientAction = /^\/api\/clients\/(cl-[0-9a-f]{8})(?:\/(invite))?$/.exec(url.pathname);
+  if (clientAction) {
+    const id = clientAction[1]!;
+    if (clientAction[2] === "invite") {
+      const { token, expiresAt } = createInvite(id);
+      const base = config.server.publicBaseUrl || `http://${req.headers.host ?? `localhost:${config.server.port}`}`;
+      audit("Студия", "выдала приглашение", getClient(id).company);
+      json(res, 200, { ok: true, url: `${base}/invite/${token}`, expiresAt });
+      return;
+    }
+    const before = getClient(id);
+    const client = updateClient(id, {
+      plan: form.get("plan") ?? undefined,
+      approval: form.get("approval") ?? undefined,
+      status: form.get("status") ?? undefined,
+      contactName: form.get("contactName") ?? undefined,
+      phone: form.get("phone") ?? undefined,
+      instagramUserId: form.get("instagramUserId") ?? undefined,
+      instagramToken: form.get("instagramToken") ?? undefined,
+      disconnectInstagram: form.get("disconnectInstagram") === "1",
+    });
+    const changes = [
+      before.plan !== client.plan && `тариф ${PLANS[client.plan].name}`,
+      before.approval !== client.approval && "порядок согласования",
+      before.status !== client.status && (client.status === "active" ? "возобновлён" : "пауза"),
+      Boolean(before.instagram) !== Boolean(client.instagram) && (client.instagram ? "Instagram подключён" : "Instagram отключён"),
+    ].filter(Boolean);
+    if (changes.length) audit("Студия", "изменила клиента", client.company, changes.join(", "));
+    json(res, 200, { ok: true });
+    return;
+  }
+
+  const invoice = /^\/api\/invoices\/(inv-[0-9a-f]{8})\/paid$/.exec(url.pathname);
+  if (invoice) {
+    const paid = form.get("paid") !== "0";
+    const inv = markInvoicePaid(invoice[1]!, paid);
+    audit("Студия", paid ? "отметила оплату" : "сняла отметку об оплате", `счёт ${inv.number}`, `$${inv.amountUsd}`);
+    json(res, 200, { ok: true });
+    return;
+  }
+
+  if (url.pathname === "/api/daily") {
+    background("Ежедневный цикл", dailyAll());
+    json(res, 202, { ok: true });
+    return;
+  }
+
+  throw new HttpError(404, "not found");
+}
+
+async function handle(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+  const url = new URL(req.url ?? "/", "http://localhost");
+  if (await handlePublic(req, res, url)) return;
+
+  const viewer = viewerFrom(req);
+  if (!viewer) {
+    if (url.pathname.startsWith("/api/")) json(res, 401, { error: "Войдите заново", login: "/login" });
+    else redirect(res, "/login");
+    return;
+  }
+
+  try {
+    await handlePrivate(req, res, url, viewer);
+  } catch (error) {
+    if (res.headersSent) throw error;
+    json(res, error instanceof HttpError ? error.status : 400, { error: errorMessage(error) });
+  }
 }
 
 export function startServer(): http.Server {
@@ -202,7 +560,10 @@ export function startServer(): http.Server {
       if (!res.headersSent) json(res, 500, { error: errorMessage(error) });
     });
   });
-  server.listen(config.server.port, () => log.info(`Студия: http://localhost:${config.server.port}`));
+  if (config.server.production && !config.server.adminPassword) {
+    log.warn("STUDIO_ADMIN_PASSWORD не задан — войти в панель студии нельзя (клиенты входят по своим паролям)");
+  }
+  server.listen(config.server.port, () => log.info(`Студия: http://localhost:${config.server.port} · кабинет: /app · вход: /login`));
   return server;
 }
 
@@ -225,7 +586,7 @@ export function startScheduler(): NodeJS.Timeout | undefined {
     running = true;
     // Отмечаем день сразу: если цикл упадёт, он не будет перезапускаться каждую минуту.
     saveState({ lastDailyRun: localDay() });
-    dailyJob()
+    dailyAll()
       .catch((e) => log.error(`Ежедневный цикл: ${errorMessage(e)}`))
       .finally(() => (running = false));
   }, 60_000);

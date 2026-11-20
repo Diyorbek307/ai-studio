@@ -8,7 +8,8 @@ import { runBot } from "./bot.js";
 import { budgetSummary } from "./budget.js";
 import { config, describeProviders } from "./config.js";
 import { errorMessage, log } from "./log.js";
-import { approveEpisode, dailyJob, newEpisode, redoEpisode, rejectEpisode, runEpisode, STEPS, type Step } from "./pipeline.js";
+import { createClient, createInvite, ensureInvoices, listClients, publicClient } from "./clients.js";
+import { approveEpisode, dailyAll, dailyJob, newEpisode, redoEpisode, rejectEpisode, runEpisode, STEPS, type Step } from "./pipeline.js";
 import path from "node:path";
 import { buildPreview } from "./preview.js";
 import { startScheduler, startServer } from "./server.js";
@@ -18,7 +19,7 @@ import { type Episode, STATUS_LABEL } from "./types.js";
 const HELP = `AI-студия — агенты, которые делают серии для Instagram Reels.
 
 Команды (npm run studio -- <команда>):
-  new [сериал] [--brief "задание"] [--engine gemini|grok|higgsfield|fal]
+  new [сериал] [--brief "задание"] [--engine cutout|gemini|grok|higgsfield|fal]
                                 новая серия (по заданию и выбранным движком) → на одобрение
   brand --company "…" --product "…" [--audience …] [--tone …] [--lang uz|ru|en] [--wishes …]
                                 Дизайнер маскотов: сериал под бренд компании-клиента
@@ -32,6 +33,12 @@ const HELP = `AI-студия — агенты, которые делают се
   design [сериал] [--force]     Дизайнер персонажей: канон внешности героев
   stats [сериал]                собрать статистику Instagram и сделать выводы
   daily [сериал]                ежедневный цикл: статистика → выводы → новые серии
+                                (без сериала — вся студия: свой сериал + автопилот клиентов)
+  clients                       клиенты: тариф, серии за период, неоплаченные счета
+  client-add --brand slug --email почта --contact "Имя" [--plan pilot|start|business|network]
+             [--approval studio_then_client|client|studio] [--phone …]
+                                подключить компанию к её бренду
+  invite <id клиента>           ссылка-приглашение в кабинет (действует 7 дней)
   serve                         сервер + панель + Telegram-бот + расписание
   budget                        расход за сегодня
   preview [папка]               превью интерфейса без сервера (снимок данных + ролики)
@@ -171,7 +178,7 @@ async function main(argv: string[]): Promise<number> {
 
     case "daily": {
       log.info(describeProviders());
-      const eps = await dailyJob(args[0] ?? config.series);
+      const eps = args[0] ? await dailyJob(args[0]) : await dailyAll();
       for (const ep of eps) printEpisode(ep);
       return eps.some((e) => e.status === "failed") ? 1 : 0;
     }
@@ -179,6 +186,41 @@ async function main(argv: string[]): Promise<number> {
     case "budget":
       console.log(budgetSummary());
       return 0;
+
+    case "clients": {
+      ensureInvoices();
+      const clients = listClients().map((c) => publicClient(c));
+      if (clients.length === 0) console.log("Клиентов пока нет: client-add --brand … --email … --contact …");
+      for (const c of clients) {
+        console.log(
+          `${c.id} · ${c.company} (${c.brandTitle}) · ${c.planName} $${c.priceUsd} · серии ${c.usage.used}/${c.usage.limit} до ${c.usage.periodEnd}` +
+            ` · ${c.status === "active" ? "активен" : "пауза"}${c.unpaidUsd ? ` · не оплачено $${c.unpaidUsd}` : ""}${c.hasLogin ? "" : " · кабинет не открыт"}`,
+        );
+      }
+      return 0;
+    }
+
+    case "client-add": {
+      const client = createClient({
+        brand: flag(args, "--brand") ?? "",
+        email: flag(args, "--email") ?? "",
+        contactName: flag(args, "--contact") ?? "",
+        phone: flag(args, "--phone"),
+        plan: flag(args, "--plan") ?? "pilot",
+        approval: flag(args, "--approval"),
+      });
+      console.log(`Клиент ${client.id}: ${client.company}. Приглашение: invite ${client.id}`);
+      return 0;
+    }
+
+    case "invite": {
+      const id = args[0];
+      if (!id) throw new Error("Укажи id клиента (список: clients)");
+      const { token, expiresAt } = createInvite(id);
+      const base = config.server.publicBaseUrl || `http://localhost:${config.server.port}`;
+      console.log(`${base}/invite/${token}\nДействует до ${expiresAt.slice(0, 10)}. Отправьте ссылку клиенту — он задаст пароль и попадёт в кабинет.`);
+      return 0;
+    }
 
     case "preview": {
       const out = buildPreview(path.resolve(args[0] ?? "preview"));

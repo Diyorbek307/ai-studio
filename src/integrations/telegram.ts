@@ -89,3 +89,17 @@ export async function getUpdates(offset: number | undefined, timeoutSec = 50): P
 export function isAdmin(chatOrUserId: number | undefined): boolean {
   return chatOrUserId !== undefined && String(chatOrUserId) === config.telegram.adminChatId;
 }
+
+let cachedUsername: string | undefined;
+
+/** Имя бота для ссылки t.me/<бот>?start=КОД: из TELEGRAM_BOT_USERNAME или один раз у Telegram (getMe). */
+export async function botUsername(): Promise<string | undefined> {
+  if (config.telegram.botUsername) return config.telegram.botUsername.replace(/^@/, "");
+  if (cachedUsername || !config.telegram.token) return cachedUsername;
+  try {
+    cachedUsername = (await call<{ username?: string }>("getMe", {}, 10_000)).username;
+  } catch {
+    // без имени бота клиент просто отправит код вручную
+  }
+  return cachedUsername;
+}

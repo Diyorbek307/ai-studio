@@ -4,13 +4,14 @@ import { log } from "../log.js";
 import { ENGINE_LABEL, type EngineChoice, resolveEngine } from "../providers/engines.js";
 import { generateImage } from "../providers/image.js";
 import { episodeFile, saveEpisode } from "../store.js";
-import type { Episode } from "../types.js";
+import { cutoutStill } from "../media/cutout.js";
+import type { Episode, Series } from "../types.js";
 import { agentInfo } from "./index.js";
 
 const AGENT = agentInfo(35);
 
 /** Рисует ключевой кадр для каждой сцены. Уже нарисованные кадры не перерисовывает. */
-export async function drawKeyframes(ep: Episode): Promise<void> {
+export async function drawKeyframes(ep: Episode, series: Series): Promise<void> {
   if (!ep.script || !ep.shots) throw new Error("Нет сценария или промптов кадров");
   ep.keyframes ??= {};
   const engine = resolveEngine(ep.engineChoice as EngineChoice | undefined, "image");
@@ -26,7 +27,11 @@ export async function drawKeyframes(ep: Episode): Promise<void> {
     const label = `${ep.script.title}\n\n${shot.scene_id}: ${scene?.lines.map((l) => l.text).join(" ") ?? ""}`;
     log.agent(AGENT, `кадр ${i + 1}/${ep.shots.length} (${shot.scene_id})`);
 
-    const result = await generateImage({ prompt: shot.image_prompt, out: episodeFile(ep, rel), label, index: i, engine });
+    // Перекладка не рисует новую картинку: кадр собирается из фона и героев сериала, бесплатно.
+    const result =
+      engine === "cutout" && scene
+        ? (await cutoutStill(series, scene, episodeFile(ep, rel)), { costUsd: 0 })
+        : await generateImage({ prompt: shot.image_prompt, out: episodeFile(ep, rel), label, index: i, engine });
     recordCost({ agent: AGENT, kind: "image", usd: result.costUsd, detail: shot.scene_id, episodeId: ep.id });
     ep.costUsd += result.costUsd;
     ep.keyframes[shot.scene_id] = rel;

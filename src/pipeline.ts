@@ -1,5 +1,5 @@
 import { animateScenes } from "./agents/animator.js";
-import { requestApproval } from "./agents/approvalConsole.js";
+import { requestApproval, sendToClient } from "./agents/approvalConsole.js";
 import { designSeries } from "./agents/characterDesigner.js";
 import { buildShots } from "./agents/consistencyKeeper.js";
 import { editEpisode } from "./agents/editor.js";
@@ -14,12 +14,14 @@ import { analyzeStats, collectStats } from "./agents/statsAnalyst.js";
 import { addSubtitles } from "./agents/subtitler.js";
 import { voiceEpisode } from "./agents/voiceUz.js";
 import { assertBudget, BudgetExceededError, budgetSummary, localDay } from "./budget.js";
+import { audit } from "./audit.js";
+import { autopilotDue, clientForBrand, listClients } from "./clients.js";
 import { config } from "./config.js";
 import { sendMessage, telegramEnabled } from "./integrations/telegram.js";
 import { isEngine, resolveEngine } from "./providers/engines.js";
 import { errorMessage, log } from "./log.js";
 import { createEpisode, listEpisodes, loadEpisode, loadInsights, loadSeries, saveEpisode, saveState } from "./store.js";
-import type { Episode, QaReport, Series } from "./types.js";
+import type { ApprovalEntry, Episode, QaReport, Series } from "./types.js";
 
 const PRODUCER = agentInfo(99);
 
@@ -139,13 +141,13 @@ async function runStep(ep: Episode, series: Series, step: Step): Promise<Series>
       ep.shots = await buildShots({ series, script: ep.script!, episodeId: ep.id });
       break;
     case "keyframes":
-      await drawKeyframes(ep);
+      await drawKeyframes(ep, series);
       break;
     case "voice":
       ep.voice = await voiceEpisode(ep, series);
       break;
     case "clips":
-      await animateScenes(ep);
+      await animateScenes(ep, series);
       break;
     case "edit":
       ep.edited = await editEpisode(ep);
@@ -203,7 +205,7 @@ export function runEpisode(id: string): Promise<Episode> {
     if (["approved", "published", "rejected"].includes(ep.status)) return ep;
     if (!nextStep(ep)) {
       // Все шаги уже сделаны — ролик ждёт решения, ничего не переделываем.
-      if (ep.status !== "awaiting_feedback") ep.status = "awaiting_approval";
+      if (ep.status !== "awaiting_feedback" && ep.status !== "awaiting_client") ep.status = "awaiting_approval";
       saveEpisode(ep);
       return ep;
     }
@@ -229,30 +231,67 @@ export function runEpisode(id: string): Promise<Episode> {
 }
 
 /** Проверки до запуска, чтобы не создавать эпизод, который сразу упадёт. */
-export function prepareEpisode(series = config.series, opts: { brief?: string; engine?: string } = {}): Episode {
+export function prepareEpisode(series = config.series, opts: { brief?: string; engine?: string; orderedBy?: string } = {}): Episode {
   loadSeries(series); // упадёт сразу, если сериала нет
   if (opts.engine && opts.engine !== "auto") {
     if (!isEngine(opts.engine)) throw new Error(`Нет движка «${opts.engine}»`);
     resolveEngine(opts.engine, "video"); // упадёт, если у движка нет ключа
   }
   const ep = createEpisode(series, opts);
+  if (opts.orderedBy) {
+    ep.orderedBy = opts.orderedBy;
+    saveEpisode(ep);
+  }
   log.agent(PRODUCER, `новый эпизод ${ep.id} (${series})${ep.brief ? ` — задание: «${ep.brief}»` : ""}`);
   return ep;
 }
 
-export async function newEpisode(series = config.series, opts: { brief?: string; engine?: string } = {}): Promise<Episode> {
+export async function newEpisode(series = config.series, opts: { brief?: string; engine?: string; orderedBy?: string } = {}): Promise<Episode> {
   return runEpisode(prepareEpisode(series, opts).id);
 }
 
-export function approveEpisode(id: string): Promise<Episode> {
+/** Кто принимает решение по ролику: команда студии или компания-клиент (только по своему бренду). */
+export type Decider = { by: "studio" } | { by: "client"; clientId: string };
+const STUDIO: Decider = { by: "studio" };
+
+function logDecision(ep: Episode, by: ApprovalEntry["by"], decision: ApprovalEntry["decision"], note?: string): void {
+  ep.approvalLog = [...(ep.approvalLog ?? []), { ts: new Date().toISOString(), by, decision, ...(note ? { note } : {}) }];
+}
+
+/** Клиент решает только по роликам своего бренда, которые ждут именно его. */
+function assertClientTurn(ep: Episode, who: Decider): void {
+  if (who.by !== "client") return;
+  const client = clientForBrand(ep.series);
+  if (!client || client.id !== who.clientId) throw new Error("Нет доступа к этой серии");
+  if (ep.status !== "awaiting_client") throw new Error("Эта серия сейчас не ждёт вашего решения");
+}
+
+/**
+ * Одобрение. Студия при порядке «студия, затем клиент» передаёт ролик клиенту;
+ * клиент (или студия за клиента) одобряет окончательно — и ролик уходит в Instagram.
+ */
+export function approveEpisode(id: string, who: Decider = STUDIO): Promise<Episode> {
   return exclusive(async () => {
     const ep = loadEpisode(id);
-    if (ep.status !== "awaiting_approval" && ep.status !== "approved") {
+    assertClientTurn(ep, who);
+    if (!["awaiting_approval", "awaiting_client", "approved"].includes(ep.status)) {
       throw new Error(`${id}: одобрить можно только ролик, который ждёт одобрения (сейчас: ${ep.status})`);
     }
+    const client = clientForBrand(ep.series);
+    if (who.by === "studio" && ep.status === "awaiting_approval" && client?.approval === "studio_then_client") {
+      logDecision(ep, "studio", "approved");
+      await sendToClient(ep, client);
+      saveEpisode(ep);
+      audit("Студия", "передала серию клиенту", ep.id, client.company);
+      return ep;
+    }
+
+    const note = who.by === "studio" && ep.status === "awaiting_client" ? "за клиента" : undefined;
+    if (ep.status !== "approved") logDecision(ep, who.by, "approved", note);
     ep.approval = { ...ep.approval, decision: "approved", decidedAt: new Date().toISOString() };
     ep.status = "approved";
     saveEpisode(ep);
+    audit(who.by === "client" ? (client?.company ?? "Клиент") : "Студия", "одобрил(а) серию", ep.id, note);
     try {
       ep.publish = await publishEpisode(ep);
       ep.status = ep.publish.dryRun ? "approved" : "published";
@@ -269,33 +308,50 @@ export function approveEpisode(id: string): Promise<Episode> {
 export function rejectEpisode(id: string): Promise<Episode> {
   return exclusive(async () => {
     const ep = loadEpisode(id);
+    if (ep.status === "published") throw new Error(`${id} уже опубликован`);
     ep.approval = { ...ep.approval, decision: "rejected", decidedAt: new Date().toISOString() };
     ep.status = "rejected";
+    logDecision(ep, "studio", "rejected");
     saveEpisode(ep);
+    audit("Студия", "отклонила серию", ep.id);
     log.agent(PRODUCER, `${id}: отклонён`);
     return ep;
   });
 }
 
-/** Ждём от тебя текст правок (Telegram: после кнопки «Переделать»). */
-export function markAwaitingFeedback(id: string): Episode {
+/** Ждём текст правок (Telegram: после кнопки «Переделать») — от студии или от клиента. */
+export function markAwaitingFeedback(id: string, who: Decider = STUDIO): Episode {
   const ep = loadEpisode(id);
+  assertClientTurn(ep, who);
   ep.status = "awaiting_feedback";
+  ep.feedbackFrom = who.by;
   saveEpisode(ep);
   return ep;
 }
 
-/** Переделать с шага (по умолчанию со сценария) с учётом твоих замечаний. */
-export async function redoEpisode(id: string, feedback: string, from: Step = "script"): Promise<Episode> {
+/** Переделать с шага (по умолчанию со сценария) с учётом замечаний студии или клиента. */
+export async function redoEpisode(id: string, feedback: string, from: Step = "script", who: Decider = STUDIO): Promise<Episode> {
   await exclusive(async () => {
     const ep = loadEpisode(id);
     if (ep.status === "published") throw new Error(`${id} уже опубликован`);
-    if (feedback.trim()) ep.feedback.push(`Продюсер: ${feedback.trim()}`);
+    if (who.by === "client") {
+      // Клиент просит правки по ролику, который ждёт его (или уже ждёт его текст после кнопки в Telegram).
+      const client = clientForBrand(ep.series);
+      if (!client || client.id !== who.clientId) throw new Error("Нет доступа к этой серии");
+      const waiting = ep.status === "awaiting_client" || (ep.status === "awaiting_feedback" && ep.feedbackFrom === "client");
+      if (!waiting) throw new Error("Эта серия сейчас не ждёт вашего решения");
+      if (!feedback.trim()) throw new Error("Напишите, что поменять в серии");
+    }
+    const text = feedback.trim();
+    if (text) ep.feedback.push(`${who.by === "client" ? "Клиент" : "Продюсер"}: ${text}`);
+    logDecision(ep, who.by, "redo", text || undefined);
     ep.approval = { ...ep.approval, decision: "redo", decidedAt: new Date().toISOString() };
     ep.attempts = {};
+    delete ep.feedbackFrom;
     resetFrom(ep, from);
     ep.status = "in_progress";
     saveEpisode(ep);
+    if (who.by === "client") audit(clientForBrand(ep.series)?.company ?? "Клиент", "попросил(а) правки", ep.id, text);
     log.agent(PRODUCER, `${id}: переделываю с шага «${from}»`);
   });
   return runEpisode(id);
@@ -321,6 +377,41 @@ export async function dailyJob(seriesSlug = config.series): Promise<Episode[]> {
     results.push(ep);
     if (ep.status === "paused_budget") break;
   }
+  saveState({ lastDailyRun: localDay() });
+  return results;
+}
+
+/**
+ * Автопилот клиентов: каждому активному клиенту — столько серий, чтобы тариф расходовался ровно по периоду
+ * (Старт — 12 в месяц, Бизнес — каждый день, Сеть — по 2 в день). Серии по заданиям клиента тоже засчитываются.
+ */
+export async function clientsAutopilot(): Promise<Episode[]> {
+  const results: Episode[] = [];
+  for (const client of listClients()) {
+    for (let n = autopilotDue(client); n > 0; n--) {
+      const ep = await newEpisode(client.brand, { orderedBy: "Автопилот" });
+      results.push(ep);
+      if (ep.status === "paused_budget") return results;
+    }
+  }
+  return results;
+}
+
+/** Ежедневный цикл всей студии: свой сериал (если он не клиентский), затем бренды клиентов и их автопилот. */
+export async function dailyAll(): Promise<Episode[]> {
+  const results = clientForBrand(config.series) ? [] : await dailyJob(config.series);
+  for (const client of listClients().filter((c) => c.status === "active")) {
+    try {
+      await collectStats(client.brand);
+      await analyzeStats(loadSeries(client.brand));
+    } catch (error) {
+      log.warn(`Аналитика «${client.company}»: ${errorMessage(error)}`);
+    }
+    for (const paused of listEpisodes().filter((e) => e.series === client.brand && e.status === "paused_budget")) {
+      results.push(await runEpisode(paused.id));
+    }
+  }
+  results.push(...(await clientsAutopilot()));
   saveState({ lastDailyRun: localDay() });
   return results;
 }

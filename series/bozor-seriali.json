@@ -43,7 +43,9 @@
       "voice": {
         "azure": "uz-UZ-MadinaNeural",
         "rate": "+5%",
-        "pitch": "-4%"
+        "pitch": "-4%",
+        "gemini": "Kore",
+        "style": "громкая хозяйка базара средних лет, напористо и тепло"
       }
     },
     {
@@ -60,7 +62,9 @@
       "voice": {
         "azure": "uz-UZ-MadinaNeural",
         "rate": "+10%",
-        "pitch": "+12%"
+        "pitch": "+12%",
+        "gemini": "Leda",
+        "style": "юная девушка, звонко и мечтательно"
       }
     },
     {
@@ -77,7 +81,9 @@
       "voice": {
         "azure": "uz-UZ-SardorNeural",
         "rate": "+8%",
-        "pitch": "-2%"
+        "pitch": "-2%",
+        "gemini": "Fenrir",
+        "style": "вспыльчивый пекарь, быстро и горячо"
       }
     },
     {
@@ -94,7 +100,9 @@
       "voice": {
         "azure": "uz-UZ-SardorNeural",
         "rate": "-12%",
-        "pitch": "-10%"
+        "pitch": "-10%",
+        "gemini": "Charon",
+        "style": "пожилой мудрец, медленно и спокойно"
       }
     },
     {
@@ -111,7 +119,9 @@
       "voice": {
         "azure": "uz-UZ-SardorNeural",
         "rate": "+6%",
-        "pitch": "+10%"
+        "pitch": "+10%",
+        "gemini": "Puck",
+        "style": "застенчивый парень, немного неуверенно"
       }
     }
   ],

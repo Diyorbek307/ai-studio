@@ -1,4 +1,5 @@
-import { instagramEnabled, mediaInsights } from "../integrations/instagram.js";
+import { instagramFor } from "../clients.js";
+import { mediaInsights } from "../integrations/instagram.js";
 import { askStructured } from "../llm.js";
 import { errorMessage, log } from "../log.js";
 import { listEpisodes, saveEpisode, saveInsights } from "../store.js";
@@ -16,7 +17,8 @@ next_ideas_hints — 3–5 конкретных подсказок Генера�
 
 /** Обновляет цифры по опубликованным роликам за последние 30 дней. Возвращает, сколько роликов обновлено. */
 export async function collectStats(series: string): Promise<number> {
-  if (!instagramEnabled()) {
+  const account = instagramFor(series);
+  if (!account) {
     log.agent(AGENT, "Instagram не подключён — статистику собирать неоткуда");
     return 0;
   }
@@ -25,7 +27,7 @@ export async function collectStats(series: string): Promise<number> {
   for (const ep of listEpisodes()) {
     if (ep.series !== series || !ep.publish?.mediaId || Date.parse(ep.publish.at) < monthAgo) continue;
     try {
-      const metrics = await mediaInsights(ep.publish.mediaId);
+      const metrics = await mediaInsights(account, ep.publish.mediaId);
       ep.stats = { fetchedAt: new Date().toISOString(), metrics };
       saveEpisode(ep);
       updated++;

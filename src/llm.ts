@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
-import type { z } from "zod";
+import { z as zod, type z } from "zod";
 import { recordCost } from "./budget.js";
 import { config } from "./config.js";
 import { type AgentInfo, log } from "./log.js";
@@ -53,13 +53,104 @@ function costOf(usage: Anthropic.Beta.BetaUsage): number {
 }
 
 /**
- * Один вызов Claude, который возвращает объект строго по zod-схеме.
- * В демо-режиме возвращает opts.mock().
+ * Один вызов «мозга» студии, который возвращает объект строго по zod-схеме:
+ * Claude, бесплатный Gemini или демо-ответ opts.mock().
  */
 export async function askStructured<S extends z.ZodType>(opts: AskOptions<S>): Promise<z.infer<S>> {
   if (config.llm.provider === "mock") {
     return opts.mock();
   }
+  if (config.llm.provider === "gemini") {
+    return askGemini(opts);
+  }
+  return askClaude(opts);
+}
+
+/** JSON-схема для Gemini: без служебных полей, которых нет в его формате. */
+export function geminiSchema(schema: z.ZodType): unknown {
+  const strip = (node: unknown): unknown => {
+    if (Array.isArray(node)) return node.map(strip);
+    if (!node || typeof node !== "object") return node;
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(node)) {
+      if (k === "$schema" || k === "additionalProperties") continue;
+      out[k] = strip(v);
+    }
+    return out;
+  };
+  return strip(zod.toJSONSchema(schema));
+}
+
+/**
+ * Gemini generateContent со строгим JSON (aistudio.google.com/docs/structured-output):
+ * generationConfig.responseFormat.text = { mimeType: "APPLICATION_JSON", schema }.
+ */
+async function askGemini<S extends z.ZodType>(opts: AskOptions<S>): Promise<z.infer<S>> {
+  const model = config.llm.geminiModel;
+  const body = {
+    system_instruction: { parts: [{ text: opts.context ? `${opts.system}\n\n${opts.context}` : opts.system }] },
+    contents: [
+      {
+        role: "user",
+        parts: [
+          ...(opts.images ?? []).map((img) => ({ inline_data: { mime_type: img.mediaType, data: img.base64 } })),
+          { text: opts.prompt },
+        ],
+      },
+    ],
+    generationConfig: {
+      responseFormat: { text: { mimeType: "APPLICATION_JSON", schema: geminiSchema(opts.schema) } },
+      thinkingConfig: { thinkingLevel: opts.effort === "high" || opts.effort === "xhigh" || opts.effort === "max" ? "high" : "low" },
+    },
+  };
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+    method: "POST",
+    headers: { "x-goog-api-key": config.gemini.apiKey, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(5 * 60_000),
+  });
+  const text = await res.text();
+  let data: GeminiTextResponse | GeminiTextResponse[];
+  try {
+    data = JSON.parse(text) as GeminiTextResponse | GeminiTextResponse[];
+  } catch {
+    throw new Error(`Gemini ${model}: ${res.status} ${text.slice(0, 300)}`);
+  }
+  const one = Array.isArray(data) ? data[0] : data;
+  if (!res.ok || !one) throw new Error(`Gemini ${model}: ${res.status} ${one?.error?.message ?? text.slice(0, 300)}`);
+
+  const candidate = one.candidates?.[0];
+  if (!candidate) throw new Error(`Агент №${opts.agent.no}: Gemini не ответил (${one.promptFeedback?.blockReason ?? "без причины"})`);
+  if (candidate.finishReason === "SAFETY") throw new Error(`Агент №${opts.agent.no}: Gemini отклонил задачу фильтром безопасности`);
+  if (candidate.finishReason === "MAX_TOKENS") throw new Error(`Агент №${opts.agent.no}: ответ Gemini обрезан по длине`);
+  const json = (candidate.content?.parts ?? [])
+    .filter((p) => typeof p.text === "string" && !p.thought)
+    .map((p) => p.text)
+    .join("");
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    throw new Error(`Агент №${opts.agent.no}: Gemini вернул ответ не по схеме`);
+  }
+
+  const usd =
+    ((one.usageMetadata?.promptTokenCount ?? 0) * config.llm.geminiPriceInPerMTok +
+      ((one.usageMetadata?.candidatesTokenCount ?? 0) + (one.usageMetadata?.thoughtsTokenCount ?? 0)) * config.llm.geminiPriceOutPerMTok) /
+    1_000_000;
+  recordCost({ agent: opts.agent, kind: "llm", usd, detail: model, episodeId: opts.episodeId });
+  log.agent(opts.agent, `Gemini ответил${usd > 0 ? ` ($${usd.toFixed(4)})` : " (бесплатный тариф)"}`);
+  return opts.schema.parse(parsed) as z.infer<S>;
+}
+
+interface GeminiTextResponse {
+  candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] }; finishReason?: string }[];
+  promptFeedback?: { blockReason?: string };
+  usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; thoughtsTokenCount?: number };
+  error?: { message?: string };
+}
+
+async function askClaude<S extends z.ZodType>(opts: AskOptions<S>): Promise<z.infer<S>> {
 
   const system: Anthropic.Beta.BetaTextBlockParam[] = [{ type: "text", text: opts.system }];
   if (opts.context) {
