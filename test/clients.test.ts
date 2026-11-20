@@ -129,3 +129,22 @@ test("счёт: сумма прописью и страница с реквиз�
   assert.match(html, /301234567/);
   assert.match(html, /Двести девяносто долларов США|Пятьсот девяносто долларов США|Одна тысяча двести долларов США/);
 });
+
+test("безопасность входа: сессия владельца привязана к паролю, адрес — правый из X-Forwarded-For, без пароля — только с этого компьютера", async () => {
+  const { config } = await import("../src/config.js");
+  const { clientIp, devOpen } = await import("../src/auth.js");
+  config.server.adminPassword = "first-pass";
+  const owner = createSession({ role: "owner" });
+  assert.equal(readSession(owner)?.role, "owner");
+  config.server.adminPassword = "second-pass";
+  assert.equal(readSession(owner), undefined);
+  assert.equal(login("admin", "second-pass")?.role, "owner");
+  config.server.adminPassword = "";
+
+  const req = (headers: Record<string, string>, remoteAddress = "10.0.0.5") => ({ headers, socket: { remoteAddress } }) as never;
+  assert.equal(clientIp(req({ "x-forwarded-for": "1.1.1.1, 9.9.9.9" })), "9.9.9.9");
+  assert.equal(clientIp(req({})), "10.0.0.5");
+  assert.equal(devOpen(req({}, "127.0.0.1")), true);
+  assert.equal(devOpen(req({}, "192.168.1.20")), false);
+  assert.equal(devOpen(req({ "x-forwarded-for": "8.8.8.8" }, "127.0.0.1")), false);
+});

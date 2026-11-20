@@ -16,7 +16,7 @@ import {
   type Viewer,
   viewerFrom,
 } from "./auth.js";
-import { budgetSummary, localDay } from "./budget.js";
+import { localDay } from "./budget.js";
 import {
   acceptInvite,
   assertCanOrder,
@@ -30,7 +30,7 @@ import {
   telegramLinkCode,
   updateClient,
 } from "./clients.js";
-import { config, describeProviders } from "./config.js";
+import { config } from "./config.js";
 import { renderInvoicePage } from "./invoicePage.js";
 import { addLead } from "./leads.js";
 import { errorMessage, log } from "./log.js";
@@ -208,8 +208,9 @@ function assertClientEpisode(viewer: Viewer, id: string): void {
 }
 
 async function handlePublic(req: http.IncomingMessage, res: http.ServerResponse, url: URL): Promise<boolean> {
+  // Проверка живости для Render — без подробностей: какие сервисы подключены и сколько потрачено, видит только владелец.
   if (url.pathname === "/health") {
-    json(res, 200, { ok: true, providers: describeProviders(), budget: budgetSummary() });
+    json(res, 200, { ok: true });
     return true;
   }
 
@@ -271,7 +272,9 @@ async function handlePublic(req: http.IncomingMessage, res: http.ServerResponse,
     }
 
     if (url.pathname === "/api/login") {
-      if (!rateLimit(`login:${ip}`)) {
+      // Два ограничения: с одного адреса и на один логин (перебор пароля одного клиента с разных адресов).
+      const account = `account:${(form.get("login") ?? "").trim().toLowerCase().slice(0, 120)}`;
+      if (!rateLimit(`login:${ip}`) || !rateLimit(account, 20)) {
         json(res, 429, { error: "Слишком много попыток. Подождите 15 минут." });
         return true;
       }
@@ -281,6 +284,7 @@ async function handlePublic(req: http.IncomingMessage, res: http.ServerResponse,
         return true;
       }
       resetRateLimit(`login:${ip}`);
+      resetRateLimit(account);
       audit(actorName(viewer), "вошёл(а) в кабинет");
       json(res, 200, { ok: true, role: viewer.role }, { "Set-Cookie": sessionCookie(createSession(viewer)) });
       return true;

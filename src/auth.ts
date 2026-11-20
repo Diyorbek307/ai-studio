@@ -45,15 +45,24 @@ interface SessionPayload {
   p?: string;
 }
 
+function stamp(secretValue: string): string {
+  return crypto.createHash("sha256").update(secretValue).digest("base64url").slice(0, 12);
+}
+
 function passwordStamp(client: Client): string {
-  return crypto.createHash("sha256").update(client.passwordHash ?? "").digest("base64url").slice(0, 12);
+  return stamp(client.passwordHash ?? "");
+}
+
+/** Отпечаток пароля владельца: при смене STUDIO_ADMIN_PASSWORD старые сессии владельца перестают действовать. */
+function ownerStamp(): string {
+  return stamp(`owner:${config.server.adminPassword}`);
 }
 
 export function createSession(viewer: Viewer): string {
   const payload: SessionPayload = {
     r: viewer.role,
     e: Date.now() + SESSION_DAYS * 86_400_000,
-    ...(viewer.role === "client" ? { c: viewer.client.id, p: passwordStamp(viewer.client) } : {}),
+    ...(viewer.role === "client" ? { c: viewer.client.id, p: passwordStamp(viewer.client) } : { p: ownerStamp() }),
   };
   const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
   return `${body}.${sign(body)}`;
@@ -73,7 +82,7 @@ export function readSession(token: string | undefined): Viewer | undefined {
     return undefined;
   }
   if (!payload.e || payload.e < Date.now()) return undefined;
-  if (payload.r === "owner") return { role: "owner" };
+  if (payload.r === "owner") return payload.p === ownerStamp() ? { role: "owner" } : undefined;
   if (payload.r === "client" && payload.c) {
     try {
       const client = getClient(payload.c);
@@ -112,9 +121,16 @@ function ownerPasswordOk(password: string): boolean {
   return crypto.timingSafeEqual(a, b);
 }
 
-/** Без пароля владельца студия открыта только локально (не в production) — для разработки. */
-export function devOpen(): boolean {
-  return !config.server.adminPassword && !config.server.production;
+/**
+ * Без пароля владельца студия открыта только для разработки: не в production
+ * и только для запросов с этого же компьютера (не через прокси и не из локальной сети).
+ */
+export function devOpen(req?: http.IncomingMessage): boolean {
+  if (config.server.adminPassword || config.server.production) return false;
+  if (!req) return true;
+  if (req.headers["x-forwarded-for"]) return false;
+  const addr = req.socket.remoteAddress ?? "";
+  return addr === "127.0.0.1" || addr === "::1" || addr === "::ffff:127.0.0.1";
 }
 
 /** Кто сделал запрос: по cookie, по Basic (для скриптов владельца) или локальная разработка. */
@@ -127,7 +143,7 @@ export function viewerFrom(req: http.IncomingMessage): Viewer | undefined {
     const i = raw.indexOf(":");
     if (i > 0 && raw.slice(0, i) === "admin" && ownerPasswordOk(raw.slice(i + 1))) return { role: "owner" };
   }
-  if (devOpen()) return { role: "owner" };
+  if (devOpen(req)) return { role: "owner" };
   return undefined;
 }
 
@@ -146,14 +162,19 @@ const WINDOW_MS = 15 * 60_000;
 const MAX_ATTEMPTS = 10;
 
 export function clientIp(req: http.IncomingMessage): string {
-  // За прокси (Render) настоящий адрес — первый в X-Forwarded-For.
-  const forwarded = String(req.headers["x-forwarded-for"] ?? "").split(",")[0]?.trim();
+  // За прокси (Render) адрес клиента дописывается в конец X-Forwarded-For; начало списка клиент может подделать.
+  const forwarded = String(req.headers["x-forwarded-for"] ?? "")
+    .split(",")
+    .map((x) => x.trim())
+    .filter(Boolean)
+    .at(-1);
   return forwarded || req.socket.remoteAddress || "?";
 }
 
 /** true — можно пробовать; false — слишком много попыток с этого адреса, подождать 15 минут. */
 export function rateLimit(key: string, max = MAX_ATTEMPTS): boolean {
   const now = Date.now();
+  if (attempts.size > 10_000) for (const [k, v] of attempts) if (v.until < now) attempts.delete(k);
   const entry = attempts.get(key);
   if (!entry || entry.until < now) {
     attempts.set(key, { count: 1, until: now + WINDOW_MS });
