@@ -1,0 +1,46 @@
+# Render: веб-сервис с постоянным диском под ролики и библию сериала.
+# Диск доступен на платных тарифах; без диска ролики пропадают при каждом деплое.
+services:
+  - type: web
+    name: ai-studio
+    runtime: docker
+    plan: starter
+    healthCheckPath: /health
+    disk:
+      name: studio-data
+      mountPath: /data
+      sizeGB: 5
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: STUDIO_SERIES
+        value: bozor-seriali
+      - key: DAILY_AT
+        value: "09:00"
+      - key: STUDIO_TZ
+        value: Asia/Tashkent
+      - key: DAILY_BUDGET_USD
+        value: "5"
+      - key: EPISODES_PER_DAY
+        value: "1"
+      # Адрес сервиса на Render, например https://ai-studio.onrender.com
+      - key: PUBLIC_BASE_URL
+        sync: false
+      - key: STUDIO_ADMIN_PASSWORD
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: FAL_KEY
+        sync: false
+      - key: AZURE_SPEECH_KEY
+        sync: false
+      - key: AZURE_SPEECH_REGION
+        value: westeurope
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_ADMIN_CHAT_ID
+        sync: false
+      - key: IG_USER_ID
+        sync: false
+      - key: IG_ACCESS_TOKEN
+        sync: false
