@@ -3,7 +3,7 @@ import path from "node:path";
 import { getClient, type Invoice, listClients } from "./clients.js";
 import { renderInvoicePage } from "./invoicePage.js";
 import { PLAN_IDS, PLANS } from "./plans.js";
-import { LANDING_FILE, renderAppPage, showcaseFile, UI_FILE } from "./server.js";
+import { LANDING_FILE, renderAppPage, UI_FILE } from "./server.js";
 import { episodeDir, listEpisodes, loadSeries } from "./store.js";
 import { type AssetUrl, buildStudioState, type InvoiceUrl, type MediaUrl } from "./studioState.js";
 
@@ -66,9 +66,9 @@ export function buildPreview(outDir: string): { page: string; landing: string; m
   // Отдельная страница рядом с превью — со своим <!doctype html>, как на сервере.
   const plans = PLAN_IDS.map((id) => PLANS[id]);
   fs.writeFileSync(landing, renderAppPage(fs.readFileSync(LANDING_FILE, "utf8"), "AI-студия — мультсериал для бренда", { STUDIO_PUBLIC: { plans } }));
-  for (const [kind, id] of [["locations", "tandir"], ["characters", "somsa"], ["characters", "non"]] as const) {
-    const file = showcaseFile(kind, id);
-    if (file) copy(file, `showcase/${kind}/${id}.png`);
+  for (const name of ["demo.mp4", "demo.jpg"]) {
+    const file = path.join(path.dirname(UI_FILE), name);
+    if (fs.existsSync(file)) copy(file, `showcase/${name}`);
   }
   return { page, landing, media: [...media] };
 }

@@ -95,7 +95,7 @@ export function showcaseFile(kind: string, id: string): string | undefined {
 
 function sendFile(req: http.IncomingMessage, res: http.ServerResponse, file: string, cache = "no-cache"): void {
   const size = fs.statSync(file).size;
-  const type = file.endsWith(".mp4") ? "video/mp4" : "image/png";
+  const type = file.endsWith(".mp4") ? "video/mp4" : file.endsWith(".jpg") ? "image/jpeg" : "image/png";
   const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range ?? "");
   if (range && (range[1] || range[2])) {
     const start = range[1] ? Number(range[1]) : size - Number(range[2]);
@@ -222,6 +222,14 @@ async function handlePublic(req: http.IncomingMessage, res: http.ServerResponse,
     const file = publicMediaPath(media[1]!, media[2]!);
     if (!file) json(res, 404, { error: "not found" });
     else sendFile(req, res, file);
+    return true;
+  }
+
+  // Ролик-пример для сайта студии.
+  if ((url.pathname === "/showcase/demo.mp4" || url.pathname === "/showcase/demo.jpg") && req.method === "GET") {
+    const file = fileURLToPath(new URL(`../../ui/${path.basename(url.pathname)}`, import.meta.url));
+    if (!fs.existsSync(file)) json(res, 404, { error: "not found" });
+    else sendFile(req, res, file, "public, max-age=86400");
     return true;
   }
 
