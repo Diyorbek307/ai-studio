@@ -289,6 +289,8 @@ export interface Episode {
   parentId?: string;
   /** Языковые версии этой серии: язык → id серии. */
   versions?: Partial<Record<"uz" | "ru" | "en", string>>;
+  /** Открыта ли страница ролика по ссылке /watch/<id> — для показа будущим клиентам. */
+  shared?: { at: string };
   publish?: {
     at: string;
     mediaId?: string;

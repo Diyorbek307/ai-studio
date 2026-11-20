@@ -78,6 +78,8 @@ export interface UiEpisode {
   language?: string;
   parentId?: string;
   versions?: Partial<Record<string, string>>;
+  /** Открыта ли ссылка для показа /watch/<id> (только у владельца). */
+  shared?: boolean;
 }
 
 export interface UiAsset {
@@ -196,6 +198,7 @@ export function toUiEpisode(ep: Episode, seriesTitle: string, mediaUrl: MediaUrl
     language: ep.language,
     parentId: ep.parentId,
     versions: ep.versions,
+    shared: Boolean(ep.shared),
   };
 }
 
@@ -225,6 +228,7 @@ function forClient(ui: UiEpisode, ep: Episode): UiEpisode {
         : "⚙️ в работе у студии";
   const base: UiEpisode = {
     ...ui,
+    shared: undefined,
     statusLabel: label,
     costUsd: 0,
     engine: undefined,

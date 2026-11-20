@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { audit } from "./audit.js";
+import { makeBackup } from "./backup.js";
 import {
   clearSessionCookie,
   clientIp,
@@ -40,7 +41,9 @@ import { botUsername, sendMessage, telegramEnabled } from "./integrations/telegr
 import { type AssetKind, characterAsset, type CharacterVariant, isCharacterVariant, locationAsset, saveAsset } from "./media/cutout.js";
 import { approveEpisode, dailyAll, makeLanguageVersion, prepareEpisode, redoEpisode, rejectEpisode, runEpisode } from "./pipeline.js";
 import { PLAN_IDS, PLANS } from "./plans.js";
-import { BUNDLED_SERIES_DIR, episodeDir, loadEpisode, loadSeries, loadState, saveState } from "./store.js";
+import { BUNDLED_SERIES_DIR, episodeDir, loadEpisode, loadSeries, loadState, saveEpisode, saveState } from "./store.js";
+import type { Episode } from "./types.js";
+import { renderWatchPage } from "./watchPage.js";
 import { buildStudioState } from "./studioState.js";
 
 /** Страницы студии — фрагменты HTML в ui/ (от dist/src/ это ../../ui). */
@@ -231,6 +234,24 @@ async function handlePublic(req: http.IncomingMessage, res: http.ServerResponse,
     return true;
   }
 
+  // Страница ролика для показа: только если студия открыла ссылку на эту серию.
+  const watch = /^\/watch\/(ep-\d{8}-[0-9a-f]{8})$/.exec(url.pathname);
+  if (watch && req.method === "GET") {
+    let ep: Episode | undefined;
+    try {
+      ep = loadEpisode(watch[1]!);
+    } catch {
+      ep = undefined;
+    }
+    if (!ep?.shared || !ep.final || !publicMediaPath(ep.id, ep.final)) {
+      html(res, renderAppPage("<p style=\"padding:24px;font-family:system-ui\">Ссылка больше не действует.</p>", "AI-студия"), 404);
+      return true;
+    }
+    const poster = ep.keyframes?.s1 ? `/media/${ep.id}/${ep.keyframes.s1}` : undefined;
+    html(res, renderWatchPage(ep, loadSeries(ep.series), { video: `/media/${ep.id}/${ep.final}`, poster }));
+    return true;
+  }
+
   if (url.pathname === "/" && req.method === "GET") {
     html(res, page(LANDING_FILE, "AI-студия — мультсериал для вашего бренда", { STUDIO_PUBLIC: publicInfo() }));
     return true;
@@ -355,6 +376,24 @@ async function handlePrivate(req: http.IncomingMessage, res: http.ServerResponse
     return;
   }
 
+  if (url.pathname === "/api/backup" && req.method === "GET") {
+    ownerOnly(viewer);
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "studio-backup-"));
+    const name = `studio-backup-${localDay()}${url.searchParams.get("full") === "1" ? "-full" : ""}.tar.gz`;
+    const { file, bytes } = await makeBackup(path.join(dir, name), { full: url.searchParams.get("full") === "1" });
+    audit("Студия", "скачала резервную копию", name);
+    res.writeHead(200, {
+      "Content-Type": "application/gzip",
+      "Content-Length": bytes,
+      "Content-Disposition": `attachment; filename="${name}"`,
+      "Cache-Control": "no-store",
+    });
+    fs.createReadStream(file)
+      .on("close", () => fs.rmSync(dir, { recursive: true, force: true }))
+      .pipe(res);
+    return;
+  }
+
   const invoicePage = /^\/invoices\/(inv-[0-9a-f]{8})$/.exec(url.pathname);
   if (invoicePage && req.method === "GET") {
     const invoice = listInvoices().find((i) => i.id === invoicePage[1]);
@@ -430,7 +469,7 @@ async function handlePrivate(req: http.IncomingMessage, res: http.ServerResponse
     return;
   }
 
-  const action = /^\/api\/episodes\/(ep-\d{8}-[0-9a-f]{8})\/(approve|reject|redo|run|version)$/.exec(url.pathname);
+  const action = /^\/api\/episodes\/(ep-\d{8}-[0-9a-f]{8})\/(approve|reject|redo|run|version|share)$/.exec(url.pathname);
   if (action) {
     const id = action[1]!;
     const verb = action[2]!;
@@ -456,6 +495,17 @@ async function handlePrivate(req: http.IncomingMessage, res: http.ServerResponse
       background(`Одобрение ${id}`, approveEpisode(id));
     } else if (verb === "redo") {
       background(`Переделка ${id}`, redoEpisode(id, form.get("feedback") ?? ""));
+    } else if (verb === "share") {
+      const ep = loadEpisode(id);
+      if (!ep.final) throw new HttpError(409, "Ролик ещё не готов");
+      const on = form.get("on") !== "0";
+      if (on) ep.shared = { at: new Date().toISOString() };
+      else delete ep.shared;
+      saveEpisode(ep);
+      audit("Студия", on ? "открыла ссылку на ролик" : "закрыла ссылку на ролик", ep.id);
+      const base = config.server.publicBaseUrl || `http://${req.headers.host ?? `localhost:${config.server.port}`}`;
+      json(res, 200, { ok: true, url: on ? `${base}/watch/${ep.id}` : undefined });
+      return;
     } else if (verb === "version") {
       background(`Русская версия ${id}`, makeLanguageVersion(id, "ru"));
     } else {

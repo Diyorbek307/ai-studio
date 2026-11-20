@@ -123,3 +123,32 @@ test("бренд для компании: Дизайнер маскотов со
   assert.equal(noKey.status, 400);
   assert.match(((await noKey.json()) as { error: string }).error, /Grok не подключён/);
 });
+
+test("ссылка для показа: страница ролика открывается только после «Поделиться»", async () => {
+  assert.equal((await fetch(`${base}/watch/${id}`)).status, 404);
+  const on = await fetch(`${base}/api/episodes/${id}/share`, { method: "POST", headers: { ...auth, "Content-Type": "application/x-www-form-urlencoded" }, body: "on=1" });
+  assert.equal(on.status, 200);
+  const { url } = (await on.json()) as { url: string };
+  assert.ok(url.endsWith(`/watch/${id}`));
+  const page = await fetch(`${base}/watch/${id}`);
+  assert.equal(page.status, 200);
+  const html = await page.text();
+  assert.ok(html.includes(`/media/${id}/final.mp4`) && html.includes("Хочу такой сериал"));
+  await fetch(`${base}/api/episodes/${id}/share`, { method: "POST", headers: { ...auth, "Content-Type": "application/x-www-form-urlencoded" }, body: "on=0" });
+  assert.equal((await fetch(`${base}/watch/${id}`)).status, 404);
+  assert.equal((await fetch(`${base}/watch/ep-20260101-00000000`)).status, 404);
+});
+
+test("резервная копия: только владельцу, без роликов и ключа сессий", async () => {
+  assert.equal((await fetch(`${base}/api/backup`)).status, 401);
+  const res = await fetch(`${base}/api/backup`, { headers: auth });
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get("content-type"), "application/gzip");
+  const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "bk-")), "b.tar.gz");
+  fs.writeFileSync(file, Buffer.from(await res.arrayBuffer()));
+  const { execFileSync } = await import("node:child_process");
+  const list = execFileSync("tar", ["-tzf", file]).toString();
+  assert.match(list, new RegExp(`episodes/${id}/episode\\.json`));
+  assert.match(list, /bozor-seriali\.json/);
+  assert.doesNotMatch(list, /\.mp4|\.session-secret|keyframes\//);
+});

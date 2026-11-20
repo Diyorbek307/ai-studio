@@ -11,6 +11,7 @@ import { config, describeProviders } from "./config.js";
 import { errorMessage, log } from "./log.js";
 import { createClient, createInvite, ensureInvoices, getClient, listClients, publicClient } from "./clients.js";
 import { buildWeeklyReport, weeklyReportsJob } from "./reports.js";
+import { makeBackup } from "./backup.js";
 import { approveEpisode, dailyAll, dailyJob, newEpisode, redoEpisode, rejectEpisode, runEpisode, STEPS, type Step } from "./pipeline.js";
 import path from "node:path";
 import { buildPreview } from "./preview.js";
@@ -41,6 +42,7 @@ const HELP = `AI-студия — агенты, которые делают се
              [--approval studio_then_client|client|studio] [--phone …]
                                 подключить компанию к её бренду
   invite <id клиента>           ссылка-приглашение в кабинет (действует 7 дней)
+  backup [файл] [--full]        резервная копия: клиенты, счета, сериалы, эпизоды (--full — с роликами)
   train <сериал> <герой>        обучить героя в Higgsfield (Soul ID) по его картинкам и дождаться результата
   report <id клиента>           отчёт клиента за прошлую неделю (просмотр, без отправки)
   reports                       отчёты за прошлую неделю всем клиентам (в Telegram и кабинет)
@@ -215,6 +217,14 @@ async function main(argv: string[]): Promise<number> {
         approval: flag(args, "--approval"),
       });
       console.log(`Клиент ${client.id}: ${client.company}. Приглашение: invite ${client.id}`);
+      return 0;
+    }
+
+    case "backup": {
+      const full = args.includes("--full");
+      const file = path.resolve(args.find((a) => !a.startsWith("--")) ?? `studio-backup-${new Date().toISOString().slice(0, 10)}${full ? "-full" : ""}.tar.gz`);
+      const { bytes } = await makeBackup(file, { full });
+      console.log(`Копия: ${file} (${(bytes / 1024 / 1024).toFixed(1)} МБ). В ней ключи Instagram клиентов и хеши паролей — храните бережно.`);
       return 0;
     }
 
