@@ -71,8 +71,28 @@ async function upload(file: string, contentType: string): Promise<string> {
   return slot.public_url;
 }
 
-export async function higgsfieldImage(prompt: string): Promise<MediaResult> {
-  const out = await run(config.higgsfield.imageEndpoint, { prompt, aspect_ratio: "9:16", resolution: "1080p", batch_size: 1 });
+/** Обученный герой (Soul ID) для кадра: его id и сила сходства (0 < x ≤ 1). */
+export interface SoulReference {
+  id: string;
+  strength?: number;
+}
+
+/** Семейство SOUL, которому подходит Soul ID: v1 (soul/standard), v2 (soul/v2/…) или cinema. */
+export function soulModelVersion(endpoint = config.higgsfield.imageEndpoint): "v1" | "v2" | "cinema" {
+  if (endpoint.includes("/cinema")) return "cinema";
+  if (endpoint.includes("/v2/")) return "v2";
+  return "v1";
+}
+
+export async function higgsfieldImage(prompt: string, soul?: SoulReference): Promise<MediaResult> {
+  const out = await run(config.higgsfield.imageEndpoint, {
+    prompt,
+    aspect_ratio: "9:16",
+    resolution: "1080p",
+    batch_size: 1,
+    // Документация: с custom_reference_id сила должна быть больше 0 и не больше 1.
+    ...(soul ? { custom_reference_id: soul.id, custom_reference_strength: Math.min(1, Math.max(0.05, soul.strength ?? 0.9)) } : {}),
+  });
   const url = out.images?.[0]?.url;
   if (!url) throw new Error("Higgsfield: в ответе нет картинки");
   return { url, costUsd: config.higgsfield.imageCostUsd };
@@ -84,4 +104,43 @@ export async function higgsfieldVideo(opts: { image: string; imageUrl?: string; 
   const out = await run(config.higgsfield.videoEndpoint, { prompt: opts.prompt, image_url: imageUrl, duration, sound: "off" });
   if (!out.video?.url) throw new Error("Higgsfield: в ответе нет видео");
   return { url: out.video.url, costUsd: duration * config.higgsfield.videoCostPerSecUsd };
+}
+
+export type SoulStatus = "not_ready" | "queued" | "in_progress" | "completed" | "failed";
+
+interface CustomReference {
+  id: string;
+  status: SoulStatus;
+  fail_reason?: string | null;
+  thumbnail_url?: string | null;
+}
+
+/**
+ * Soul ID: обучение своего героя по картинкам (docs.higgsfield.ai/docs/models/soul-id).
+ * POST /v1/custom-references с публичными ссылками на 1–100 картинок → id и статус.
+ * Обучение идёт на стороне Higgsfield; статус проверяется через soulStatus().
+ */
+export async function trainSoulCharacter(name: string, images: string[]): Promise<CustomReference> {
+  if (images.length === 0) throw new Error("Нет картинок героя для обучения");
+  const urls: string[] = [];
+  for (const file of images.slice(0, 100)) urls.push(await upload(file, "image/png"));
+  const res = await fetch(`${BASE}/v1/custom-references`, {
+    method: "POST",
+    headers: { ...auth(), "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: name.slice(0, 100),
+      model_version: soulModelVersion(),
+      input_images: urls.map((url) => ({ type: "image_url", image_url: url })),
+    }),
+    signal: AbortSignal.timeout(60_000),
+  });
+  if (res.status === 429) {
+    throw new Error(`Higgsfield сейчас обучает максимум героев — попробуйте через ${res.headers.get("retry-after") ?? "несколько"} с`);
+  }
+  return readJson<CustomReference>(res, "обучение героя");
+}
+
+export async function soulStatus(id: string): Promise<CustomReference> {
+  const res = await fetch(`${BASE}/v1/custom-references/${encodeURIComponent(id)}`, { headers: auth(), signal: AbortSignal.timeout(60_000) });
+  return readJson<CustomReference>(res, "статус обучения");
 }

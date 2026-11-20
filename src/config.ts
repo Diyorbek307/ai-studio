@@ -58,6 +58,8 @@ export const config = {
     engine: oneOf("IMAGE_ENGINE", ["auto", "cutout", "gemini", "grok", "higgsfield", "fal", "mock"] as const, "auto"),
     falModel: str("FAL_IMAGE_MODEL", "fal-ai/flux/dev"),
     costUsd: num("IMAGE_COST_USD", 0.03),
+    // Картинки героев и мест как образцы для Gemini и Grok: герои одинаковые в каждом кадре.
+    references: !["off", "false", "0"].includes(str("IMAGE_REFERENCES").toLowerCase()),
   },
 
   video: {

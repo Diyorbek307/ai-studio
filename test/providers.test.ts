@@ -167,3 +167,81 @@ test("выбор движка: явный без ключа — ошибка, а
   // Ключ Gemini есть, но картинки и видео у Gemini платные — без GEMINI_MEDIA=on их не трогаем.
   assert.throws(() => resolveEngine("gemini", "image"), /GEMINI_MEDIA=on/);
 });
+
+const refs = [
+  { label: "Qovun opa", kind: "character" as const, base64: "QQ==", mimeType: "image/png" },
+  { label: "Anor", kind: "character" as const, base64: "Qg==", mimeType: "image/png" },
+  { label: "Katta bozor", kind: "location" as const, base64: "Qw==", mimeType: "image/png" },
+];
+
+test("Gemini Nano Banana: картинки героев и места уходят образцами вместе с текстом", async () => {
+  calls.length = 0;
+  routes = [
+    (c) =>
+      c.url === "https://generativelanguage.googleapis.com/v1beta/interactions"
+        ? { status: "completed", steps: [{ type: "model_output", content: [{ type: "image", data: "aW1n", mime_type: "image/png" }] }] }
+        : undefined,
+  ];
+  const out = await geminiImage("Qovun opa argues with Anor at the stall", refs);
+  assert.equal(out.bytes?.toString(), "img");
+  const body = calls[0]!.body as { input: { type: string; text?: string; data?: string; mime_type?: string }[] };
+  assert.equal(body.input.length, 4);
+  assert.equal(body.input[0]!.type, "text");
+  assert.match(body.input[0]!.text!, /image 1 — the character Qovun opa; image 2 — the character Anor; image 3 — the location Katta bozor/);
+  assert.deepEqual(body.input.slice(1).map((i) => [i.type, i.data, i.mime_type]), [["image", "QQ==", "image/png"], ["image", "Qg==", "image/png"], ["image", "Qw==", "image/png"]]);
+});
+
+test("Grok: с образцами — правка по нескольким картинкам, в тексте <IMAGE_0>…", async () => {
+  calls.length = 0;
+  routes = [(c) => (c.url === "https://api.x.ai/v1/images/edits" ? { data: [{ b64_json: "aW1n" }], usage: { cost_in_usd_ticks: 200_000_000 } } : undefined)];
+  await grokImage("Qovun opa argues with Anor", refs);
+  const body = calls[0]!.body as { images: { url: string }[]; prompt: string; aspect_ratio: string };
+  assert.equal(calls[0]!.url, "https://api.x.ai/v1/images/edits");
+  assert.equal(body.images[0]!.url, "data:image/png;base64,QQ==");
+  assert.equal(body.images.length, 3);
+  assert.match(body.prompt, /^<IMAGE_0> is the character Qovun opa, <IMAGE_1> is the character Anor, <IMAGE_2> is the location Katta bozor\./);
+  assert.equal(body.aspect_ratio, "9:16");
+});
+
+test("Higgsfield Soul ID: обучение героя по картинкам и кадр с обученным героем", async () => {
+  const { trainSoulCharacter, soulStatus, higgsfieldImage, soulModelVersion } = await import("../src/providers/higgsfield.js");
+  calls.length = 0;
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "soul-"));
+  const files = ["qovun.png", "qovun.talk.png"].map((f) => {
+    fs.writeFileSync(path.join(dir, f), "png");
+    return path.join(dir, f);
+  });
+  let n = 0;
+  routes = [
+    (c) =>
+      c.url === "https://api.higgsfield.ai/files/generate-upload-url"
+        ? { public_url: `https://cdn.hf/ref${++n}.png`, upload_url: `https://storage.hf/put${n}`, upload_headers: { "Content-Type": "image/png" } }
+        : undefined,
+    (c) => (c.url.startsWith("https://storage.hf/put") ? new Response("", { status: 200 }) : undefined),
+    (c) => (c.url === "https://api.higgsfield.ai/v1/custom-references" ? { id: "11111111-2222-3333-4444-555555555555", name: "x", model_version: "v1", status: "queued" } : undefined),
+    (c) => (c.url === "https://api.higgsfield.ai/v1/custom-references/11111111-2222-3333-4444-555555555555" ? { id: "11111111-2222-3333-4444-555555555555", status: "completed" } : undefined),
+    (c) => (c.url === "https://api.higgsfield.ai/higgsfield-ai/soul/standard" ? { status: "queued", request_id: "s1", status_url: "https://api.higgsfield.ai/requests/s1/status" } : undefined),
+    (c) => (c.url === "https://api.higgsfield.ai/requests/s1/status" ? { status: "completed", images: [{ url: "https://cdn.hf/frame.png" }] } : undefined),
+  ];
+  assert.equal(soulModelVersion(), "v1");
+  assert.equal(soulModelVersion("higgsfield-ai/soul/v2/standard"), "v2");
+
+  const created = await trainSoulCharacter("Bozor Seriali: Qovun opa", files);
+  assert.equal(created.status, "queued");
+  const create = calls.find((c) => c.url.endsWith("/v1/custom-references"))!;
+  assert.deepEqual(create.body, {
+    name: "Bozor Seriali: Qovun opa",
+    model_version: "v1",
+    input_images: [
+      { type: "image_url", image_url: "https://cdn.hf/ref1.png" },
+      { type: "image_url", image_url: "https://cdn.hf/ref2.png" },
+    ],
+  });
+  assert.equal((await soulStatus(created.id)).status, "completed");
+
+  const frame = await higgsfieldImage("Qovun opa at the stall", { id: created.id });
+  assert.equal(frame.url, "https://cdn.hf/frame.png");
+  const gen = calls.find((c) => c.url.endsWith("/soul/standard"))!.body as Record<string, unknown>;
+  assert.equal(gen.custom_reference_id, created.id);
+  assert.equal(gen.custom_reference_strength, 0.9); // по документации — больше 0 и не больше 1
+});

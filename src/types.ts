@@ -24,6 +24,15 @@ export const CharacterSchema = z.object({
       style: z.string().optional(),
     })
     .default({}),
+  /** Герой, обученный в Higgsfield (Soul ID): по нему SOUL рисует героя одинаковым в каждом кадре. */
+  higgsfield_ref: z
+    .object({
+      id: z.string(),
+      status: z.string(),
+      updatedAt: z.string(),
+      failReason: z.string().optional(),
+    })
+    .optional(),
 });
 export type Character = z.infer<typeof CharacterSchema>;
 

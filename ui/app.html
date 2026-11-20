@@ -1071,6 +1071,15 @@ main { padding-block: 20px 48px; }
       : `<span class="ava" style="--c:${esc(c.color)}" aria-hidden="true">${esc(c.name.charAt(0))}</span>`;
   }
 
+  // Обучение героя в Higgsfield (Soul ID): кнопка, если Higgsfield подключён, и статус обучения.
+  function soulControl(b, a) {
+    const status = a.soul?.status;
+    if (status === "completed") return '<span class="tag ok" title="Higgsfield рисует этого героя по обученной модели">Soul ID ✓</span>';
+    if (status && status !== "failed") return '<span class="tag warn">обучается…</span>';
+    if (!state.engines.find((e) => e.engine === "higgsfield")?.available) return "";
+    return `<button class="btn small" type="button" data-train="${esc(b.slug)}|${esc(a.id)}" title="${status === "failed" ? esc(a.soul.failReason || "Прошлое обучение не удалось") : "Higgsfield обучит модель на этом герое: в кадрах он будет одинаковым"}">${status === "failed" ? "Обучить заново" : "Обучить в Higgsfield"}</button>`;
+  }
+
   function assetTiles(b) {
     const tile = (kind, a) => `<figure class="asset ${kind}">
         <div class="asset-img">${a.art ? `<img src="${esc(a.art)}" alt="${esc(a.name)}" loading="lazy">` : ""}</div>
@@ -1079,7 +1088,7 @@ main { padding-block: 20px 48px; }
         ${kind === "characters" && !a.placeholder ? `<div class="states">
           <button type="button" class="${a.talk ? "on" : ""}" data-upload="${esc(b.slug)}|characters|${esc(a.id)}|talk" title="Та же картинка, но с открытым ртом: герой будет шевелить губами в такт голосу">${a.talk ? "✓ " : "+ "}рот</button>
           <button type="button" class="${a.blink ? "on" : ""}" data-upload="${esc(b.slug)}|characters|${esc(a.id)}|blink" title="Та же картинка с закрытыми глазами: герой будет моргать">${a.blink ? "✓ " : "+ "}моргание</button>
-        </div>` : ""}
+        </div>${soulControl(b, a)}` : ""}
       </figure>`;
     const all = [...b.characters, ...b.locations];
     const ready = all.filter((a) => !a.placeholder).length;
@@ -1590,6 +1599,16 @@ main { padding-block: 20px 48px; }
       uploadTarget = { slug, kind, id, variant };
       $("#assetInput").value = "";
       $("#assetInput").click();
+      return;
+    }
+    const trainBtn = t.closest("[data-train]");
+    if (trainBtn) {
+      const [slug, id] = trainBtn.dataset.train.split("|");
+      trainBtn.disabled = true;
+      post(`/api/brands/${slug}/characters/${id}/train`).then((ok) => {
+        if (ok) toast("Higgsfield обучает героя — статус обновится сам");
+        load();
+      });
       return;
     }
     if (t.closest("#tgConnect")) return connectTelegram(t.closest("#tgConnect"));

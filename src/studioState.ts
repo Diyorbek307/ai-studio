@@ -86,6 +86,8 @@ export interface UiAsset {
   /** Состояния героя для живой перекладки: ссылки на «рот открыт» и «глаза закрыты». */
   talk?: string;
   blink?: string;
+  /** Обучение героя в Higgsfield (Soul ID): статус и причина ошибки. */
+  soul?: { status: string; failReason?: string };
 }
 
 export interface UiBrand {
@@ -258,6 +260,7 @@ function toUiBrand(series: Series, episodes: Episode[], assetUrl: AssetUrl): UiB
     client: series.client ? { company: series.client.company, product: series.client.product } : undefined,
     characters: series.characters.map((c, i) => ({
       ...assetInfo(series.slug, "characters", c.id, c.name, assetUrl),
+      ...(c.higgsfield_ref ? { soul: { status: c.higgsfield_ref.status, failReason: c.higgsfield_ref.failReason } } : {}),
       role: c.role,
       color: c.color ?? FALLBACK_COLORS[i % FALLBACK_COLORS.length]!,
     })),

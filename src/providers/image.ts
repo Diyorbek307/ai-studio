@@ -4,9 +4,9 @@ import { config } from "../config.js";
 import { normalizeImage, placeholderImage } from "../media/ffmpeg.js";
 import type { Engine } from "./engines.js";
 import { falRun, findFileUrl } from "./fal.js";
-import { geminiImage } from "./gemini.js";
+import { geminiImage, type ImageReference } from "./gemini.js";
 import { grokImage } from "./grok.js";
-import { higgsfieldImage } from "./higgsfield.js";
+import { higgsfieldImage, type SoulReference } from "./higgsfield.js";
 import { type MediaResult, saveMedia } from "./media.js";
 
 export interface ImageResult {
@@ -29,7 +29,17 @@ async function falImage(prompt: string): Promise<MediaResult> {
 }
 
 /** Рисует вертикальный кадр 1080×1920 выбранным движком и сохраняет в PNG. */
-export async function generateImage(opts: { prompt: string; out: string; label: string; index: number; engine: Engine }): Promise<ImageResult> {
+export async function generateImage(opts: {
+  prompt: string;
+  out: string;
+  label: string;
+  index: number;
+  engine: Engine;
+  /** Картинки героев и места сцены — для Gemini и Grok. */
+  references?: ImageReference[];
+  /** Обученный герой сцены — для Higgsfield SOUL. */
+  soul?: SoulReference;
+}): Promise<ImageResult> {
   fs.mkdirSync(path.dirname(opts.out), { recursive: true });
 
   if (opts.engine === "mock") {
@@ -39,11 +49,11 @@ export async function generateImage(opts: { prompt: string; out: string; label: 
 
   const result =
     opts.engine === "gemini"
-      ? await geminiImage(opts.prompt)
+      ? await geminiImage(opts.prompt, opts.references)
       : opts.engine === "grok"
-        ? await grokImage(opts.prompt)
+        ? await grokImage(opts.prompt, opts.references)
         : opts.engine === "higgsfield"
-          ? await higgsfieldImage(opts.prompt)
+          ? await higgsfieldImage(opts.prompt, opts.soul)
           : await falImage(opts.prompt);
 
   const raw = `${opts.out}.raw`;

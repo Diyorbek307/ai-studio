@@ -41,11 +41,27 @@ export function modelOutput(data: InteractionResponse, type: "image" | "video"):
   throw new Error(`Gemini: в ответе нет ${type === "image" ? "картинки" : "видео"} (статус: ${data.status ?? "неизвестен"})`);
 }
 
-export async function geminiImage(prompt: string): Promise<MediaResult> {
+/** Картинка-образец героя или места: Nano Banana держит до 4 героев и до 10 объектов по образцам. */
+export interface ImageReference {
+  /** Кто или что на картинке — подставляется в текст запроса. */
+  label: string;
+  kind: "character" | "location";
+  base64: string;
+  mimeType: string;
+}
+
+export async function geminiImage(prompt: string, references: ImageReference[] = []): Promise<MediaResult> {
+  const refs = [...references.filter((r) => r.kind === "character").slice(0, 4), ...references.filter((r) => r.kind === "location").slice(0, 1)];
+  const guide = refs.length
+    ? `\n\nReference images, in order: ${refs.map((r, i) => `image ${i + 1} — ${r.kind === "character" ? `the character ${r.label}` : `the location ${r.label}`}`).join("; ")}. ` +
+      "Keep every character exactly as in the reference images: same shape, colours, outfit and face. Use the location reference for the background."
+    : "";
   const data = await interact(
     {
       model: config.gemini.imageModel,
-      input: prompt,
+      input: refs.length
+        ? [{ type: "text", text: prompt + guide }, ...refs.map((r) => ({ type: "image", data: r.base64, mime_type: r.mimeType }))]
+        : prompt,
       response_format: { type: "image", mime_type: "image/png", aspect_ratio: "9:16" },
     },
     5 * 60_000,

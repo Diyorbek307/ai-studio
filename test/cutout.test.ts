@@ -81,3 +81,13 @@ test("состояния героя: только поверх настояще�
   await saveAsset("bozor-seriali", "characters", "sabzi", img("base2.png", "500x700"));
   assert.equal(fs.existsSync(talk), false); // новая основная картинка — старый рот не подходит
 });
+
+test("образцы для платных движков: только нарисованные герои сцены и её место", async () => {
+  const { sceneReferences } = await import("../src/agents/keyframeGenerator.js");
+  const { trainCharacter } = await import("../src/agents/soulTrainer.js");
+  const series = loadSeries("bozor-seriali");
+  const refs = sceneReferences(series, { id: "s1", location: "stall", characters: ["qovun", "nobody", "anor"], visual: "", camera: "", lines: [], duration_sec: 5 });
+  assert.deepEqual(refs.map((r) => [r.kind, r.label]), [["character", "Qovun opa"], ["character", "Anor"], ["location", "Katta bozor, ряд с фруктами"]]);
+  assert.ok(refs[0]!.base64.length > 1000);
+  await assert.rejects(trainCharacter("bozor-seriali", "qovun"), /Higgsfield не подключён/);
+});

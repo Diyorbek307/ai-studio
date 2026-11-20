@@ -1,4 +1,5 @@
 import { config } from "../config.js";
+import type { ImageReference } from "./gemini.js";
 import type { MediaResult } from "./media.js";
 
 /**
@@ -23,16 +24,26 @@ async function readJson<T>(res: Response, what: string): Promise<T> {
   return JSON.parse(text) as T;
 }
 
-export async function grokImage(prompt: string): Promise<MediaResult> {
-  const res = await fetch(`${BASE}/images/generations`, {
+/**
+ * Кадр Grok Imagine. С образцами героев — через /images/edits с несколькими картинками
+ * (docs.x.ai: images[], в тексте они называются <IMAGE_0>, <IMAGE_1>…), без образцов — /images/generations.
+ */
+export async function grokImage(prompt: string, references: ImageReference[] = []): Promise<MediaResult> {
+  const refs = references.slice(0, 5);
+  const guide = refs.length
+    ? `${refs.map((r, i) => `<IMAGE_${i}> is ${r.kind === "character" ? `the character ${r.label}` : `the location ${r.label}`}`).join(", ")}. ` +
+      "Draw a new vertical frame with these exact characters (same shape, colours, outfit and face). Scene: "
+    : "";
+  const res = await fetch(`${BASE}/images/${refs.length ? "edits" : "generations"}`, {
     method: "POST",
     headers: headers(),
     body: JSON.stringify({
       model: config.grok.imageModel,
-      prompt,
+      prompt: guide + prompt,
       n: 1,
       aspect_ratio: "9:16",
       response_format: "b64_json",
+      ...(refs.length ? { images: refs.map((r) => ({ url: `data:${r.mimeType};base64,${r.base64}` })) } : {}),
     }),
     signal: AbortSignal.timeout(5 * 60_000),
   });

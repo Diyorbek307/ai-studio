@@ -35,6 +35,7 @@ import { renderInvoicePage } from "./invoicePage.js";
 import { addLead } from "./leads.js";
 import { errorMessage, log } from "./log.js";
 import { designBrandSeries } from "./agents/mascotDesigner.js";
+import { trainCharacter, watchSoulTraining } from "./agents/soulTrainer.js";
 import { botUsername, sendMessage, telegramEnabled } from "./integrations/telegram.js";
 import { type AssetKind, characterAsset, type CharacterVariant, isCharacterVariant, locationAsset, saveAsset } from "./media/cutout.js";
 import { approveEpisode, dailyAll, prepareEpisode, redoEpisode, rejectEpisode, runEpisode } from "./pipeline.js";
@@ -367,6 +368,16 @@ async function handlePrivate(req: http.IncomingMessage, res: http.ServerResponse
 
   if (req.method !== "POST") throw new HttpError(404, "not found");
   if (!sameOrigin(req)) throw new HttpError(403, "Запрос с чужого сайта");
+
+  const train = /^\/api\/brands\/([a-z0-9-]+)\/characters\/([a-z0-9-]+)\/train$/.exec(url.pathname);
+  if (train) {
+    ownerOnly(viewer);
+    const [, slug, id] = train as unknown as [string, string, string];
+    const ref = await trainCharacter(slug, id);
+    background(`Обучение героя ${id}`, watchSoulTraining(slug, id));
+    json(res, 202, { ok: true, status: ref.status });
+    return;
+  }
 
   const upload = /^\/api\/brands\/([a-z0-9-]+)\/(characters|locations)\/([a-z0-9-]+)$/.exec(url.pathname);
   if (upload) {

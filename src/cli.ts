@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { designSeries, needsDesign } from "./agents/characterDesigner.js";
 import { designBrandSeries } from "./agents/mascotDesigner.js";
+import { trainCharacter, watchSoulTraining } from "./agents/soulTrainer.js";
 import { engineStatus } from "./providers/engines.js";
 import { STARTER_AGENTS } from "./agents/index.js";
 import { analyzeStats, collectStats } from "./agents/statsAnalyst.js";
@@ -40,6 +41,7 @@ const HELP = `AI-студия — агенты, которые делают се
              [--approval studio_then_client|client|studio] [--phone …]
                                 подключить компанию к её бренду
   invite <id клиента>           ссылка-приглашение в кабинет (действует 7 дней)
+  train <сериал> <герой>        обучить героя в Higgsfield (Soul ID) по его картинкам и дождаться результата
   report <id клиента>           отчёт клиента за прошлую неделю (просмотр, без отправки)
   reports                       отчёты за прошлую неделю всем клиентам (в Telegram и кабинет)
   serve                         сервер + панель + Telegram-бот + расписание
@@ -214,6 +216,16 @@ async function main(argv: string[]): Promise<number> {
       });
       console.log(`Клиент ${client.id}: ${client.company}. Приглашение: invite ${client.id}`);
       return 0;
+    }
+
+    case "train": {
+      const [slug, id] = args;
+      if (!slug || !id) throw new Error("Укажи сериал и id героя: train bozor-seriali qovun");
+      const started = await trainCharacter(slug, id);
+      console.log(`Обучение началось (${started.status}). Жду результат — это может занять время…`);
+      const done = await watchSoulTraining(slug, id);
+      console.log(done ? `Статус: ${done.status}${done.failReason ? ` — ${done.failReason}` : ""}` : "Не дождались — статус обновится при следующей серии");
+      return done?.status === "completed" ? 0 : 1;
     }
 
     case "report": {
