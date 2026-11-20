@@ -1168,6 +1168,11 @@ main { padding-block: 20px 48px; }
         <span class="tag ${c.instagramConnected ? "ok" : ""}">Instagram ${c.instagramConnected ? "✓" : "—"}</span>
         <span class="tag">${esc(c.approvalLabel)}</span>
         ${c.unpaidUsd ? `<span class="tag bad">не оплачено ${usd(c.unpaidUsd)}</span>` : ""}
+        ${(() => {
+          if (!(state.plans.find((p) => p.id === c.plan) || {}).weeklyReport) return "";
+          const r = (state.reports || []).find((x) => x.clientId === c.id);
+          return r ? `<span class="tag ok" title="${esc(r.text)}">отчёт ${esc(day(r.weekStart))}: ${r.made} серий${r.sent ? ", в Telegram" : ""}</span>` : '<span class="tag">отчёт — в понедельник</span>';
+        })()}
       </div>
       <div class="contact mono"><span>${esc(c.email)}</span>${c.phone ? `<a href="tel:${esc(c.phone.replace(/[^+\d]/g, ""))}">${esc(c.phone)}</a>` : ""}</div>
       <div class="brand-actions">
@@ -1251,7 +1256,22 @@ main { padding-block: 20px 48px; }
         <ul class="features">${me.features.map((f) => `<li>${esc(f)}</li>`).join("")}</ul>
       </div>
       <div><h3 class="block-title">Счета</h3>${invoices ? `<div class="rows">${invoices}</div>` : '<p class="hint">Счетов пока нет.</p>'}</div>
+      ${me.weeklyReport ? `<div><h3 class="block-title">Отчёты по неделям</h3>${reportRows(state.reports || [])}</div>` : ""}
       ${others.length ? `<div><h3 class="block-title">Другие тарифы</h3><div class="plans-mini">${others.map((p) => `<div><b>${esc(p.name)}</b><span>${usd(p.priceUsd)} в месяц · ${p.episodes} серий</span></div>`).join("")}</div><p class="hint">Чтобы сменить тариф, напишите студии — новый начнётся со следующего периода.</p></div>` : ""}`;
+  }
+
+  function reportRows(reports) {
+    if (!reports.length) return '<p class="hint">Первый отчёт придёт в понедельник: сколько серий вышло, цифры Instagram и что впереди. В Telegram его можно запросить командой /report.</p>';
+    return `<div class="rows">${reports
+      .map((r) => {
+        const views = r.metrics.views ? ` · ${Number(r.metrics.views).toLocaleString("ru-RU")} просмотров` : "";
+        return `<div class="row">
+          <div class="row-main"><b>Неделя ${esc(day(r.weekStart))} — ${esc(dayBefore(r.weekEnd))}</b><span>${r.made} ${plural(r.made, "серия", "серии", "серий")} · ${r.published} в Instagram${views}</span></div>
+          <div class="row-side">${r.sent ? '<span class="tag ok">в Telegram</span>' : ""}</div>
+          <details class="msg"><summary>Открыть отчёт</summary><div style="white-space:pre-wrap;margin-top:8px">${esc(r.text)}</div></details>
+        </div>`;
+      })
+      .join("")}</div>`;
   }
 
   function renderSettings() {

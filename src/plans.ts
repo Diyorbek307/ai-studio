@@ -11,6 +11,8 @@ export interface Plan {
   /** Пилот — разовый период в днях, остальные — календарный месяц. */
   period: "once" | "month";
   days?: number;
+  /** Еженедельный отчёт клиенту (у пилота — итоги пилота). */
+  weeklyReport: boolean;
   features: string[];
 }
 
@@ -22,7 +24,8 @@ export const PLANS: Record<PlanId, Plan> = {
     episodes: 5,
     period: "once",
     days: 7,
-    features: ["Маскот и сериал под бренд", "5 серий за неделю", "Без подписки"],
+    weeklyReport: true,
+    features: ["Маскот и сериал под бренд", "5 серий за неделю", "Итоги пилота с цифрами", "Без подписки"],
   },
   start: {
     id: "start",
@@ -30,6 +33,7 @@ export const PLANS: Record<PlanId, Plan> = {
     priceUsd: 290,
     episodes: 12,
     period: "month",
+    weeklyReport: false,
     features: ["12 серий в месяц, 3 в неделю", "1 маскот, 1 язык", "Публикация в Instagram"],
   },
   business: {
@@ -38,6 +42,7 @@ export const PLANS: Record<PlanId, Plan> = {
     priceUsd: 590,
     episodes: 30,
     period: "month",
+    weeklyReport: true,
     features: ["Серия каждый день", "Серии под ваши акции и праздники", "Instagram и Telegram", "Отчёт раз в неделю"],
   },
   network: {
@@ -46,7 +51,8 @@ export const PLANS: Record<PlanId, Plan> = {
     priceUsd: 1200,
     episodes: 60,
     period: "month",
-    features: ["2 серии в день", "2 языка, до 3 маскотов", "Серии под филиалы", "Приоритет в очереди"],
+    weeklyReport: true,
+    features: ["2 серии в день", "2 языка, до 3 маскотов", "Серии под филиалы", "Приоритет в очереди", "Отчёт раз в неделю"],
   },
 };
 

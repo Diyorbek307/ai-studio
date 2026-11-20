@@ -8,7 +8,8 @@ import { runBot } from "./bot.js";
 import { budgetSummary } from "./budget.js";
 import { config, describeProviders } from "./config.js";
 import { errorMessage, log } from "./log.js";
-import { createClient, createInvite, ensureInvoices, listClients, publicClient } from "./clients.js";
+import { createClient, createInvite, ensureInvoices, getClient, listClients, publicClient } from "./clients.js";
+import { buildWeeklyReport, weeklyReportsJob } from "./reports.js";
 import { approveEpisode, dailyAll, dailyJob, newEpisode, redoEpisode, rejectEpisode, runEpisode, STEPS, type Step } from "./pipeline.js";
 import path from "node:path";
 import { buildPreview } from "./preview.js";
@@ -39,6 +40,8 @@ const HELP = `AI-студия — агенты, которые делают се
              [--approval studio_then_client|client|studio] [--phone …]
                                 подключить компанию к её бренду
   invite <id клиента>           ссылка-приглашение в кабинет (действует 7 дней)
+  report <id клиента>           отчёт клиента за прошлую неделю (просмотр, без отправки)
+  reports                       отчёты за прошлую неделю всем клиентам (в Telegram и кабинет)
   serve                         сервер + панель + Telegram-бот + расписание
   budget                        расход за сегодня
   preview [папка]               превью интерфейса без сервера (снимок данных + ролики)
@@ -210,6 +213,19 @@ async function main(argv: string[]): Promise<number> {
         approval: flag(args, "--approval"),
       });
       console.log(`Клиент ${client.id}: ${client.company}. Приглашение: invite ${client.id}`);
+      return 0;
+    }
+
+    case "report": {
+      const id = args[0];
+      if (!id) throw new Error("Укажи id клиента (список: clients)");
+      console.log(buildWeeklyReport(getClient(id)).text);
+      return 0;
+    }
+
+    case "reports": {
+      const done = await weeklyReportsJob();
+      console.log(done.length ? `Отчётов: ${done.length}` : "Новых отчётов нет: за прошлую неделю уже всё отправлено или у тарифов клиентов нет отчётов");
       return 0;
     }
 

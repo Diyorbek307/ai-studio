@@ -12,6 +12,7 @@ import {
   type TgUpdate,
 } from "./integrations/telegram.js";
 import { errorMessage, log } from "./log.js";
+import { buildWeeklyReport } from "./reports.js";
 import { approveEpisode, dailyAll, markAwaitingFeedback, newEpisode, prepareEpisode, redoEpisode, rejectEpisode, runEpisode } from "./pipeline.js";
 import { listEpisodes, loadEpisode, loadSeries, loadState, saveState } from "./store.js";
 import { analyzeStats, collectStats } from "./agents/statsAnalyst.js";
@@ -42,6 +43,7 @@ function clientHelp(client: Client): string {
     "",
     "/new <задание> — заказать серию, например: /new скидка 20% на плов в пятницу",
     "/status — ваши серии",
+    "/report — итоги прошлой недели",
     "",
     `Тариф: ${u.used} из ${u.limit} серий до ${u.periodEnd}.`,
   ].join("\n");
@@ -162,6 +164,10 @@ async function handleClientCommand(chat: string, client: Client, text: string): 
   }
   if (command === "/status") {
     await sendMessage(chat, clientStatusText(client));
+    return;
+  }
+  if (command === "/report") {
+    await sendMessage(chat, buildWeeklyReport(getClient(client.id)).text);
     return;
   }
   await sendMessage(chat, clientHelp(client));

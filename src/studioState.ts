@@ -17,6 +17,7 @@ import {
 } from "./clients.js";
 import { config } from "./config.js";
 import { type Lead, listLeads } from "./leads.js";
+import { listReports, type WeeklyReport } from "./reports.js";
 import { CHARACTER_VARIANTS, type CharacterVariant, characterAsset, isPlaceholder, locationAsset } from "./media/cutout.js";
 import { isStepDone, STEPS, type Step } from "./pipeline.js";
 import { PLAN_IDS, PLANS, type Plan } from "./plans.js";
@@ -126,8 +127,10 @@ export interface StudioState {
   invoices?: UiInvoice[];
   leads?: Lead[];
   audit?: AuditEntry[];
-  /** Только у клиента: его карточка, тариф и счета. */
-  me?: PublicClient & { features: string[]; invoices: UiInvoice[] };
+  /** Последние отчёты за неделю (у владельца — по всем клиентам). */
+  reports?: WeeklyReport[];
+  /** Только у клиента: его карточка, тариф, счета и отчёты. */
+  me?: PublicClient & { features: string[]; invoices: UiInvoice[]; weeklyReport: boolean };
 }
 
 /** Как интерфейс получает ссылку на файл эпизода (на сервере — /media/...). */
@@ -317,7 +320,8 @@ export function buildStudioState(
       schedule: { dailyAt: "", timezone: config.schedule.timezone, episodesPerDay: 0 },
       agents: [],
       episodes: mine.slice(0, 60).map((ep) => forClient(toUiEpisode(ep, titles.get(ep.series) ?? ep.series, opts.mediaUrl), ep)),
-      me: { ...publicClient(me), features: PLANS[me.plan].features, invoices: uiInvoices(listInvoices(me.id), clients) },
+      me: { ...publicClient(me), features: PLANS[me.plan].features, invoices: uiInvoices(listInvoices(me.id), clients), weeklyReport: PLANS[me.plan].weeklyReport },
+      reports: listReports(me.id).slice(0, 8),
     };
   }
 
@@ -344,6 +348,7 @@ export function buildStudioState(
     clients: clients.map((c) => publicClient(c)),
     invoices: uiInvoices(listInvoices(), clients),
     leads: listLeads(50),
+    reports: listReports().slice(0, 40),
     audit: recentAudit(60),
   };
 }

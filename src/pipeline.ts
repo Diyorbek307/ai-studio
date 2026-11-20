@@ -17,6 +17,7 @@ import { assertBudget, BudgetExceededError, budgetSummary, localDay } from "./bu
 import { audit } from "./audit.js";
 import { autopilotDue, clientForBrand, listClients } from "./clients.js";
 import { pickOccasion } from "./occasions.js";
+import { weeklyReportsJob } from "./reports.js";
 import { config } from "./config.js";
 import { sendMessage, telegramEnabled } from "./integrations/telegram.js";
 import { isEngine, resolveEngine } from "./providers/engines.js";
@@ -430,6 +431,11 @@ export async function dailyAll(): Promise<Episode[]> {
     }
   }
   results.push(...(await clientsAutopilot()));
+  try {
+    await weeklyReportsJob();
+  } catch (error) {
+    log.warn(`Отчёты за неделю: ${errorMessage(error)}`);
+  }
   saveState({ lastDailyRun: localDay() });
   return results;
 }
