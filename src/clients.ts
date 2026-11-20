@@ -4,6 +4,7 @@ import { type IgAccount, studioInstagram } from "./integrations/instagram.js";
 import { readCollection, writeCollection } from "./db.js";
 import { PLANS, type PlanId, billingPeriods, currentPeriod, isPlan } from "./plans.js";
 import { listEpisodes, loadSeries, seriesExists } from "./store.js";
+import type { Episode } from "./types.js";
 
 /**
  * Клиенты студии — компании, которые купили сериал под свой бренд.
@@ -41,6 +42,8 @@ export interface Client {
   instagram?: { userId: string; token: string };
   /** Реквизиты для счёта: юрлицо, ИНН, адрес. */
   legal?: { name?: string; inn?: string; address?: string };
+  /** Вторая языковая версия каждой серии (тариф «Сеть»: 2 языка). */
+  secondLanguage?: "ru";
   createdAt: string;
 }
 
@@ -89,6 +92,7 @@ export interface PublicClient {
   telegramLinked: boolean;
   instagramConnected: boolean;
   legal?: { name?: string; inn?: string; address?: string };
+  secondLanguage?: "ru";
   usage: Usage;
   unpaidUsd: number;
   createdAt: string;
@@ -191,6 +195,8 @@ export interface ClientPatch {
   legalName?: string;
   legalInn?: string;
   legalAddress?: string;
+  /** "" — без второй версии, "ru" — русская версия каждой серии. */
+  secondLanguage?: string;
 }
 
 export function updateClient(id: string, patch: ClientPatch): Client {
@@ -218,6 +224,11 @@ export function updateClient(id: string, patch: ClientPatch): Client {
       inn: inn || undefined,
       address: (patch.legalAddress ?? client.legal?.address ?? "").trim() || undefined,
     };
+  }
+  if (patch.secondLanguage !== undefined) {
+    if (patch.secondLanguage !== "" && patch.secondLanguage !== "ru") throw new Error("Вторая версия: пока только русская");
+    if (patch.secondLanguage === "ru") client.secondLanguage = "ru";
+    else delete client.secondLanguage;
   }
   if (patch.instagramUserId?.trim() && patch.instagramToken?.trim()) {
     client.instagram = { userId: patch.instagramUserId.trim(), token: patch.instagramToken.trim() };
@@ -318,11 +329,12 @@ export function clientByChat(chatId: string | number): Client | undefined {
 // ---------- Тариф, расход серий, счета ----------
 
 /** Серии бренда, которые засчитываются в тариф: всё, кроме отклонённых студией и упавших. */
-export function usage(client: Client, today = localDay()): Usage {
+export function usage(client: Client, today = localDay(), episodes: Episode[] = listEpisodes()): Usage {
   const plan = PLANS[client.plan];
   const period = currentPeriod(plan, client.periodStart, today);
-  const used = listEpisodes().filter((e) => {
-    if (e.series !== client.brand || e.status === "rejected" || e.status === "failed") return false;
+  const used = episodes.filter((e) => {
+    // Языковые версии — та же серия на втором языке, в тариф не засчитываются.
+    if (e.series !== client.brand || e.parentId || e.status === "rejected" || e.status === "failed") return false;
     const day = localDay(new Date(e.createdAt));
     return day >= period.start && day < period.end;
   }).length;
@@ -398,7 +410,7 @@ export function markInvoicePaid(id: string, paid = true): Invoice {
   return inv;
 }
 
-export function publicClient(client: Client, today = localDay()): PublicClient {
+export function publicClient(client: Client, today = localDay(), episodes?: Episode[]): PublicClient {
   const plan = PLANS[client.plan];
   let brandTitle = client.brand;
   try {
@@ -426,7 +438,8 @@ export function publicClient(client: Client, today = localDay()): PublicClient {
     telegramLinked: Boolean(client.telegram?.chatId),
     instagramConnected: Boolean(client.instagram),
     legal: client.legal,
-    usage: usage(client, today),
+    secondLanguage: client.secondLanguage,
+    usage: usage(client, today, episodes),
     unpaidUsd: listInvoices(client.id)
       .filter((i) => i.status === "unpaid")
       .reduce((sum, i) => sum + i.amountUsd, 0),

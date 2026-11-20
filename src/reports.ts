@@ -90,7 +90,7 @@ export function buildWeeklyReport(client: Client, today = localDay(), episodes: 
     // сериал удалён вручную — отчёт без названия и выводов
   }
   const occasions = upcomingOccasions(today, 21, client.brand).map((o) => `${o.name.split(" · ").pop()} (${ruDay(o.date)})`);
-  const u = usage(client, today);
+  const u = usage(client, today, episodes);
   const plan = PLANS[client.plan];
 
   const metricLine = METRIC_LABEL.filter(([k]) => metrics[k] !== undefined)

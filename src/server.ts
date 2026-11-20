@@ -38,7 +38,7 @@ import { designBrandSeries } from "./agents/mascotDesigner.js";
 import { trainCharacter, watchSoulTraining } from "./agents/soulTrainer.js";
 import { botUsername, sendMessage, telegramEnabled } from "./integrations/telegram.js";
 import { type AssetKind, characterAsset, type CharacterVariant, isCharacterVariant, locationAsset, saveAsset } from "./media/cutout.js";
-import { approveEpisode, dailyAll, prepareEpisode, redoEpisode, rejectEpisode, runEpisode } from "./pipeline.js";
+import { approveEpisode, dailyAll, makeLanguageVersion, prepareEpisode, redoEpisode, rejectEpisode, runEpisode } from "./pipeline.js";
 import { PLAN_IDS, PLANS } from "./plans.js";
 import { BUNDLED_SERIES_DIR, episodeDir, loadEpisode, loadSeries, loadState, saveState } from "./store.js";
 import { buildStudioState } from "./studioState.js";
@@ -426,7 +426,7 @@ async function handlePrivate(req: http.IncomingMessage, res: http.ServerResponse
     return;
   }
 
-  const action = /^\/api\/episodes\/(ep-\d{8}-[0-9a-f]{8})\/(approve|reject|redo|run)$/.exec(url.pathname);
+  const action = /^\/api\/episodes\/(ep-\d{8}-[0-9a-f]{8})\/(approve|reject|redo|run|version)$/.exec(url.pathname);
   if (action) {
     const id = action[1]!;
     const verb = action[2]!;
@@ -452,6 +452,8 @@ async function handlePrivate(req: http.IncomingMessage, res: http.ServerResponse
       background(`Одобрение ${id}`, approveEpisode(id));
     } else if (verb === "redo") {
       background(`Переделка ${id}`, redoEpisode(id, form.get("feedback") ?? ""));
+    } else if (verb === "version") {
+      background(`Русская версия ${id}`, makeLanguageVersion(id, "ru"));
     } else {
       background(`Продолжение ${id}`, runEpisode(id));
     }
@@ -540,6 +542,7 @@ async function handlePrivate(req: http.IncomingMessage, res: http.ServerResponse
       legalName: form.get("legalName") ?? undefined,
       legalInn: form.get("legalInn") ?? undefined,
       legalAddress: form.get("legalAddress") ?? undefined,
+      secondLanguage: form.get("secondLanguage") ?? undefined,
     });
     const changes = [
       before.plan !== client.plan && `тариф ${PLANS[client.plan].name}`,

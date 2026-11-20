@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { animateScenes } from "./agents/animator.js";
 import { requestApproval, sendToClient } from "./agents/approvalConsole.js";
 import { designSeries } from "./agents/characterDesigner.js";
@@ -22,7 +24,7 @@ import { config } from "./config.js";
 import { sendMessage, telegramEnabled } from "./integrations/telegram.js";
 import { isEngine, resolveEngine } from "./providers/engines.js";
 import { errorMessage, log } from "./log.js";
-import { createEpisode, listEpisodes, loadEpisode, loadInsights, loadSeries, saveEpisode, saveState } from "./store.js";
+import { createEpisode, episodeFile, listEpisodes, loadEpisode, loadInsights, loadSeries, saveEpisode, saveState } from "./store.js";
 import type { ApprovalEntry, Episode, QaReport, Series } from "./types.js";
 
 const PRODUCER = agentInfo(99);
@@ -281,7 +283,14 @@ function assertClientTurn(ep: Episode, who: Decider): void {
  * Одобрение. Студия при порядке «студия, затем клиент» передаёт ролик клиенту;
  * клиент (или студия за клиента) одобряет окончательно — и ролик уходит в Instagram.
  */
-export function approveEpisode(id: string, who: Decider = STUDIO): Promise<Episode> {
+export async function approveEpisode(id: string, who: Decider = STUDIO): Promise<Episode> {
+  const ep = await approveInQueue(id, who);
+  // Клиенту со второй языковой версией — сразу собрать её (после очереди, не дожидаясь).
+  if (ep.status !== "awaiting_approval") autoLanguageVersion(ep).catch((e) => log.warn(`Языковая версия ${id}: ${errorMessage(e)}`));
+  return ep;
+}
+
+function approveInQueue(id: string, who: Decider): Promise<Episode> {
   return exclusive(async () => {
     const ep = loadEpisode(id);
     assertClientTurn(ep, who);
@@ -438,4 +447,66 @@ export async function dailyAll(): Promise<Episode[]> {
   }
   saveState({ lastDailyRun: localDay() });
   return results;
+}
+
+/** Какие языковые версии умеем делать: русская — из русского перевода реплик, который пишет Сценарист. */
+export const VERSION_LANGUAGES = ["ru"] as const;
+export type VersionLanguage = (typeof VERSION_LANGUAGES)[number];
+
+/**
+ * Языковая версия серии: те же кадры, реплики из перевода, новая озвучка, анимация и субтитры.
+ * В тариф клиента не засчитывается — это та же серия на втором языке.
+ */
+export async function makeLanguageVersion(id: string, language: VersionLanguage = "ru", orderedBy = "Студия"): Promise<Episode> {
+  const childId = await exclusive(async () => {
+    const parent = loadEpisode(id);
+    const series = loadSeries(parent.series);
+    if (parent.parentId) throw new Error("Это уже языковая версия серии");
+    if ((parent.language ?? series.language) === language) throw new Error("Серия уже на этом языке");
+    if (parent.versions?.[language]) throw new Error("Русская версия этой серии уже есть");
+    if (!parent.script || !parent.hook || !parent.shots || !parent.keyframes || !parent.shots.every((s) => parent.keyframes![s.scene_id])) {
+      throw new Error("Серия ещё не готова: нужны сценарий и кадры");
+    }
+    const child = createEpisode(series.slug, { brief: parent.brief, engine: parent.engineChoice });
+    child.language = language;
+    child.parentId = parent.id;
+    child.orderedBy = orderedBy;
+    child.idea = parent.idea;
+    child.ideaAlternatives = parent.ideaAlternatives;
+    child.script = {
+      ...parent.script,
+      scenes: parent.script.scenes.map((sc) => ({ ...sc, lines: sc.lines.map((l) => ({ ...l, text: l.translation_ru, translation_ru: l.text })) })),
+      caption: parent.script.caption_ru,
+      caption_ru: parent.script.caption,
+    };
+    child.hook = {
+      ...parent.hook,
+      opening_line: parent.hook.opening_line_ru,
+      opening_line_ru: parent.hook.opening_line,
+      on_screen_text: parent.hook.opening_line_ru.split(/\s+/).slice(0, 5).join(" "),
+    };
+    child.shots = parent.shots;
+    child.engines = parent.engines?.image ? { image: parent.engines.image } : undefined;
+    child.keyframes = {};
+    for (const [scene, rel] of Object.entries(parent.keyframes)) {
+      fs.mkdirSync(path.dirname(episodeFile(child, rel)), { recursive: true });
+      fs.copyFileSync(episodeFile(parent, rel), episodeFile(child, rel));
+      child.keyframes[scene] = rel;
+    }
+    saveEpisode(child);
+    parent.versions = { ...parent.versions, [language]: child.id };
+    saveEpisode(parent);
+    log.agent(PRODUCER, `${parent.id}: собираю русскую версию ${child.id}`);
+    return child.id;
+  });
+  return runEpisode(childId);
+}
+
+/** Вторая языковая версия для клиента, у которого она включена, — после того как студия передала серию клиенту. */
+async function autoLanguageVersion(ep: Episode): Promise<void> {
+  const client = clientForBrand(ep.series);
+  const language = client?.secondLanguage;
+  if (!client || !language || ep.parentId || ep.versions?.[language]) return;
+  if (!["awaiting_client", "approved", "published"].includes(ep.status)) return;
+  await makeLanguageVersion(ep.id, language, "Автопилот");
 }

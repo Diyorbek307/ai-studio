@@ -283,6 +283,12 @@ export interface Episode {
   feedbackFrom?: "studio" | "client";
   /** Повод из календаря («navruz:2027»), если серия к празднику: второй к тому же поводу автопилот не сделает. */
   occasion?: string;
+  /** Язык этой серии, если он отличается от языка сериала (языковая версия). */
+  language?: "uz" | "ru" | "en";
+  /** Серия-оригинал, из которой сделана эта языковая версия. */
+  parentId?: string;
+  /** Языковые версии этой серии: язык → id серии. */
+  versions?: Partial<Record<"uz" | "ru" | "en", string>>;
   publish?: {
     at: string;
     mediaId?: string;

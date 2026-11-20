@@ -565,7 +565,12 @@ main { padding-block: 20px 48px; }
         <select id="ceStatus" name="status"><option value="active">Активен</option><option value="paused">Пауза — без новых серий и счетов</option></select>
       </label>
     </div>
-    <label class="field" for="ceApproval"><span>Кто согласует серии</span><select id="ceApproval" name="approval"></select></label>
+    <div class="field-row">
+      <label class="field" for="ceApproval"><span>Кто согласует серии</span><select id="ceApproval" name="approval"></select></label>
+      <label class="field" for="ceLang"><span>Вторая версия</span>
+        <select id="ceLang" name="secondLanguage"><option value="">Нет</option><option value="ru">Русская — к каждой серии</option></select>
+      </label>
+    </div>
     <div class="field-row">
       <label class="field" for="ceContact"><span>Контактное лицо</span><input id="ceContact" name="contactName" maxlength="80"></label>
       <label class="field" for="cePhone"><span>Телефон</span><input id="cePhone" name="phone" type="tel" maxlength="40"></label>
@@ -957,8 +962,12 @@ main { padding-block: 20px 48px; }
       return `<div class="actions"><button class="btn primary" type="button" data-act="run" data-id="${ep.id}" ${busy}>Продолжить с места остановки</button></div>`;
     if (ep.status === "approved" && ep.error)
       return `<div class="actions"><button class="btn primary" type="button" data-act="approve" data-id="${ep.id}" ${busy}>Попробовать опубликовать снова</button></div>`;
+    const brandLang = brandBySlug(ep.series)?.language;
+    const canVersion = !ep.parentId && !ep.versions?.ru && brandLang && brandLang !== "ru" && ["approved", "published"].includes(ep.status);
+    const versionBtn = canVersion ? `<button class="btn" type="button" data-act="version" data-id="${ep.id}" ${busy} title="Те же кадры, русская озвучка и субтитры. В тариф не засчитывается">Русская версия</button>` : "";
     if (ep.status === "published" && ep.publish?.permalink)
-      return `<div class="actions"><a class="btn" href="${esc(ep.publish.permalink)}" target="_blank" rel="noopener">Открыть в Instagram</a></div>`;
+      return `<div class="actions"><a class="btn" href="${esc(ep.publish.permalink)}" target="_blank" rel="noopener">Открыть в Instagram</a>${versionBtn}</div>`;
+    if (versionBtn) return `<div class="actions">${versionBtn}${ep.video && !PREVIEW ? `<a class="btn" href="${esc(ep.video)}" download="${esc(ep.id)}.mp4">Скачать ролик</a>` : ""}</div>`;
     if (ep.status === "approved" && ep.video && !PREVIEW)
       return `<div class="actions"><a class="btn" href="${esc(ep.video)}" download="${esc(ep.id)}.mp4">Скачать ролик</a></div>`;
     return "";
@@ -979,6 +988,8 @@ main { padding-block: 20px 48px; }
       state.brands.length > 1 ? `<span class="tag">${esc(ep.seriesTitle)}</span>` : "",
       ep.engine ? `<span class="tag engine-tag">${esc(ep.engine)}</span>` : "",
       !isClient() && ep.orderedBy && ep.orderedBy !== "Студия" ? `<span class="tag">${ep.orderedBy === "Автопилот" ? "автопилот" : "заказ клиента"}</span>` : "",
+      ep.language ? `<span class="tag engine-tag">версия ${esc(ep.language.toUpperCase())}</span>` : "",
+      ep.versions?.ru ? '<span class="tag">есть версия RU</span>' : "",
     ].join("");
     const meta = isClient()
       ? `<span>${esc(date)}</span>${ep.duration ? `<span>${Math.round(ep.duration)} с</span>` : ""}`
@@ -1437,6 +1448,7 @@ main { padding-block: 20px 48px; }
     $("#cePlan").innerHTML = planOptions(c.plan);
     $("#ceApproval").innerHTML = options(state.approvalModes, c.approval);
     $("#ceStatus").value = c.status;
+    $("#ceLang").value = c.secondLanguage || "";
     $("#ceContact").value = c.contactName;
     $("#cePhone").value = c.phone || "";
     $("#ceLegalName").value = c.legal?.name || "";
@@ -1662,6 +1674,9 @@ main { padding-block: 20px 48px; }
         break;
       case "run":
         run(id, base + "/run", null, "Продолжаю с места остановки");
+        break;
+      case "version":
+        run(id, base + "/version", null, "Собираю русскую версию — она появится отдельной серией");
         break;
     }
   });

@@ -12,6 +12,19 @@ export interface SpeechResult {
 const LOCALE = { uz: "uz-UZ", ru: "ru-RU", en: "en-US" } as const;
 const DEFAULT_VOICE = { uz: "uz-UZ-SardorNeural", ru: "ru-RU-DmitryNeural", en: "en-US-GuyNeural" } as const;
 
+const FEMALE_AZURE = { uz: "uz-UZ-MadinaNeural", ru: "ru-RU-SvetlanaNeural", en: "en-US-JennyNeural" } as const;
+const FEMALE_NAMES = /Madina|Svetlana|Dariya|Jenny|Aria|Sara|Ava|Emma|Michelle/i;
+
+/**
+ * Голос героя для другого языка (русская версия серии): Azure-голос подбирается того же пола
+ * под нужный язык, темп и высота сохраняются. Голос Gemini подходит для всех языков и не меняется.
+ */
+export function voiceForLanguage(voice: Character["voice"], language: keyof typeof LOCALE): Character["voice"] {
+  if (!voice.azure || voice.azure.startsWith(LOCALE[language])) return voice;
+  const female = FEMALE_NAMES.test(voice.azure);
+  return { ...voice, azure: female ? FEMALE_AZURE[language] : DEFAULT_VOICE[language] };
+}
+
 function xmlEscape(text: string): string {
   return text
     .replace(/&/g, "&amp;")

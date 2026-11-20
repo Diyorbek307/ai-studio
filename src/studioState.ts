@@ -74,6 +74,10 @@ export interface UiEpisode {
   approvalLog: ApprovalEntry[];
   /** Компания-клиент бренда, если есть. */
   clientCompany?: string;
+  /** Язык языковой версии ("ru"), если серия — версия другой серии. */
+  language?: string;
+  parentId?: string;
+  versions?: Partial<Record<string, string>>;
 }
 
 export interface UiAsset {
@@ -189,6 +193,9 @@ export function toUiEpisode(ep: Episode, seriesTitle: string, mediaUrl: MediaUrl
     feedbackFrom: ep.feedbackFrom,
     approvalLog: ep.approvalLog ?? [],
     clientCompany,
+    language: ep.language,
+    parentId: ep.parentId,
+    versions: ep.versions,
   };
 }
 
@@ -326,7 +333,7 @@ export function buildStudioState(
       schedule: { dailyAt: "", timezone: config.schedule.timezone, episodesPerDay: 0 },
       agents: [],
       episodes: mine.slice(0, 60).map((ep) => forClient(toUiEpisode(ep, titles.get(ep.series) ?? ep.series, opts.mediaUrl), ep)),
-      me: { ...publicClient(me), features: PLANS[me.plan].features, invoices: uiInvoices(listInvoices(me.id), clients, invoiceUrl), weeklyReport: PLANS[me.plan].weeklyReport },
+      me: { ...publicClient(me, localDay(), all), features: PLANS[me.plan].features, invoices: uiInvoices(listInvoices(me.id), clients, invoiceUrl), weeklyReport: PLANS[me.plan].weeklyReport },
       reports: listReports(me.id).slice(0, 8),
     };
   }
@@ -351,7 +358,7 @@ export function buildStudioState(
     schedule: { dailyAt: config.schedule.dailyAt, timezone: config.schedule.timezone, episodesPerDay: config.schedule.episodesPerDay },
     agents: STARTER_AGENTS.map(({ no, name, dept, does }) => ({ no, name, dept, does })),
     episodes: all.slice(0, 80).map((ep) => toUiEpisode(ep, titles.get(ep.series) ?? ep.series, opts.mediaUrl, companyOf.get(ep.series))),
-    clients: clients.map((c) => publicClient(c)),
+    clients: clients.map((c) => publicClient(c, localDay(), all)),
     invoices: uiInvoices(listInvoices(), clients, invoiceUrl),
     leads: listLeads(50),
     reports: listReports().slice(0, 40),

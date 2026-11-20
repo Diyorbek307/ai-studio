@@ -2,7 +2,7 @@ import path from "node:path";
 import { assertBudget, recordCost } from "../budget.js";
 import { log } from "../log.js";
 import { mediaDuration } from "../media/ffmpeg.js";
-import { speak } from "../providers/tts.js";
+import { speak, voiceForLanguage } from "../providers/tts.js";
 import { episodeDir, episodeFile } from "../store.js";
 import type { Episode, Series, VoiceLine, VoiceTimeline } from "../types.js";
 import { characterById } from "./context.js";
@@ -61,10 +61,12 @@ export async function voiceEpisode(ep: Episode, series: Series): Promise<VoiceTi
     for (const [i, line] of scene.lines.entries()) {
       assertBudget();
       const character = characterById(series, line.character);
+      // Языковая версия серии (например, русская) озвучивается на своём языке голосом того же пола.
+      const language = ep.language ?? series.language;
       const result = await speak({
         text: line.text,
-        language: series.language,
-        voice: character?.voice ?? {},
+        language,
+        voice: voiceForLanguage(character?.voice ?? {}, language),
         emotion: line.emotion,
         outBase: episodeFile(ep, `voice/${scene.id}-${i + 1}`),
       });
