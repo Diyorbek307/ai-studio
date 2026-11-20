@@ -91,3 +91,20 @@ test("образцы для платных движков: только нари
   assert.ok(refs[0]!.base64.length > 1000);
   await assert.rejects(trainCharacter("bozor-seriali", "qovun"), /Higgsfield не подключён/);
 });
+
+test("фирменная концовка: у брендов клиентов по умолчанию, в конце ролика ещё 2.2 с", async () => {
+  const { endCardFor, END_CARD_SECONDS } = await import("../src/media/endCard.js");
+  const { saveSeries } = await import("../src/store.js");
+  const own = loadSeries("bozor-seriali");
+  assert.equal(endCardFor(own), undefined); // свой сериал студии — без концовки
+  const brand = { ...own, client: { company: "Lazzat Somsa", product: "Самса из тандыра" } };
+  assert.deepEqual(endCardFor(brand), { title: "Lazzat Somsa", slogan: "Самса из тандыра", cta: undefined, color: own.characters[0]!.color });
+  assert.equal(endCardFor({ ...brand, end_card: { enabled: false } }), undefined);
+
+  saveSeries({ ...own, end_card: { enabled: true, title: "Bozor Seriali", cta: "@bozor.seriali · +998 90 000 00 00" } });
+  const ep = await newEpisode("bozor-seriali");
+  assert.equal(ep.status, "awaiting_approval", ep.error);
+  const info = await probe(path.join(episodeDir(ep.id), ep.final!));
+  assert.ok(Math.abs(info.duration - (ep.voice!.total + END_CARD_SECONDS)) < 0.5, `${info.duration} vs ${ep.voice!.total}`);
+  saveSeries(own);
+});

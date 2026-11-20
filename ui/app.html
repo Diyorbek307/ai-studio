@@ -1118,6 +1118,21 @@ main { padding-block: 20px 48px; }
     return `<button class="btn small" type="button" data-train="${esc(b.slug)}|${esc(a.id)}" title="${status === "failed" ? esc(a.soul.failReason || "Прошлое обучение не удалось") : "Higgsfield обучит модель на этом герое: в кадрах он будет одинаковым"}">${status === "failed" ? "Обучить заново" : "Обучить в Higgsfield"}</button>`;
   }
 
+  // Фирменная концовка серии: название, слоган, контакт — последние 2 секунды каждого ролика бренда.
+  function endCardForm(b) {
+    const set = b.endCardSettings || {};
+    const on = Boolean(b.endCard);
+    const summary = on ? `Концовка: ${esc(b.endCard.title)}${b.endCard.cta ? ` · ${esc(b.endCard.cta)}` : ""}` : "Концовка серий: выключена";
+    return `<details class="assets"><summary>${summary}</summary>
+      <form class="endcard" data-endcard="${esc(b.slug)}" style="display:grid;gap:10px;margin-top:10px">
+        <label class="engine" style="grid-auto-flow:column;justify-content:start;gap:8px"><input type="checkbox" name="enabled" value="1" ${on ? "checked" : ""} style="position:static;opacity:1;pointer-events:auto"><span>Показывать в конце каждой серии (2 секунды)</span></label>
+        <label class="field"><span>Название</span><input name="title" maxlength="60" value="${esc(set.title || "")}" placeholder="${esc(b.client?.company || b.title)}"></label>
+        <label class="field"><span>Слоган</span><input name="slogan" maxlength="90" value="${esc(set.slogan || "")}" placeholder="${esc(b.client?.product || "Короткая фраза о бренде")}"></label>
+        <label class="field"><span>Контакт</span><input name="cta" maxlength="80" value="${esc(set.cta || "")}" placeholder="@instagram · +998 90 123 45 67"></label>
+        <div><button class="btn small primary" type="submit">Сохранить концовку</button></div>
+      </form></details>`;
+  }
+
   function assetTiles(b) {
     const tile = (kind, a) => `<figure class="asset ${kind}">
         <div class="asset-img">${a.art ? `<img src="${esc(a.art)}" alt="${esc(a.name)}" loading="lazy">` : ""}</div>
@@ -1168,7 +1183,11 @@ main { padding-block: 20px 48px; }
     $("#brandsText").textContent = "У каждого бренда свой сериал: маскот, герои, локации и рубрики. Компания-клиент получает серии по тарифу, а ты одобряешь их в один тап.";
     $("#newBrand").hidden = false;
     // Не перерисовываем, пока открыт выбор файла или раскрыт блок картинок: иначе он схлопнется.
-    const open = [...document.querySelectorAll("#brands details[open]")].map((d) => d.closest("[data-brand-card]")?.dataset.brandCard);
+    // Какие раскрывающиеся блоки открыты (картинки, концовка) — после перерисовки откроем их снова.
+    const open = [...document.querySelectorAll("#brands details[open]")].map((d) => {
+      const card = d.closest("[data-brand-card]");
+      return card ? `${card.dataset.brandCard}|${[...card.querySelectorAll("details")].indexOf(d)}` : "";
+    });
     const waiting = expectBrands > 0 ? `<div class="brand-card empty"><span class="spin" aria-hidden="true"></span><p>Дизайнер маскотов собирает новый бренд…</p></div>` : "";
     $("#brands").innerHTML = state.brands
       .map((b) => {
@@ -1191,6 +1210,7 @@ main { padding-block: 20px 48px; }
             <div><b>${money(b.stats.costUsd)}</b><span>расход</span></div>
           </div>
           ${assetTiles(b)}
+          ${endCardForm(b)}
           <div class="brand-actions">
             <button class="btn primary" type="button" data-new-for="${esc(b.slug)}">Новая серия</button>
             <button class="btn" type="button" data-show-brand="${esc(b.slug)}">Серии бренда</button>
@@ -1199,7 +1219,10 @@ main { padding-block: 20px 48px; }
         </article>`;
       })
       .join("") + waiting;
-    for (const slug of open) document.querySelector(`[data-brand-card="${CSS.escape(slug || "")}"] details`)?.setAttribute("open", "");
+    for (const key of open) {
+      const [slug, index] = key.split("|");
+      document.querySelectorAll(`[data-brand-card="${CSS.escape(slug || "")}"] details`)[Number(index)]?.setAttribute("open", "");
+    }
   }
 
   // ---------- Клиенты (владелец) ----------
@@ -1780,6 +1803,20 @@ main { padding-block: 20px 48px; }
   });
 
   document.addEventListener("submit", async (event) => {
+    const endcard = event.target.dataset?.endcard;
+    if (endcard) {
+      event.preventDefault();
+      const form = new FormData(event.target);
+      const ok = await post(`/api/brands/${endcard}/endcard`, {
+        enabled: form.get("enabled") ? "1" : "0",
+        title: form.get("title") || "",
+        slogan: form.get("slogan") || "",
+        cta: form.get("cta") || "",
+      });
+      if (ok) toast("Концовка сохранена — она будет в следующих сериях");
+      load();
+      return;
+    }
     if (event.target.id !== "pwForm") return;
     event.preventDefault();
     const form = new FormData(event.target);

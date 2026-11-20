@@ -154,7 +154,7 @@ async function runStep(ep: Episode, series: Series, step: Step): Promise<Series>
       await animateScenes(ep, series);
       break;
     case "edit":
-      ep.edited = await editEpisode(ep);
+      ep.edited = await editEpisode(ep, series);
       break;
     case "subtitles": {
       const out = await addSubtitles(ep);

@@ -18,6 +18,7 @@ import {
 import { config } from "./config.js";
 import { type Lead, listLeads } from "./leads.js";
 import { listReports, type WeeklyReport } from "./reports.js";
+import { endCardFor } from "./media/endCard.js";
 import { CHARACTER_VARIANTS, type CharacterVariant, characterAsset, isPlaceholder, locationAsset } from "./media/cutout.js";
 import { isStepDone, STEPS, type Step } from "./pipeline.js";
 import { PLAN_IDS, PLANS, type Plan } from "./plans.js";
@@ -106,6 +107,10 @@ export interface UiBrand {
   locations: UiAsset[];
   rubrics: string[];
   stats: { episodes: number; waiting: number; published: number; costUsd: number };
+  /** Фирменная концовка: что увидит зритель в конце серии (undefined — концовки нет). */
+  endCard?: { title: string; slogan?: string; cta?: string };
+  /** Что записано в библии сериала — для формы настройки. */
+  endCardSettings?: { enabled?: boolean; title?: string; slogan?: string; cta?: string };
 }
 
 export type UiInvoice = Invoice & { company: string; planName: string; url: string };
@@ -277,6 +282,8 @@ function toUiBrand(series: Series, episodes: Episode[], assetUrl: AssetUrl): UiB
     })),
     locations: series.locations.map((l) => assetInfo(series.slug, "locations", l.id, l.name, assetUrl)),
     rubrics: series.rubrics,
+    endCard: endCardFor(series),
+    endCardSettings: series.end_card,
     stats: {
       episodes: own.length,
       waiting: own.filter((e) => ["awaiting_approval", "awaiting_feedback", "awaiting_client"].includes(e.status)).length,

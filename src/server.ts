@@ -41,7 +41,7 @@ import { botUsername, sendMessage, telegramEnabled } from "./integrations/telegr
 import { type AssetKind, characterAsset, type CharacterVariant, isCharacterVariant, locationAsset, saveAsset } from "./media/cutout.js";
 import { approveEpisode, dailyAll, makeLanguageVersion, prepareEpisode, redoEpisode, rejectEpisode, runEpisode } from "./pipeline.js";
 import { PLAN_IDS, PLANS } from "./plans.js";
-import { BUNDLED_SERIES_DIR, episodeDir, loadEpisode, loadSeries, loadState, saveEpisode, saveState } from "./store.js";
+import { BUNDLED_SERIES_DIR, episodeDir, loadEpisode, loadSeries, loadState, saveEpisode, saveSeries, saveState } from "./store.js";
 import type { Episode } from "./types.js";
 import { renderWatchPage } from "./watchPage.js";
 import { buildStudioState } from "./studioState.js";
@@ -554,6 +554,23 @@ async function handlePrivate(req: http.IncomingMessage, res: http.ServerResponse
       }),
     );
     json(res, 202, { ok: true });
+    return;
+  }
+
+  const endCard = /^\/api\/brands\/([a-z0-9-]+)\/endcard$/.exec(url.pathname);
+  if (endCard) {
+    const series = loadSeries(endCard[1]!);
+    const field = (k: string, max: number) => (form.get(k) ?? "").replace(/\s+/g, " ").trim().slice(0, max) || undefined;
+    series.end_card = {
+      enabled: form.get("enabled") === "1",
+      title: field("title", 60),
+      slogan: field("slogan", 90),
+      cta: field("cta", 80),
+      color: series.end_card?.color,
+    };
+    saveSeries(series);
+    audit("Студия", series.end_card.enabled ? "настроила концовку серий" : "выключила концовку серий", series.title);
+    json(res, 200, { ok: true });
     return;
   }
 

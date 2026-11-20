@@ -4,7 +4,8 @@ import { config } from "../config.js";
 import { log } from "../log.js";
 import { ffmpeg } from "../media/ffmpeg.js";
 import { episodeDir, episodeFile } from "../store.js";
-import type { Episode } from "../types.js";
+import { END_CARD_SECONDS, endCardFor, renderEndCard } from "../media/endCard.js";
+import type { Episode, Series } from "../types.js";
 import { agentInfo } from "./index.js";
 
 const AGENT = agentInfo(61);
@@ -26,7 +27,7 @@ export function pickMusic(episodeId: string, dir = config.musicDir): string | un
  * Склейка: каждый клип подгоняется под длину своей сцены, клипы идут подряд,
  * реплики ложатся на свои места, музыка тихо играет под ними.
  */
-export async function editEpisode(ep: Episode): Promise<string> {
+export async function editEpisode(ep: Episode, series?: Series): Promise<string> {
   if (!ep.voice || !ep.clips) throw new Error("Нет клипов или озвучки");
   const { width: W, height: H, fps } = config.render;
   const dir = episodeDir(ep.id);
@@ -60,13 +61,21 @@ export async function editEpisode(ep: Episode): Promise<string> {
     segments.push(seg);
   }
 
+  // Фирменная концовка бренда — последним сегментом, музыка доигрывает под ней.
+  const card = series ? endCardFor(series) : undefined;
+  if (card && series) {
+    const seg = path.join(work, "seg-endcard.mp4");
+    await renderEndCard(series, card, seg);
+    segments.push(seg);
+  }
+
   const list = path.join(work, "segments.txt");
   fs.writeFileSync(list, segments.map((s) => `file '${path.basename(s)}'`).join("\n") + "\n");
   const videoOnly = path.join(work, "video.mp4");
   await ffmpeg(["-f", "concat", "-safe", "0", "-i", "segments.txt", "-c", "copy", path.basename(videoOnly)], work);
 
   // 2. Звуковая дорожка: тишина на всю длину + реплики со сдвигом + музыка.
-  const total = ep.voice.total;
+  const total = ep.voice.total + (card ? END_CARD_SECONDS : 0);
   const inputs: string[] = ["-i", videoOnly];
   const filters: string[] = [`anullsrc=channel_layout=stereo:sample_rate=44100:d=${total.toFixed(3)}[base]`];
   const mixLabels = ["[base]"];
@@ -110,6 +119,6 @@ export async function editEpisode(ep: Episode): Promise<string> {
     path.join(dir, out),
   ]);
 
-  log.agent(AGENT, `смонтировано ${segments.length} сцен${music ? `, музыка: ${path.basename(music)}` : ", без музыки"}`);
+  log.agent(AGENT, `смонтировано ${segments.length - (card ? 1 : 0)} сцен${card ? " + фирменная концовка" : ""}${music ? `, музыка: ${path.basename(music)}` : ", без музыки"}`);
   return out;
 }

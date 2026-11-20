@@ -200,6 +200,17 @@ test("картинка героя заменяет заглушку; клиен�
   assert.equal((await asClient("/api/brands/bozor-seriali/characters/qovun")).status, 403);
 });
 
+test("концовка бренда настраивается владельцем, клиенту запрещено", async () => {
+  assert.equal((await asClient("/api/brands/bozor-seriali/endcard", { enabled: "1", title: "X" })).status, 403);
+  assert.equal((await asOwner("/api/brands/bozor-seriali/endcard", { enabled: "1", title: "Bozor  Seriali ", cta: "@bozor" })).status, 200);
+  const owners = (await (await fetch(base + "/api/state", { headers: owner })).json()) as State;
+  const b = owners.brands.find((x) => x.slug === "bozor-seriali")!;
+  assert.deepEqual(b.endCard && [b.endCard.title, b.endCard.cta], ["Bozor Seriali", "@bozor"]);
+  await asOwner("/api/brands/bozor-seriali/endcard", { enabled: "0" });
+  const after = (await (await fetch(base + "/api/state", { headers: owner })).json()) as State;
+  assert.equal(after.brands.find((x) => x.slug === "bozor-seriali")!.endCard, undefined);
+});
+
 test("смена пароля выдаёт новую сессию, выход стирает cookie", async () => {
   const res = await asClient("/api/me/password", { current: "client-pass-1", next: "client-pass-2" });
   assert.equal(res.status, 200);

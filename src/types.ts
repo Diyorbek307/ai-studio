@@ -66,6 +66,16 @@ export const SeriesSchema = z.object({
       contact: z.string().optional(),
     })
     .optional(),
+  /** Фирменная концовка серии: у брендов клиентов включена по умолчанию. */
+  end_card: z
+    .object({
+      enabled: z.boolean().optional(),
+      title: z.string().optional(),
+      slogan: z.string().optional(),
+      cta: z.string().optional(),
+      color: z.string().optional(),
+    })
+    .optional(),
   createdAt: z.string().optional(),
 });
 export type Series = z.infer<typeof SeriesSchema>;
