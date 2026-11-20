@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { localDay } from "./budget.js";
+import { config } from "./config.js";
 import { type IgAccount, studioInstagram } from "./integrations/instagram.js";
 import { readCollection, writeCollection } from "./db.js";
 import { PLANS, type PlanId, billingPeriods, currentPeriod, isPlan } from "./plans.js";
@@ -44,6 +45,8 @@ export interface Client {
   legal?: { name?: string; inn?: string; address?: string };
   /** Вторая языковая версия каждой серии (тариф «Сеть»: 2 языка). */
   secondLanguage?: "ru";
+  /** Telegram-канал бренда: бот публикует туда одобренные серии. */
+  telegramChannel?: { chat: string; title: string };
   createdAt: string;
 }
 
@@ -93,6 +96,7 @@ export interface PublicClient {
   instagramConnected: boolean;
   legal?: { name?: string; inn?: string; address?: string };
   secondLanguage?: "ru";
+  telegramChannel?: { chat: string; title: string };
   usage: Usage;
   unpaidUsd: number;
   createdAt: string;
@@ -439,12 +443,28 @@ export function publicClient(client: Client, today = localDay(), episodes?: Epis
     instagramConnected: Boolean(client.instagram),
     legal: client.legal,
     secondLanguage: client.secondLanguage,
+    telegramChannel: client.telegramChannel,
     usage: usage(client, today, episodes),
     unpaidUsd: listInvoices(client.id)
       .filter((i) => i.status === "unpaid")
       .reduce((sum, i) => sum + i.amountUsd, 0),
     createdAt: client.createdAt,
   };
+}
+
+/** Канал клиента сохраняется после проверки прав бота (checkChannel); "" — отключить. */
+export function setTelegramChannel(id: string, channel: { chat: string; title: string } | undefined): Client {
+  const client = getClient(id);
+  if (channel) client.telegramChannel = channel;
+  else delete client.telegramChannel;
+  return saveClient(client);
+}
+
+/** Telegram-канал сериала: у бренда клиента — канал клиента, у своего сериала — TELEGRAM_CHANNEL. */
+export function telegramChannelFor(brand: string): string | undefined {
+  const client = clientForBrand(brand);
+  if (client) return client.telegramChannel?.chat;
+  return config.telegram.channel || undefined;
 }
 
 /**

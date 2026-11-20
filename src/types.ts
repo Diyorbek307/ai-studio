@@ -307,6 +307,8 @@ export interface Episode {
     permalink?: string;
     dryRun?: boolean;
     note?: string;
+    /** Пост в Telegram-канале бренда: id сообщения или ошибка. */
+    telegram?: { chat: string; messageId?: number; error?: string };
   };
   stats?: { fetchedAt: string; metrics: Record<string, number> };
 }

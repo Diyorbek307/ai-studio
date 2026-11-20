@@ -117,6 +117,8 @@ export const config = {
     adminChatId: str("TELEGRAM_ADMIN_CHAT_ID"),
     /** Имя бота без @ — для ссылки, по которой клиент подключает Telegram (иначе узнаём у Telegram). */
     botUsername: str("TELEGRAM_BOT_USERNAME"),
+    /** Telegram-канал собственного сериала студии (@имя или -100…): бот публикует туда одобренные серии. */
+    channel: str("TELEGRAM_CHANNEL"),
   },
 
   instagram: {

@@ -28,6 +28,7 @@ import {
   getClient,
   listInvoices,
   markInvoicePaid,
+  setTelegramChannel,
   telegramLinkCode,
   updateClient,
 } from "./clients.js";
@@ -37,7 +38,7 @@ import { addLead } from "./leads.js";
 import { errorMessage, log } from "./log.js";
 import { designBrandSeries } from "./agents/mascotDesigner.js";
 import { trainCharacter, watchSoulTraining } from "./agents/soulTrainer.js";
-import { botUsername, sendMessage, telegramEnabled } from "./integrations/telegram.js";
+import { botUsername, checkChannel, isChannelRef, sendMessage, telegramEnabled } from "./integrations/telegram.js";
 import { type AssetKind, characterAsset, type CharacterVariant, isCharacterVariant, locationAsset, saveAsset } from "./media/cutout.js";
 import { approveEpisode, dailyAll, makeLanguageVersion, prepareEpisode, redoEpisode, rejectEpisode, runEpisode } from "./pipeline.js";
 import { PLAN_IDS, PLANS } from "./plans.js";
@@ -186,6 +187,25 @@ function actorName(viewer: Viewer): string {
 async function notifyOwner(text: string): Promise<void> {
   if (!telegramEnabled()) return;
   await sendMessage(config.telegram.adminChatId, text).catch((e) => log.warn(`Telegram: ${errorMessage(e)}`));
+}
+
+/** Подключает Telegram-канал клиента после проверки прав бота; пустая строка — отключить. Возвращает название канала. */
+async function connectChannel(clientId: string, raw: string): Promise<string | undefined> {
+  const chat = raw.trim().replace(/^https?:\/\/t\.me\//, "@");
+  if (!chat) {
+    setTelegramChannel(clientId, undefined);
+    return undefined;
+  }
+  if (!isChannelRef(chat)) throw new HttpError(400, "Канал: @имя_канала или ссылка t.me/имя_канала");
+  if (!telegramEnabled()) throw new HttpError(400, "Сначала подключите Telegram-бота студии (TELEGRAM_BOT_TOKEN)");
+  let title: string;
+  try {
+    title = await checkChannel(chat);
+  } catch (error) {
+    throw new HttpError(400, errorMessage(error));
+  }
+  setTelegramChannel(clientId, { chat, title });
+  return title;
 }
 
 class HttpError extends Error {
@@ -531,6 +551,14 @@ async function handlePrivate(req: http.IncomingMessage, res: http.ServerResponse
     return;
   }
 
+  if (url.pathname === "/api/me/channel") {
+    if (viewer.role !== "client") throw new HttpError(403, "Нет доступа");
+    const title = await connectChannel(viewer.client.id, form.get("channel") ?? "");
+    audit(viewer.client.company, title ? "подключил(а) Telegram-канал" : "отключил(а) Telegram-канал", title);
+    json(res, 200, { ok: true, title });
+    return;
+  }
+
   if (url.pathname === "/api/me/password") {
     if (viewer.role !== "client") throw new HttpError(403, "Нет доступа");
     changePassword(viewer.client.id, form.get("current") ?? "", form.get("next") ?? "");
@@ -609,6 +637,10 @@ async function handlePrivate(req: http.IncomingMessage, res: http.ServerResponse
       return;
     }
     const before = getClient(id);
+    const channel = form.get("telegramChannel");
+    if (channel !== null && channel.trim() !== (before.telegramChannel?.chat ?? "")) {
+      await connectChannel(id, channel);
+    }
     const client = updateClient(id, {
       plan: form.get("plan") ?? undefined,
       approval: form.get("approval") ?? undefined,

@@ -587,6 +587,7 @@ main { padding-block: 20px 48px; }
         <label class="field" for="ceLegalAddress"><span>Адрес</span><input id="ceLegalAddress" name="legalAddress" maxlength="200" placeholder="Ташкент, ул. …"></label>
       </div>
     </fieldset>
+    <label class="field" for="ceChannel"><span>Telegram-канал бренда <small>бот должен быть админом канала</small></span><input id="ceChannel" name="telegramChannel" maxlength="64" placeholder="@lazzat_somsa"></label>
     <fieldset class="field">
       <legend>Instagram клиента <small id="ceIgState"></small></legend>
       <div class="field-row">
@@ -893,9 +894,9 @@ main { padding-block: 20px 48px; }
     if (ep.status === "failed") return `<div class="note bad"><strong>Остановилась с ошибкой</strong><span>${esc(ep.error)}</span></div>`;
     if (ep.status === "paused_budget") return `<div class="note warn"><strong>Пауза: кончился дневной бюджет</strong><span>Продолжится завтра или после кнопки «Продолжить».</span></div>`;
     if (ep.status === "approved" && ep.publish?.dryRun)
-      return `<div class="note good"><strong>Одобрено</strong><span>Instagram не подключён: ролик готов, выложи его вручную.</span></div>`;
+      return `<div class="note good"><strong>Одобрено${ep.publish.telegram ? " · в Telegram-канале" : ""}</strong><span>${ep.publish.telegram ? "Пост в канале вышел. Instagram не подключён — выложи ролик туда вручную." : "Instagram не подключён: ролик готов, выложи его вручную."}</span></div>`;
     if (ep.status === "approved" && ep.error) return `<div class="note bad"><strong>Одобрено, но публикация не удалась</strong><span>${esc(ep.error)}</span></div>`;
-    if (ep.status === "published") return `<div class="note good"><strong>Опубликовано в Instagram</strong></div>`;
+    if (ep.status === "published") return `<div class="note good"><strong>Опубликовано в Instagram${ep.publish?.telegram ? " и Telegram-канале" : ""}</strong></div>`;
     if (ep.status === "awaiting_feedback") return `<div class="note warn"><strong>Ждём твои правки</strong><span>Напиши ниже, что исправить, и студия переделает серию.</span></div>`;
     return "";
   }
@@ -1244,6 +1245,7 @@ main { padding-block: 20px 48px; }
         ${login}
         <span class="tag ${c.telegramLinked ? "ok" : ""}">Telegram ${c.telegramLinked ? "✓" : "—"}</span>
         <span class="tag ${c.instagramConnected ? "ok" : ""}">Instagram ${c.instagramConnected ? "✓" : "—"}</span>
+        <span class="tag ${c.telegramChannel ? "ok" : ""}" title="${esc(c.telegramChannel?.title || "")}">канал ${c.telegramChannel ? "✓" : "—"}</span>
         <span class="tag">${esc(c.approvalLabel)}</span>
         ${c.unpaidUsd ? `<span class="tag bad">не оплачено ${usd(c.unpaidUsd)}</span>` : ""}
         ${(() => {
@@ -1367,6 +1369,10 @@ main { padding-block: 20px 48px; }
     }[me.approval];
     $("#settingsBox").innerHTML = `
       <div class="setting"><div class="setting-head"><b>Telegram</b><span class="state ${me.telegramLinked ? "on" : "off"}">${me.telegramLinked ? "Подключён" : "Не подключён"}</span></div>${tg}</div>
+      <form class="setting" id="channelForm"><div class="setting-head"><b>Telegram-канал</b><span class="state ${me.telegramChannel ? "on" : "off"}">${me.telegramChannel ? esc(me.telegramChannel.title) : "Не подключён"}</span></div>
+        <p>${me.telegramChannel ? `Одобренные серии сами выходят в канал ${esc(me.telegramChannel.chat)}.` : "Одобренные серии могут сами выходить в ваш Telegram-канал: добавьте бота студии администратором канала с правом публикации и укажите канал."}</p>
+        <div class="copy"><input name="channel" maxlength="64" placeholder="@имя_канала" value="${esc(me.telegramChannel?.chat || "")}" aria-label="Telegram-канал"><button class="btn" type="submit">${me.telegramChannel ? "Сохранить" : "Подключить"}</button></div>
+      </form>
       <div class="setting"><div class="setting-head"><b>Instagram</b><span class="state ${me.instagramConnected ? "on" : "off"}">${me.instagramConnected ? "Подключён" : "Не подключён"}</span></div>
         <p>${me.instagramConnected ? "Одобренные серии сами выходят в ваш Instagram." : "Пока Instagram не подключён, одобренные серии студия публикует вручную. Чтобы серии выходили сами, попросите студию подключить ваш аккаунт."}</p></div>
       <div class="setting"><div class="setting-head"><b>Согласование</b><span class="tag">${esc(me.approvalLabel)}</span></div><p>${esc(approval)}</p></div>
@@ -1499,6 +1505,7 @@ main { padding-block: 20px 48px; }
     $("#ceApproval").innerHTML = options(state.approvalModes, c.approval);
     $("#ceStatus").value = c.status;
     $("#ceLang").value = c.secondLanguage || "";
+    $("#ceChannel").value = c.telegramChannel?.chat || "";
     $("#ceContact").value = c.contactName;
     $("#cePhone").value = c.phone || "";
     $("#ceLegalName").value = c.legal?.name || "";
@@ -1814,6 +1821,13 @@ main { padding-block: 20px 48px; }
         cta: form.get("cta") || "",
       });
       if (ok) toast("Концовка сохранена — она будет в следующих сериях");
+      load();
+      return;
+    }
+    if (event.target.id === "channelForm") {
+      event.preventDefault();
+      const data = await post("/api/me/channel", { channel: new FormData(event.target).get("channel") || "" });
+      if (data) toast(data.title ? `Канал «${data.title}» подключён` : "Канал отключён");
       load();
       return;
     }

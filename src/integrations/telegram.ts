@@ -103,3 +103,26 @@ export async function botUsername(): Promise<string | undefined> {
   }
   return cachedUsername;
 }
+
+/** @имя канала или числовой id (-100…). */
+export function isChannelRef(value: string): boolean {
+  return /^@[A-Za-z0-9_]{5,32}$/.test(value) || /^-100\d{5,}$/.test(value);
+}
+
+/**
+ * Проверяет, что бот может публиковать в канал: канал существует, бот в нём администратор с правом публикации.
+ * Возвращает название канала.
+ */
+export async function checkChannel(chat: string): Promise<string> {
+  const info = await call<{ title?: string; type?: string }>("getChat", { chat_id: chat }).catch(() => {
+    throw new Error("Канал не найден — проверьте @имя или добавьте бота в канал");
+  });
+  if (info.type !== "channel") throw new Error("Это не канал");
+  const me = await call<{ id: number }>("getMe", {});
+  const member = await call<{ status: string; can_post_messages?: boolean }>("getChatMember", { chat_id: chat, user_id: me.id }).catch(() => {
+    throw new Error("Бот не добавлен в канал — добавьте его администратором");
+  });
+  if (member.status !== "administrator" && member.status !== "creator") throw new Error("Сделайте бота администратором канала");
+  if (member.status === "administrator" && member.can_post_messages === false) throw new Error("Дайте боту право публиковать сообщения в канале");
+  return info.title ?? chat;
+}

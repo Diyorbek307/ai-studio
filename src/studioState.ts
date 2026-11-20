@@ -67,7 +67,7 @@ export interface UiEpisode {
   feedback: string[];
   video?: string;
   poster?: string;
-  publish?: { permalink?: string; note?: string; dryRun?: boolean; at: string };
+  publish?: { permalink?: string; note?: string; dryRun?: boolean; at: string; telegram?: string };
   /** Кто заказал: студия, автопилот, клиент. */
   orderedBy?: string;
   /** Чьи правки ждём после «Переделать». */
@@ -195,7 +195,15 @@ export function toUiEpisode(ep: Episode, seriesTitle: string, mediaUrl: MediaUrl
     feedback: ep.feedback,
     video: ep.final ? mediaUrl(ep, ep.final) : undefined,
     poster: posterFile ? mediaUrl(ep, posterFile) : undefined,
-    publish: ep.publish ? { permalink: ep.publish.permalink, note: ep.publish.note, dryRun: ep.publish.dryRun, at: ep.publish.at } : undefined,
+    publish: ep.publish
+      ? {
+          permalink: ep.publish.permalink,
+          note: ep.publish.note,
+          dryRun: ep.publish.dryRun,
+          at: ep.publish.at,
+          telegram: ep.publish.telegram?.messageId ? ep.publish.telegram.chat : undefined,
+        }
+      : undefined,
     orderedBy: ep.orderedBy,
     feedbackFrom: ep.feedbackFrom,
     approvalLog: ep.approvalLog ?? [],
@@ -242,7 +250,16 @@ function forClient(ui: UiEpisode, ep: Episode): UiEpisode {
     feedback: ep.feedback.filter((f) => f.startsWith("Клиент:")).map((f) => f.replace(/^Клиент:\s*/, "")),
     approvalLog: ui.approvalLog.filter((a) => a.by === "client" || a.decision === "sent_to_client"),
     step: undefined,
-    publish: ui.publish ? { ...ui.publish, note: ui.publish.dryRun ? "Серия одобрена — студия опубликует её в ближайшее время." : undefined } : undefined,
+    publish: ui.publish
+      ? {
+          ...ui.publish,
+          note: ui.publish.dryRun
+            ? ui.publish.telegram
+              ? "Опубликовано в вашем Telegram-канале. В Instagram студия выложит серию в ближайшее время."
+              : "Серия одобрена — студия опубликует её в ближайшее время."
+            : undefined,
+        }
+      : undefined,
   };
   if (visible) return base;
   return { ...base, title: ep.brief ? "Серия по вашему заданию" : "Новая серия", logline: "", hook: undefined, lines: [], caption: undefined, hashtags: [], video: undefined, poster: undefined };
