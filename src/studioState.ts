@@ -100,7 +100,9 @@ export interface UiBrand {
   stats: { episodes: number; waiting: number; published: number; costUsd: number };
 }
 
-export type UiInvoice = Invoice & { company: string; planName: string };
+export type UiInvoice = Invoice & { company: string; planName: string; url: string };
+/** Ссылка на страницу счёта (на сервере — /invoices/<id>, в превью — готовый файл). */
+export type InvoiceUrl = (invoice: Invoice) => string;
 
 export interface StudioState {
   generatedAt: string;
@@ -278,13 +280,13 @@ function autoEngineLabel(): string {
   }
 }
 
-function uiInvoices(invoices: Invoice[], clients: Client[]): UiInvoice[] {
+function uiInvoices(invoices: Invoice[], clients: Client[], invoiceUrl: InvoiceUrl): UiInvoice[] {
   const byId = new Map(clients.map((c) => [c.id, c]));
-  return invoices.map((i) => ({ ...i, company: byId.get(i.clientId)?.company ?? i.clientId, planName: PLANS[i.plan].name }));
+  return invoices.map((i) => ({ ...i, company: byId.get(i.clientId)?.company ?? i.clientId, planName: PLANS[i.plan].name, url: invoiceUrl(i) }));
 }
 
 export function buildStudioState(
-  opts: { viewer?: Viewer; episodes?: Episode[]; mediaUrl?: MediaUrl; assetUrl?: AssetUrl } = {},
+  opts: { viewer?: Viewer; episodes?: Episode[]; mediaUrl?: MediaUrl; assetUrl?: AssetUrl; invoiceUrl?: InvoiceUrl } = {},
 ): StudioState {
   const viewer: Viewer = opts.viewer ?? { role: "owner" };
   ensureInvoices();
@@ -294,6 +296,7 @@ export function buildStudioState(
   const titles = new Map(series.map((s) => [s.slug, s.title]));
   const all = opts.episodes ?? listEpisodes();
   const assetUrl = opts.assetUrl ?? serverAssetUrl;
+  const invoiceUrl: InvoiceUrl = opts.invoiceUrl ?? ((i) => `/invoices/${i.id}`);
 
   const common = {
     generatedAt: new Date().toISOString(),
@@ -320,7 +323,7 @@ export function buildStudioState(
       schedule: { dailyAt: "", timezone: config.schedule.timezone, episodesPerDay: 0 },
       agents: [],
       episodes: mine.slice(0, 60).map((ep) => forClient(toUiEpisode(ep, titles.get(ep.series) ?? ep.series, opts.mediaUrl), ep)),
-      me: { ...publicClient(me), features: PLANS[me.plan].features, invoices: uiInvoices(listInvoices(me.id), clients), weeklyReport: PLANS[me.plan].weeklyReport },
+      me: { ...publicClient(me), features: PLANS[me.plan].features, invoices: uiInvoices(listInvoices(me.id), clients, invoiceUrl), weeklyReport: PLANS[me.plan].weeklyReport },
       reports: listReports(me.id).slice(0, 8),
     };
   }
@@ -346,7 +349,7 @@ export function buildStudioState(
     agents: STARTER_AGENTS.map(({ no, name, dept, does }) => ({ no, name, dept, does })),
     episodes: all.slice(0, 80).map((ep) => toUiEpisode(ep, titles.get(ep.series) ?? ep.series, opts.mediaUrl, companyOf.get(ep.series))),
     clients: clients.map((c) => publicClient(c)),
-    invoices: uiInvoices(listInvoices(), clients),
+    invoices: uiInvoices(listInvoices(), clients, invoiceUrl),
     leads: listLeads(50),
     reports: listReports().slice(0, 40),
     audit: recentAudit(60),

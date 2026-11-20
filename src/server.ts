@@ -25,11 +25,13 @@ import {
   createClient,
   createInvite,
   getClient,
+  listInvoices,
   markInvoicePaid,
   telegramLinkCode,
   updateClient,
 } from "./clients.js";
 import { config, describeProviders } from "./config.js";
+import { renderInvoicePage } from "./invoicePage.js";
 import { addLead } from "./leads.js";
 import { errorMessage, log } from "./log.js";
 import { designBrandSeries } from "./agents/mascotDesigner.js";
@@ -348,6 +350,21 @@ async function handlePrivate(req: http.IncomingMessage, res: http.ServerResponse
     return;
   }
 
+  const invoicePage = /^\/invoices\/(inv-[0-9a-f]{8})$/.exec(url.pathname);
+  if (invoicePage && req.method === "GET") {
+    const invoice = listInvoices().find((i) => i.id === invoicePage[1]);
+    if (!invoice || (viewer.role === "client" && invoice.clientId !== viewer.client.id)) throw new HttpError(404, "Счёт не найден");
+    const client = getClient(invoice.clientId);
+    let title = client.brand;
+    try {
+      title = loadSeries(client.brand).title;
+    } catch {
+      // сериал удалён — в счёте будет его короткое имя
+    }
+    html(res, renderInvoicePage(invoice, client, title));
+    return;
+  }
+
   if (req.method !== "POST") throw new HttpError(404, "not found");
   if (!sameOrigin(req)) throw new HttpError(403, "Запрос с чужого сайта");
 
@@ -509,6 +526,9 @@ async function handlePrivate(req: http.IncomingMessage, res: http.ServerResponse
       instagramUserId: form.get("instagramUserId") ?? undefined,
       instagramToken: form.get("instagramToken") ?? undefined,
       disconnectInstagram: form.get("disconnectInstagram") === "1",
+      legalName: form.get("legalName") ?? undefined,
+      legalInn: form.get("legalInn") ?? undefined,
+      legalAddress: form.get("legalAddress") ?? undefined,
     });
     const changes = [
       before.plan !== client.plan && `тариф ${PLANS[client.plan].name}`,

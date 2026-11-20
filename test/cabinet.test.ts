@@ -163,6 +163,14 @@ test("заявка с сайта попадает владельцу; счёт �
   const me = (await clientState()).me!;
   assert.equal(me.invoices[0]!.status, "paid");
   assert.equal(me.unpaidUsd, 0);
+
+  // Страница счёта: клиенту — свой счёт, без входа — на страницу входа.
+  assert.equal(me.invoices[0]!.url, `/invoices/${inv.id}`);
+  const page = await fetch(base + me.invoices[0]!.url, { headers: { Cookie: clientCookie } });
+  assert.equal(page.status, 200);
+  assert.match(await page.text(), /Оплачен/);
+  assert.equal((await fetch(base + me.invoices[0]!.url, { redirect: "manual" })).status, 303);
+  assert.equal((await fetch(`${base}/invoices/inv-00000000`, { headers: owner })).status, 404);
 });
 
 test("картинка героя заменяет заглушку; клиент не видит картинки чужих брендов", async () => {

@@ -110,3 +110,22 @@ test("заявка с сайта: проверка телефона и обре�
   assert.equal(lead.company, "Lazzat Somsa");
   assert.equal(lead.message?.length, 1000);
 });
+
+test("счёт: сумма прописью и страница с реквизитами", async () => {
+  const { amountInWords, renderInvoicePage } = await import("../src/invoicePage.js");
+  assert.equal(amountInWords(590, "USD"), "Пятьсот девяносто долларов США");
+  assert.equal(amountInWords(1201, "USD"), "Одна тысяча двести один доллар США");
+  assert.equal(amountInWords(7_552_000, "UZS"), "Семь миллионов пятьсот пятьдесят две тысячи сум");
+  assert.equal(amountInWords(12_000, "UZS"), "Двенадцать тысяч сум");
+
+  const c = clients.clientForBrand("bozor-seriali")!;
+  clients.updateClient(c.id, { legalName: "ООО «Bozor <Seriali>»", legalInn: "301 234 567" });
+  assert.throws(() => clients.updateClient(c.id, { legalInn: "12ab" }), /ИНН/);
+  const inv = clients.listInvoices(c.id)[0]!;
+  const html = renderInvoicePage(inv, clients.getClient(c.id), "Bozor Seriali");
+  assert.ok(html.startsWith("<!doctype html>"));
+  assert.match(html, /Счёт на оплату № 2026-000\d/);
+  assert.match(html, /ООО «Bozor &lt;Seriali&gt;»/); // экранирование
+  assert.match(html, /301234567/);
+  assert.match(html, /Двести девяносто долларов США|Пятьсот девяносто долларов США|Одна тысяча двести долларов США/);
+});

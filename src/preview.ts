@@ -1,10 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
-import { listClients } from "./clients.js";
+import { getClient, type Invoice, listClients } from "./clients.js";
+import { renderInvoicePage } from "./invoicePage.js";
 import { PLAN_IDS, PLANS } from "./plans.js";
 import { LANDING_FILE, renderAppPage, showcaseFile, UI_FILE } from "./server.js";
-import { episodeDir, listEpisodes } from "./store.js";
-import { type AssetUrl, buildStudioState, type MediaUrl } from "./studioState.js";
+import { episodeDir, listEpisodes, loadSeries } from "./store.js";
+import { type AssetUrl, buildStudioState, type InvoiceUrl, type MediaUrl } from "./studioState.js";
 
 function inject(file: string, vars: Record<string, unknown>): string {
   const ui = fs.readFileSync(file, "utf8");
@@ -35,14 +36,27 @@ export function buildPreview(outDir: string): { page: string; landing: string; m
   const mediaUrl: MediaUrl = (ep, file) => copy(path.join(episodeDir(ep.id), file), `media/${ep.id}/${file}`);
   const assetUrl: AssetUrl = (slug, kind, id, file, variant) => copy(file, `assets/${slug}/${kind}/${id}${variant ? `.${variant}` : ""}.png`);
 
+  // Счета в превью — готовые страницы рядом (на сервере их отдаёт /invoices/<id>).
+  const invoiceUrl: InvoiceUrl = (invoice: Invoice) => {
+    const rel = `invoices/${invoice.id}.html`;
+    if (!media.has(rel)) {
+      const client = getClient(invoice.clientId);
+      const target = path.join(outDir, rel);
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.writeFileSync(target, renderInvoicePage(invoice, client, loadSeries(client.brand).title));
+      media.add(rel);
+    }
+    return rel;
+  };
+
   const episodes = listEpisodes();
-  const owner = buildStudioState({ episodes, mediaUrl, assetUrl });
+  const owner = buildStudioState({ episodes, mediaUrl, assetUrl, invoiceUrl });
   // Кабинет первого клиента, у которого уже есть серии на согласовании, иначе — первого клиента.
   const clients = listClients();
   const client =
     clients.find((c) => episodes.some((e) => e.series === c.brand && e.status === "awaiting_client")) ?? clients[0];
   const preview = client
-    ? { views: { owner, client: buildStudioState({ viewer: { role: "client", client }, episodes, mediaUrl, assetUrl }) } }
+    ? { views: { owner, client: buildStudioState({ viewer: { role: "client", client }, episodes, mediaUrl, assetUrl, invoiceUrl }) } }
     : owner;
 
   fs.mkdirSync(outDir, { recursive: true });

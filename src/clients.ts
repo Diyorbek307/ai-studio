@@ -39,6 +39,8 @@ export interface Client {
   invite?: { tokenHash: string; expiresAt: string };
   telegram?: { chatId?: string; linkCode?: string; linkExpiresAt?: string };
   instagram?: { userId: string; token: string };
+  /** Реквизиты для счёта: юрлицо, ИНН, адрес. */
+  legal?: { name?: string; inn?: string; address?: string };
   createdAt: string;
 }
 
@@ -86,6 +88,7 @@ export interface PublicClient {
   inviteActive: boolean;
   telegramLinked: boolean;
   instagramConnected: boolean;
+  legal?: { name?: string; inn?: string; address?: string };
   usage: Usage;
   unpaidUsd: number;
   createdAt: string;
@@ -185,6 +188,9 @@ export interface ClientPatch {
   instagramUserId?: string;
   instagramToken?: string;
   disconnectInstagram?: boolean;
+  legalName?: string;
+  legalInn?: string;
+  legalAddress?: string;
 }
 
 export function updateClient(id: string, patch: ClientPatch): Client {
@@ -204,6 +210,15 @@ export function updateClient(id: string, patch: ClientPatch): Client {
   if (patch.contactName?.trim()) client.contactName = patch.contactName.trim();
   if (patch.phone !== undefined) client.phone = patch.phone.trim() || undefined;
   if (patch.disconnectInstagram) delete client.instagram;
+  if (patch.legalName !== undefined || patch.legalInn !== undefined || patch.legalAddress !== undefined) {
+    const inn = (patch.legalInn ?? client.legal?.inn ?? "").replace(/\s/g, "");
+    if (inn && !/^\d{9,14}$/.test(inn)) throw new Error("ИНН — только цифры (в Узбекистане 9 цифр)");
+    client.legal = {
+      name: (patch.legalName ?? client.legal?.name ?? "").trim() || undefined,
+      inn: inn || undefined,
+      address: (patch.legalAddress ?? client.legal?.address ?? "").trim() || undefined,
+    };
+  }
   if (patch.instagramUserId?.trim() && patch.instagramToken?.trim()) {
     client.instagram = { userId: patch.instagramUserId.trim(), token: patch.instagramToken.trim() };
   }
@@ -410,6 +425,7 @@ export function publicClient(client: Client, today = localDay()): PublicClient {
     inviteActive: Boolean(client.invite && client.invite.expiresAt > new Date().toISOString()),
     telegramLinked: Boolean(client.telegram?.chatId),
     instagramConnected: Boolean(client.instagram),
+    legal: client.legal,
     usage: usage(client, today),
     unpaidUsd: listInvoices(client.id)
       .filter((i) => i.status === "unpaid")

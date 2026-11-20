@@ -137,6 +137,21 @@ export const config = {
     dailyUsd: num("DAILY_BUDGET_USD", 5),
   },
 
+  /** Реквизиты студии для счетов на оплату. */
+  company: {
+    name: str("STUDIO_LEGAL_NAME", "AI-студия"),
+    inn: str("STUDIO_INN"),
+    address: str("STUDIO_ADDRESS"),
+    bank: str("STUDIO_BANK"),
+    account: str("STUDIO_ACCOUNT"),
+    mfo: str("STUDIO_MFO"),
+    phone: str("STUDIO_PHONE"),
+    director: str("STUDIO_DIRECTOR"),
+    /** Курс доллара в сумах для суммы счёта (пусто — счёт только в долларах). */
+    usdRate: num("STUDIO_USD_RATE", 0),
+    vatNote: str("STUDIO_VAT_NOTE", "Без НДС"),
+  },
+
   schedule: {
     dailyAt: str("DAILY_AT"),
     timezone: str("STUDIO_TZ", "Asia/Tashkent"),
