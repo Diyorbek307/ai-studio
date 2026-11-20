@@ -1,0 +1,729 @@
+<title>AI-студия</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Пульт студии: шапка с бюджетом → вкладки → лента серий с вертикальным плеером слева и решением справа.
+   Палитра — риштанская керамика: лазурь, шафран, глубокий синий. */
+:root {
+  --bg: #EEF2F6;
+  --surface: #FFFFFF;
+  --surface-2: #E4EAF1;
+  --line: #D3DCE6;
+  --ink: #111A2C;
+  --muted: #586378;
+  --accent: #0B6E8E;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #D7ECF3;
+  --saffron: #B87411;
+  --saffron-soft: #FBEBCF;
+  --good: #1E7D50;
+  --good-soft: #DBF0E4;
+  --bad: #B83A33;
+  --bad-soft: #F8E0DD;
+  --screen: #0A0F1A;
+  --shadow: 0 1px 2px rgba(17, 26, 44, .06), 0 6px 18px rgba(17, 26, 44, .06);
+  --font-display: "Unbounded", "Manrope", system-ui, sans-serif;
+  --font-body: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0B111D; --surface: #131B2B; --surface-2: #1A2438; --line: #26324A; --ink: #E7ECF5; --muted: #97A3BA;
+    --accent: #43B6D6; --accent-ink: #04202B; --accent-soft: #10323F; --saffron: #F0B656; --saffron-soft: #3A2A10;
+    --good: #4CC48D; --good-soft: #12301F; --bad: #F2786E; --bad-soft: #3B1A19; --screen: #000000;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0B111D; --surface: #131B2B; --surface-2: #1A2438; --line: #26324A; --ink: #E7ECF5; --muted: #97A3BA;
+  --accent: #43B6D6; --accent-ink: #04202B; --accent-soft: #10323F; --saffron: #F0B656; --saffron-soft: #3A2A10;
+  --good: #4CC48D; --good-soft: #12301F; --bad: #F2786E; --bad-soft: #3B1A19; --screen: #000000;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--font-body); -webkit-font-smoothing: antialiased; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+button, input, textarea { font: inherit; color: inherit; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+
+/* ---------- Шапка ---------- */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+.top-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 12px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.logo { width: 38px; height: 38px; flex: none; }
+.brand-name { font: 700 17px/1.1 var(--font-display); letter-spacing: -.01em; }
+.brand-sub { color: var(--muted); font-size: 13px; }
+.top-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.budget { display: grid; gap: 4px; min-width: 132px; }
+.budget-label { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); }
+.budget-label b { color: var(--ink); font-weight: 600; }
+.meter { height: 6px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+.meter > span { display: block; height: 100%; background: var(--accent); border-radius: inherit; transition: width .4s ease; }
+.meter.hot > span { background: var(--saffron); }
+.meter.full > span { background: var(--bad); }
+
+.tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tabs a { display: inline-flex; align-items: center; gap: 6px; padding: 10px 12px; color: var(--muted); text-decoration: none; font-weight: 600; font-size: 14px; border-bottom: 2px solid transparent; white-space: nowrap; }
+.tabs a[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tabs .count { font: 500 11px/1 var(--font-mono); background: var(--saffron-soft); color: var(--saffron); padding: 3px 6px; border-radius: 99px; }
+.tabs .count:empty { display: none; }
+
+/* ---------- Кнопки ---------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--line); background: var(--surface); padding: 9px 14px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; text-decoration: none; color: var(--ink); transition: background .15s, border-color .15s, transform .05s; }
+.btn:hover { border-color: var(--muted); }
+.btn:active { transform: translateY(1px); }
+.btn[disabled] { opacity: .55; cursor: progress; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.06); }
+.btn.danger { color: var(--bad); }
+.btn.danger.solid { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+.btn svg { width: 16px; height: 16px; flex: none; }
+
+.banner { background: var(--saffron-soft); color: var(--ink); border-bottom: 1px solid var(--line); font-size: 13px; }
+.banner .wrap { padding-block: 10px; }
+
+main { padding-block: 20px 48px; }
+
+/* ---------- Фильтры ---------- */
+.filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 6px 12px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; }
+.chip b { font: 500 12px var(--font-mono); color: var(--ink); }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.chip[aria-pressed="true"] b { color: var(--surface); }
+.chip.attn:not([aria-pressed="true"]) { border-color: var(--saffron); color: var(--saffron); }
+
+/* ---------- Карточка серии ---------- */
+.episodes { display: grid; gap: 16px; }
+/* На телефоне: название → ролик → решение. На широком экране ролик слева на всю высоту карточки. */
+.ep { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "media" "body"; gap: 16px; padding: 16px; }
+@media (min-width: 760px) {
+  .ep { grid-template-columns: 250px minmax(0, 1fr); grid-template-areas: "media head" "media body"; grid-template-rows: auto 1fr; gap: 16px 24px; padding: 20px; }
+}
+.ep-head { grid-area: head; }
+.ep-media { grid-area: media; display: flex; justify-content: center; align-items: flex-start; }
+.ep-body { grid-area: body; }
+.phone { width: 100%; max-width: min(250px, 62vw); aspect-ratio: 9 / 16; background: var(--screen); border-radius: 22px; padding: 6px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06); }
+.phone video, .phone .screen { width: 100%; height: 100%; border-radius: 17px; display: block; object-fit: cover; background: var(--screen); }
+.phone .screen { display: grid; place-content: center; justify-items: center; gap: 10px; color: #C9D3E3; font-size: 13px; text-align: center; padding: 16px; }
+.screen .spin { width: 34px; height: 34px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, .15); border-top-color: var(--saffron); animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.ep-body { min-width: 0; display: grid; gap: 16px; align-content: start; }
+.ep-head { display: grid; gap: 6px; }
+.ep-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ep h3 { margin: 0; font: 700 20px/1.25 var(--font-display); letter-spacing: -.01em; text-wrap: balance; }
+.logline { margin: 0; color: var(--muted); max-width: 62ch; }
+.meta { color: var(--muted); font-size: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
+
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 99px; background: var(--surface-2); color: var(--muted); }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.st-in_progress { background: var(--accent-soft); color: var(--accent); }
+.st-in_progress::before { animation: pulse 1.2s ease-in-out infinite; }
+.st-awaiting_approval, .st-awaiting_feedback { background: var(--saffron-soft); color: var(--saffron); }
+.st-approved, .st-published { background: var(--good-soft); color: var(--good); }
+.st-paused_budget { background: var(--saffron-soft); color: var(--saffron); }
+.st-failed { background: var(--bad-soft); color: var(--bad); }
+@keyframes pulse { 50% { opacity: .3; } }
+
+/* Прогресс по шагам конвейера */
+.pipe { display: grid; gap: 8px; }
+.pipe ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 4px; }
+.pipe li { height: 8px; border-radius: 99px; background: var(--surface-2); position: relative; }
+.pipe li.done { background: var(--accent); }
+.pipe li.now { background: var(--saffron); animation: pulse 1.2s ease-in-out infinite; }
+.pipe li.stop { background: var(--bad); }
+.pipe-caption { font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.pipe-caption b { color: var(--ink); font-weight: 600; }
+.pipe-names { display: none; }
+@media (min-width: 900px) {
+  .pipe-names { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 4px; font-size: 10.5px; color: var(--muted); letter-spacing: .01em; }
+  .pipe-names span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pipe-names .is-now { color: var(--saffron); font-weight: 700; }
+}
+
+.note { border-radius: 10px; padding: 10px 12px; font-size: 14px; display: grid; gap: 4px; }
+.note.good { background: var(--good-soft); }
+.note.warn { background: var(--saffron-soft); }
+.note.bad { background: var(--bad-soft); }
+.note strong { font-size: 13px; }
+.note ul { margin: 0; padding-left: 18px; }
+
+/* Сценарий */
+.script { display: grid; gap: 2px; }
+.script-title { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; gap: 8px; }
+.hook { font: 700 13px/1.3 var(--font-display); color: var(--saffron); letter-spacing: 0; text-transform: none; }
+.line { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+.line:first-of-type { border-top: 0; }
+.ava { width: 32px; height: 32px; border-radius: 50%; background: var(--c); color: #fff; display: grid; place-items: center; font: 700 13px var(--font-display); }
+.line-who { font-size: 12px; color: var(--muted); display: flex; gap: 8px; }
+.line-who b { color: var(--ink); }
+.line-uz { font-weight: 600; }
+.line-ru { color: var(--muted); font-size: 13.5px; }
+.scene-tag { font: 500 11px var(--font-mono); }
+
+/* Решение */
+.actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding-top: 4px; }
+.panel { display: grid; gap: 10px; background: var(--surface-2); border-radius: 12px; padding: 12px; }
+.panel textarea { width: 100%; min-height: 80px; resize: vertical; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--surface); }
+.quick { display: flex; gap: 6px; flex-wrap: wrap; }
+.quick button { border: 1px dashed var(--line); background: var(--surface); border-radius: 99px; padding: 4px 10px; font-size: 13px; cursor: pointer; color: var(--muted); }
+.quick button:hover { color: var(--ink); border-color: var(--muted); }
+.panel-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.empty { text-align: center; padding: 48px 16px; background: var(--surface); border: 1px dashed var(--line); border-radius: var(--radius); color: var(--muted); display: grid; gap: 12px; justify-items: center; }
+.empty h3 { margin: 0; color: var(--ink); font: 700 18px var(--font-display); }
+.empty p { margin: 0; max-width: 46ch; }
+
+/* ---------- Агенты ---------- */
+.section-head { display: grid; gap: 6px; margin-bottom: 16px; }
+.section-head h2 { margin: 0; font: 700 22px/1.2 var(--font-display); letter-spacing: -.01em; }
+.section-head p { margin: 0; color: var(--muted); max-width: 70ch; }
+.agents { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); }
+.agent { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.agent.busy { border-color: var(--saffron); }
+.agent-no { width: 44px; height: 44px; border-radius: 12px; background: var(--surface-2); display: grid; place-items: center; font: 500 13px var(--font-mono); color: var(--muted); }
+.agent.busy .agent-no { background: var(--saffron-soft); color: var(--saffron); }
+.agent-name { font-weight: 700; }
+.agent-dept { font-size: 12px; color: var(--muted); }
+.agent-does { font-size: 13.5px; }
+.agent-state { font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.agent.busy .agent-state { color: var(--saffron); }
+.more { margin-top: 16px; background: var(--accent-soft); border-radius: 12px; padding: 14px 16px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; }
+
+/* ---------- Подключения ---------- */
+.conns { display: grid; gap: 10px; }
+.conn { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 16px; align-items: center; }
+.conn-name { font-weight: 700; }
+.conn-what { color: var(--muted); font-size: 13.5px; }
+.conn-keys { grid-column: 1 / -1; font-size: 12px; color: var(--muted); display: flex; gap: 6px; flex-wrap: wrap; }
+.conn-keys code { font-family: var(--font-mono); background: var(--surface-2); padding: 2px 6px; border-radius: 6px; color: var(--ink); }
+.state { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 99px; white-space: nowrap; }
+.state.on { background: var(--good-soft); color: var(--good); }
+.state.demo { background: var(--saffron-soft); color: var(--saffron); }
+.state.off { background: var(--surface-2); color: var(--muted); }
+.facts { margin-top: 16px; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+.fact { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+.fact span { display: block; font-size: 12px; color: var(--muted); }
+.fact b { font: 600 15px var(--font-mono); }
+
+/* ---------- Сообщения ---------- */
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--surface); padding: 10px 16px; border-radius: 12px; font-size: 14px; font-weight: 600; box-shadow: var(--shadow); z-index: 20; max-width: calc(100% - 32px); text-align: center; }
+.fatal { background: var(--bad-soft); border-radius: 12px; padding: 14px 16px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before { animation: none !important; transition: none !important; }
+}
+</style>
+
+<header class="top">
+  <div class="wrap top-row">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 38 38" aria-hidden="true">
+        <rect x="1" y="1" width="36" height="36" rx="11" fill="var(--accent)"></rect>
+        <rect x="11" y="7" width="16" height="24" rx="4" fill="none" stroke="var(--accent-ink)" stroke-width="2"></rect>
+        <path d="M17 15.5v7l6-3.5z" fill="var(--saffron)"></path>
+      </svg>
+      <div>
+        <div class="brand-name">AI-студия</div>
+        <div class="brand-sub" id="seriesName">&nbsp;</div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <div class="budget" id="budget" aria-live="polite">
+        <div class="budget-label"><span>Расход сегодня</span><b class="mono" id="budgetText">—</b></div>
+        <div class="meter" id="budgetMeter"><span style="width:0"></span></div>
+      </div>
+      <button class="btn primary" id="newEpisode" type="button">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
+        Новая серия
+      </button>
+    </div>
+  </div>
+  <nav class="wrap tabs" role="tablist" aria-label="Разделы студии">
+    <a href="#series" role="tab" data-tab="series">Серии <span class="count" id="countYou"></span></a>
+    <a href="#agents" role="tab" data-tab="agents">Агенты</a>
+    <a href="#connections" role="tab" data-tab="connections">Подключения</a>
+  </nav>
+</header>
+
+<div class="banner" id="previewBanner" hidden>
+  <div class="wrap">Это превью интерфейса на демо-серии. Кнопки здесь ничего не меняют: они работают в студии, запущенной на сервере.</div>
+</div>
+
+<main class="wrap">
+  <section data-view="series" aria-label="Серии">
+    <div class="filters" id="filters"></div>
+    <div class="episodes" id="episodes"></div>
+  </section>
+
+  <section data-view="agents" hidden aria-label="Агенты">
+    <div class="section-head">
+      <h2>15 агентов на смене</h2>
+      <p id="agentsSummary">Этап «Старт»: агенты в том порядке, в котором через них проходит ролик.</p>
+    </div>
+    <div class="agents" id="agents"></div>
+    <div class="more">
+      <span>Ещё 85 агентов этапов «Рост» и «Масштаб» описаны в каталоге студии.</span>
+      <a class="btn" href="https://claude.ai/artifact/Bnf3Z9f83c9iE5A4RCjzxG" target="_blank" rel="noopener">Открыть каталог</a>
+    </div>
+  </section>
+
+  <section data-view="connections" hidden aria-label="Подключения">
+    <div class="section-head">
+      <h2>Подключения</h2>
+      <p>Каждый ключ включает свою часть студии, остальное работает в демо-режиме. Ключи задаются в файле <span class="mono">.env</span> или в настройках сервера.</p>
+    </div>
+    <div class="conns" id="conns"></div>
+    <div class="facts" id="facts"></div>
+  </section>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(() => {
+  const PREVIEW = window.STUDIO_PREVIEW || null;
+  const $ = (sel) => document.querySelector(sel);
+  const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const money = (n) => "$" + Number(n || 0).toFixed(2);
+
+  const pref = {
+    get(key, fallback) { try { return localStorage.getItem("studio." + key) ?? fallback; } catch { return fallback; } },
+    set(key, value) { try { localStorage.setItem("studio." + key, value); } catch { /* приватный режим */ } },
+  };
+
+  let state = null;
+  let timer = null;
+  let filter = pref.get("filter", "all");
+  const ui = {};      // id → { redo, confirmReject, busy }
+  const drafts = {};  // id → текст правок
+
+  const FILTERS = [
+    ["all", "Все", () => true],
+    ["you", "Ждут тебя", (e) => e.status === "awaiting_approval" || e.status === "awaiting_feedback"],
+    ["work", "В работе", (e) => e.status === "in_progress"],
+    ["done", "Готово", (e) => e.status === "approved" || e.status === "published"],
+    ["issues", "Проблемы", (e) => e.status === "failed" || e.status === "paused_budget"],
+    ["rejected", "Отклонены", (e) => e.status === "rejected"],
+  ];
+  const QUICK_FIXES = ["Сделай смешнее", "Короче, до 20 секунд", "Другая концовка", "Сильнее первая фраза", "Больше Non bobo"];
+
+  // ---------- Данные ----------
+  async function load() {
+    try {
+      if (PREVIEW) {
+        state = PREVIEW;
+      } else {
+        const res = await fetch("/api/state", { headers: { Accept: "application/json" } });
+        if (!res.ok) throw new Error(res.status === 401 ? "Нужно войти: обнови страницу и введи пароль." : "Сервер ответил " + res.status);
+        state = await res.json();
+      }
+      render();
+    } catch (error) {
+      $("#episodes").innerHTML = `<div class="fatal">Не удалось загрузить студию: ${esc(error.message)}</div>`;
+    } finally {
+      schedule();
+    }
+  }
+
+  function schedule() {
+    clearTimeout(timer);
+    if (PREVIEW || !state) return;
+    const busy = state.episodes.some((e) => e.status === "in_progress");
+    timer = setTimeout(load, busy ? 4000 : 15000);
+  }
+
+  async function post(url, body) {
+    if (PREVIEW) {
+      toast("В превью кнопки не работают — запусти студию на сервере");
+      return false;
+    }
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+      body: new URLSearchParams(body || {}),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      toast(data.error || "Не получилось: сервер ответил " + res.status);
+      return false;
+    }
+    return true;
+  }
+
+  let toastTimer = null;
+  function toast(text) {
+    const el = $("#toast");
+    el.textContent = text;
+    el.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => (el.hidden = true), 3600);
+  }
+
+  // ---------- Шапка и вкладки ----------
+  const TABS = ["series", "agents", "connections"];
+  function currentTab() {
+    const h = location.hash.slice(1);
+    return TABS.includes(h) ? h : "series";
+  }
+  function showTab() {
+    const tab = currentTab();
+    document.querySelectorAll("[data-view]").forEach((v) => (v.hidden = v.dataset.view !== tab));
+    document.querySelectorAll("[data-tab]").forEach((a) => a.setAttribute("aria-selected", String(a.dataset.tab === tab)));
+  }
+  addEventListener("hashchange", () => {
+    showTab();
+    requestAnimationFrame(() => window.scrollTo(0, 0));
+  });
+
+  function renderHeader() {
+    $("#seriesName").textContent = state.series.title;
+    const { spent, limit } = state.budget;
+    const share = limit > 0 ? Math.min(1, spent / limit) : 1;
+    $("#budgetText").textContent = `${money(spent)} из ${money(limit)}`;
+    const meter = $("#budgetMeter");
+    meter.firstElementChild.style.width = (share * 100).toFixed(1) + "%";
+    meter.classList.toggle("hot", share >= 0.75 && share < 1);
+    meter.classList.toggle("full", share >= 1);
+    const waiting = state.episodes.filter(FILTERS[1][2]).length;
+    $("#countYou").textContent = waiting ? String(waiting) : "";
+  }
+
+  // ---------- Серии ----------
+  function charById(id) {
+    return state.characters.find((c) => c.id === id) || { id, name: id, color: "var(--muted)" };
+  }
+
+  function pipeline(ep) {
+    const steps = state.steps;
+    const total = steps.length;
+    const done = ep.stepsDone;
+    const stopped = ep.status === "failed" || ep.status === "paused_budget";
+    const running = ep.status === "in_progress";
+    const nowIndex = done < total ? done : -1;
+    const items = steps
+      .map((s, i) => {
+        const cls = i < done ? "done" : i === nowIndex && running ? "now" : i === nowIndex && stopped ? "stop" : "";
+        return `<li class="${cls}" title="${esc(s.label)} · № ${s.agents.join(", № ")}"></li>`;
+      })
+      .join("");
+    const names = steps.map((s, i) => `<span class="${i === nowIndex && running ? "is-now" : ""}">${esc(s.label)}</span>`).join("");
+
+    let caption;
+    if (done >= total) caption = `<span><b>${total} из ${total}</b> · ролик собран и проверен</span>`;
+    else {
+      const step = steps[nowIndex];
+      const who = step.agents.map((no) => state.agents.find((a) => a.no === no)).filter(Boolean).map((a) => `№ ${a.no} ${a.name}`).join(", ");
+      const verb = running ? "сейчас работает" : stopped ? "остановился на шаге" : "следующий шаг";
+      caption = `<span><b>Шаг ${nowIndex + 1} из ${total}: ${esc(step.label)}</b> · ${verb} ${running ? esc(who) : ""}</span>`;
+    }
+    return `<div class="pipe"><ol aria-label="Готово шагов: ${done} из ${total}">${items}</ol><div class="pipe-names" aria-hidden="true">${names}</div><div class="pipe-caption">${caption}</div></div>`;
+  }
+
+  function qaBlock(ep) {
+    if (!ep.qa) return "";
+    if (ep.qa.pass) return `<div class="note good"><strong>Проверка качества пройдена</strong><span>${esc(ep.qa.summary)}</span></div>`;
+    const issues = ep.qa.issues.map((i) => `<li>${esc(i)}</li>`).join("");
+    return `<div class="note warn"><strong>Контролёр качества нашёл замечания</strong><span>${esc(ep.qa.summary)}</span>${issues ? `<ul>${issues}</ul>` : ""}</div>`;
+  }
+
+  function statusBlock(ep) {
+    if (ep.status === "failed") return `<div class="note bad"><strong>Остановилась с ошибкой</strong><span>${esc(ep.error)}</span></div>`;
+    if (ep.status === "paused_budget") return `<div class="note warn"><strong>Пауза: кончился дневной бюджет</strong><span>Продолжится завтра или после кнопки «Продолжить».</span></div>`;
+    if (ep.status === "approved" && ep.publish?.dryRun)
+      return `<div class="note good"><strong>Одобрено</strong><span>Instagram не подключён: ролик готов, выложи его вручную.</span></div>`;
+    if (ep.status === "approved" && ep.error) return `<div class="note bad"><strong>Одобрено, но публикация не удалась</strong><span>${esc(ep.error)}</span></div>`;
+    if (ep.status === "published") return `<div class="note good"><strong>Опубликовано в Instagram</strong></div>`;
+    if (ep.status === "awaiting_feedback") return `<div class="note warn"><strong>Ждём твои правки</strong><span>Напиши ниже, что исправить, и студия переделает серию.</span></div>`;
+    return "";
+  }
+
+  function scriptBlock(ep) {
+    if (!ep.lines.length) return "";
+    const lines = ep.lines
+      .map((l) => {
+        const c = charById(l.character);
+        return `<div class="line">
+          <span class="ava" style="--c:${esc(c.color)}" aria-hidden="true">${esc(c.name.charAt(0))}</span>
+          <div><div class="line-who"><b>${esc(c.name)}</b><span class="scene-tag">сцена ${l.scene}</span></div>
+          <div class="line-uz" lang="uz">${esc(l.text)}</div><div class="line-ru">${esc(l.ru)}</div></div>
+        </div>`;
+      })
+      .join("");
+    const hook = ep.hook ? `<span class="hook" lang="uz">«${esc(ep.hook)}»</span>` : "";
+    return `<div class="script"><div class="script-title"><span>Сценарий</span>${hook}</div>${lines}</div>`;
+  }
+
+  function actionsBlock(ep) {
+    const st = ui[ep.id] || {};
+    const busy = st.busy ? "disabled" : "";
+    const redoPanel = `<div class="panel">
+        <label for="fix-${ep.id}"><strong>Что исправить?</strong></label>
+        <textarea id="fix-${ep.id}" data-draft="${ep.id}" placeholder="Например: шутка в конце слабая, пусть Somsa aka закипит от злости">${esc(drafts[ep.id] || "")}</textarea>
+        <div class="quick">${QUICK_FIXES.map((q) => `<button type="button" data-act="quick" data-id="${ep.id}" data-text="${esc(q)}">${esc(q)}</button>`).join("")}</div>
+        <div class="panel-row">
+          <button class="btn primary" type="button" data-act="redo-send" data-id="${ep.id}" ${busy}>Переделать серию</button>
+          ${ep.status === "awaiting_feedback" ? "" : `<button class="btn" type="button" data-act="redo-cancel" data-id="${ep.id}">Отмена</button>`}
+        </div>
+      </div>`;
+
+    if (ep.status === "awaiting_approval" || ep.status === "awaiting_feedback") {
+      if (st.redo || ep.status === "awaiting_feedback") return redoPanel;
+      if (st.confirmReject)
+        return `<div class="panel"><strong>Отклонить серию? Она не будет опубликована.</strong>
+          <div class="panel-row"><button class="btn danger solid" type="button" data-act="reject" data-id="${ep.id}" ${busy}>Да, отклонить</button>
+          <button class="btn" type="button" data-act="reject-cancel" data-id="${ep.id}">Нет</button></div></div>`;
+      return `<div class="actions">
+          <button class="btn primary" type="button" data-act="approve" data-id="${ep.id}" ${busy}>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            Одобрить и опубликовать</button>
+          <button class="btn" type="button" data-act="redo-open" data-id="${ep.id}">Переделать</button>
+          <button class="btn danger" type="button" data-act="reject-ask" data-id="${ep.id}">Отклонить</button>
+        </div>`;
+    }
+    if (ep.status === "failed" || ep.status === "paused_budget")
+      return `<div class="actions"><button class="btn primary" type="button" data-act="run" data-id="${ep.id}" ${busy}>Продолжить с места остановки</button></div>`;
+    if (ep.status === "approved" && ep.error)
+      return `<div class="actions"><button class="btn primary" type="button" data-act="approve" data-id="${ep.id}" ${busy}>Попробовать опубликовать снова</button></div>`;
+    if (ep.status === "published" && ep.publish?.permalink)
+      return `<div class="actions"><a class="btn" href="${esc(ep.publish.permalink)}" target="_blank" rel="noopener">Открыть в Instagram</a></div>`;
+    if (ep.status === "approved" && ep.video && !PREVIEW)
+      return `<div class="actions"><a class="btn" href="${esc(ep.video)}" download="${esc(ep.id)}.mp4">Скачать ролик</a></div>`;
+    return "";
+  }
+
+  function card(ep) {
+    const media = ep.video
+      ? `<video src="${esc(ep.video)}" ${ep.poster ? `poster="${esc(ep.poster)}"` : ""} controls playsinline preload="metadata"></video>`
+      : `<div class="screen">${ep.status === "in_progress" ? '<span class="spin" aria-hidden="true"></span><span>Агенты собирают ролик</span>' : "<span>Ролика нет</span>"}</div>`;
+    const date = new Date(ep.createdAt).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+    return `<article class="ep" data-id="${ep.id}">
+      <div class="ep-head">
+        <div class="ep-top"><span class="pill st-${ep.status}">${esc(ep.statusLabel.replace(/^\S+\s/, ""))}</span></div>
+        <h3>${esc(ep.title)}</h3>
+        ${ep.logline ? `<p class="logline">${esc(ep.logline)}</p>` : ""}
+        <div class="meta mono"><span>${esc(date)}</span>${ep.duration ? `<span>${Math.round(ep.duration)} с</span>` : ""}<span>${money(ep.costUsd)}</span><span>${esc(ep.id)}</span></div>
+      </div>
+      <div class="ep-media"><div class="phone">${media}</div></div>
+      <div class="ep-body">
+        ${pipeline(ep)}
+        ${statusBlock(ep)}
+        ${qaBlock(ep)}
+        ${scriptBlock(ep)}
+        ${actionsBlock(ep)}
+      </div>
+    </article>`;
+  }
+
+  function renderFilters() {
+    const html = FILTERS.map(([key, label, test]) => {
+      const n = state.episodes.filter(test).length;
+      if (key !== "all" && n === 0 && filter !== key) return "";
+      const attn = key === "you" && n > 0 ? " attn" : "";
+      return `<button class="chip${attn}" type="button" data-filter="${key}" aria-pressed="${filter === key}">${label} <b>${n}</b></button>`;
+    }).join("");
+    $("#filters").innerHTML = html;
+  }
+
+  // Перерисовываем только изменившиеся карточки, чтобы не сбивать видео и набранный текст.
+  function cardKey(ep) {
+    return JSON.stringify([ep, ui[ep.id] || {}, drafts[ep.id] || ""]);
+  }
+
+  function renderEpisodes() {
+    const box = $("#episodes");
+    const test = (FILTERS.find((f) => f[0] === filter) || FILTERS[0])[2];
+    const list = state.episodes.filter(test);
+    if (state.episodes.length === 0) {
+      box.innerHTML = `<div class="empty"><h3>Серий пока нет</h3><p>Нажми «Новая серия»: агенты придумают сюжет, нарисуют кадры, озвучат и пришлют ролик сюда на одобрение.</p></div>`;
+      return;
+    }
+    if (list.length === 0) {
+      box.innerHTML = `<div class="empty"><p>В этом разделе пусто.</p></div>`;
+      return;
+    }
+    box.querySelectorAll(".empty, .fatal").forEach((n) => n.remove());
+    const keep = new Set();
+    let prev = null;
+    for (const ep of list) {
+      const key = cardKey(ep);
+      let node = box.querySelector(`[data-id="${ep.id}"]`);
+      if (!node || node._key !== key) {
+        const tpl = document.createElement("template");
+        tpl.innerHTML = card(ep).trim();
+        const fresh = tpl.content.firstElementChild;
+        fresh._key = key;
+        if (node) node.replaceWith(fresh);
+        node = fresh;
+      }
+      keep.add(node);
+      const anchor = prev ? prev.nextSibling : box.firstChild;
+      if (node !== anchor) box.insertBefore(node, anchor);
+      prev = node;
+    }
+    [...box.children].forEach((n) => { if (!keep.has(n)) n.remove(); });
+  }
+
+  // ---------- Агенты и подключения ----------
+  function renderAgents() {
+    const busy = new Map();
+    for (const ep of state.episodes.filter((e) => e.status === "in_progress")) {
+      const step = state.steps[ep.stepsDone];
+      if (step) step.agents.forEach((no) => busy.set(no, ep.title));
+    }
+    $("#agentsSummary").textContent = busy.size
+      ? "Сейчас работают: " + [...busy.keys()].map((no) => "№ " + no).join(", ") + ". Остальные ждут своей очереди."
+      : "Этап «Старт»: агенты в том порядке, в котором через них проходит ролик. Сейчас все свободны.";
+    $("#agents").innerHTML = state.agents
+      .map((a) => {
+        const on = busy.has(a.no) || (a.no === 99 && busy.size > 0);
+        return `<div class="agent${on ? " busy" : ""}">
+          <span class="agent-no">№${a.no}</span>
+          <div><div class="agent-name">${esc(a.name)}</div><div class="agent-dept">${esc(a.dept)}</div><div class="agent-does">${esc(a.does)}</div></div>
+          <span class="agent-state">${on ? "работает" : "свободен"}</span>
+        </div>`;
+      })
+      .join("");
+  }
+
+  function renderConnections() {
+    const p = state.providers;
+    const rows = [
+      ["Claude", "Идеи, сценарии, хуки, промпты кадров, проверка качества, аналитика", p.claude, ["ANTHROPIC_API_KEY"], true],
+      ["Картинки — fal.ai", "Ключевые кадры каждой сцены", p.image, ["FAL_KEY"], true],
+      ["Видео — fal.ai", "Оживление кадров в клипы", p.video, ["FAL_KEY"], true],
+      ["Голос — Azure Speech", "Узбекская озвучка героев", p.tts, ["AZURE_SPEECH_KEY", "AZURE_SPEECH_REGION"], true],
+      ["Telegram", "Ролики на одобрение с кнопками прямо в чат", p.telegram, ["TELEGRAM_BOT_TOKEN", "TELEGRAM_ADMIN_CHAT_ID"], false],
+      ["Instagram", "Публикация Reels и статистика роликов", p.instagram, ["IG_USER_ID", "IG_ACCESS_TOKEN"], false],
+      ["Публичный адрес", "По этой ссылке Instagram скачивает готовый ролик", p.publicUrl, ["PUBLIC_BASE_URL"], false],
+    ];
+    $("#conns").innerHTML = rows
+      .map(([name, what, on, keys, hasDemo]) => {
+        const chip = on ? '<span class="state on">Подключено</span>' : hasDemo ? '<span class="state demo">Демо-режим</span>' : '<span class="state off">Не подключено</span>';
+        return `<div class="conn"><div><div class="conn-name">${esc(name)}</div><div class="conn-what">${esc(what)}</div></div>${chip}
+          <div class="conn-keys">${keys.map((k) => `<code>${esc(k)}</code>`).join("")}</div></div>`;
+      })
+      .join("");
+    const s = state.schedule;
+    $("#facts").innerHTML = [
+      ["Ежедневный запуск", s.dailyAt ? `${s.dailyAt} · ${s.timezone}` : "выключен"],
+      ["Серий в день", String(s.episodesPerDay)],
+      ["Дневной лимит", money(state.budget.limit)],
+    ]
+      .map(([k, v]) => `<div class="fact"><span>${esc(k)}</span><b>${esc(v)}</b></div>`)
+      .join("");
+  }
+
+  function render() {
+    renderHeader();
+    renderFilters();
+    renderEpisodes();
+    renderAgents();
+    renderConnections();
+  }
+
+  // ---------- Действия ----------
+  function setUi(id, patch) {
+    ui[id] = { ...(ui[id] || {}), ...patch };
+    renderEpisodes();
+  }
+
+  async function run(id, url, body, done) {
+    setUi(id, { busy: true });
+    const ok = await post(url, body);
+    setUi(id, { busy: false });
+    if (ok) {
+      toast(done);
+      if (done && ui[id]) { ui[id].redo = false; ui[id].confirmReject = false; }
+      if (url.endsWith("/redo")) delete drafts[id];
+      load();
+    }
+  }
+
+  document.addEventListener("click", (event) => {
+    const chip = event.target.closest("[data-filter]");
+    if (chip) {
+      filter = chip.dataset.filter;
+      pref.set("filter", filter);
+      renderFilters();
+      renderEpisodes();
+      return;
+    }
+    const btn = event.target.closest("[data-act]");
+    if (!btn) return;
+    const id = btn.dataset.id;
+    const base = "/api/episodes/" + id;
+    switch (btn.dataset.act) {
+      case "approve":
+        run(id, base + "/approve", null, "Одобрено — публикую");
+        break;
+      case "redo-open":
+        setUi(id, { redo: true, confirmReject: false });
+        document.getElementById("fix-" + id)?.focus();
+        break;
+      case "redo-cancel":
+        setUi(id, { redo: false });
+        break;
+      case "quick": {
+        const current = (drafts[id] || "").trim();
+        drafts[id] = current ? current + ". " + btn.dataset.text : btn.dataset.text;
+        setUi(id, {});
+        document.getElementById("fix-" + id)?.focus();
+        break;
+      }
+      case "redo-send":
+        run(id, base + "/redo", { feedback: drafts[id] || "" }, "Отправлено на переделку — агенты начали заново");
+        break;
+      case "reject-ask":
+        setUi(id, { confirmReject: true, redo: false });
+        break;
+      case "reject-cancel":
+        setUi(id, { confirmReject: false });
+        break;
+      case "reject":
+        run(id, base + "/reject", null, "Серия отклонена");
+        break;
+      case "run":
+        run(id, base + "/run", null, "Продолжаю с места остановки");
+        break;
+    }
+  });
+
+  document.addEventListener("input", (event) => {
+    const id = event.target.dataset?.draft;
+    if (!id) return;
+    drafts[id] = event.target.value;
+    // Карточка уже показывает этот текст — помечаем её актуальной, чтобы обновление не сбросило курсор.
+    const node = event.target.closest("[data-id]");
+    const ep = state.episodes.find((e) => e.id === id);
+    if (node && ep) node._key = cardKey(ep);
+  });
+
+  $("#newEpisode").addEventListener("click", async (event) => {
+    const btn = event.currentTarget;
+    btn.disabled = true;
+    const ok = await post("/api/episodes");
+    btn.disabled = false;
+    if (ok) {
+      toast("Агенты начали новую серию — она появится в списке");
+      filter = "all";
+      location.hash = "series";
+      setTimeout(load, 800);
+    }
+  });
+
+  if (PREVIEW) $("#previewBanner").hidden = false;
+  showTab();
+  load();
+})();
+</script>

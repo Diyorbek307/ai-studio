@@ -10,6 +10,7 @@ COPY package.json package-lock.json ./
 RUN npm ci
 COPY tsconfig.json ./
 COPY src ./src
+COPY ui ./ui
 COPY series ./series
 COPY music ./music
 RUN npm run build && npm prune --omit=dev

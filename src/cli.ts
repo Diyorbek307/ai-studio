@@ -7,6 +7,8 @@ import { budgetSummary } from "./budget.js";
 import { config, describeProviders } from "./config.js";
 import { errorMessage, log } from "./log.js";
 import { approveEpisode, dailyJob, newEpisode, redoEpisode, rejectEpisode, runEpisode, STEPS, type Step } from "./pipeline.js";
+import path from "node:path";
+import { buildPreview } from "./preview.js";
 import { startScheduler, startServer } from "./server.js";
 import { listEpisodes, loadEpisode, loadSeries, seedSeries } from "./store.js";
 import { type Episode, STATUS_LABEL } from "./types.js";
@@ -26,6 +28,7 @@ const HELP = `AI-студия — агенты, которые делают се
   daily [сериал]                ежедневный цикл: статистика → выводы → новые серии
   serve                         сервер + панель + Telegram-бот + расписание
   budget                        расход за сегодня
+  preview [папка]               превью интерфейса без сервера (снимок данных + ролики)
   agents                        список стартовых агентов
 
 Шаги конвейера: ${STEPS.join(" → ")}`;
@@ -144,6 +147,12 @@ async function main(argv: string[]): Promise<number> {
     case "budget":
       console.log(budgetSummary());
       return 0;
+
+    case "preview": {
+      const out = buildPreview(path.resolve(args[0] ?? "preview"));
+      console.log(`Превью: ${out.page} (+ ${out.media.length} файлов)`);
+      return 0;
+    }
 
     case "serve": {
       log.info(describeProviders());

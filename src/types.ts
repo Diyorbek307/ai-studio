@@ -6,6 +6,8 @@ export const CharacterSchema = z.object({
   id: z.string(),
   name: z.string(),
   role: z.string(),
+  /** Цвет героя в интерфейсе студии. */
+  color: z.string().optional(),
   personality: z.string(),
   look: z.string(),
   /** Канонический промпт внешности на английском — пишет Дизайнер персонажей (№ 21). */

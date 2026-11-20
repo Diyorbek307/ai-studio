@@ -33,46 +33,86 @@
       "id": "qovun",
       "name": "Qovun opa",
       "role": "Хозяйка лучшего прилавка, главная сплетница базара",
+      "color": "#D9A21B",
       "personality": "Гордая, громкая, всё про всех знает, но в беде первая приходит на помощь.",
       "look": "Круглая золотисто-жёлтая дыня с сетчатой кожурой, платок из атласа, большие серьги, руки в боки.",
-      "catchphrases": ["Voy, eshitmadingizmi?", "Men aytgandim-ku!"],
-      "voice": { "azure": "uz-UZ-MadinaNeural", "rate": "+5%", "pitch": "-4%" }
+      "catchphrases": [
+        "Voy, eshitmadingizmi?",
+        "Men aytgandim-ku!"
+      ],
+      "voice": {
+        "azure": "uz-UZ-MadinaNeural",
+        "rate": "+5%",
+        "pitch": "-4%"
+      }
     },
     {
       "id": "anor",
       "name": "Anor",
       "role": "Молодая красавица, мечтает стать блогером",
+      "color": "#C2185B",
       "personality": "Мечтательная, современная, снимает всё на телефон, стесняется Sabzi.",
       "look": "Блестящий рубиново-красный гранат с маленькой короной-хвостиком, длинные ресницы, держит телефон.",
-      "catchphrases": ["Obuna bo'ling!", "Bu kontent bo'ladi!"],
-      "voice": { "azure": "uz-UZ-MadinaNeural", "rate": "+10%", "pitch": "+12%" }
+      "catchphrases": [
+        "Obuna bo'ling!",
+        "Bu kontent bo'ladi!"
+      ],
+      "voice": {
+        "azure": "uz-UZ-MadinaNeural",
+        "rate": "+10%",
+        "pitch": "+12%"
+      }
     },
     {
       "id": "somsa",
       "name": "Somsa aka",
       "role": "Пекарь у тандыра, вспыльчивый, но добрый",
+      "color": "#C9772B",
       "personality": "Заводится с пол-оборота — из него буквально идёт пар, — но быстро отходит и всех угощает.",
       "look": "Треугольная золотистая самса с кунжутом, белый фартук и тюбетейка, густые брови.",
-      "catchphrases": ["Hozir qizib ketaman!", "Issiqqina, oling!"],
-      "voice": { "azure": "uz-UZ-SardorNeural", "rate": "+8%", "pitch": "-2%" }
+      "catchphrases": [
+        "Hozir qizib ketaman!",
+        "Issiqqina, oling!"
+      ],
+      "voice": {
+        "azure": "uz-UZ-SardorNeural",
+        "rate": "+8%",
+        "pitch": "-2%"
+      }
     },
     {
       "id": "non",
       "name": "Non bobo",
       "role": "Мудрый старейшина базара",
+      "color": "#9C6B3F",
       "personality": "Говорит пословицами, мирит соседей, никуда не торопится.",
       "look": "Круглая румяная лепёшка с узором-штампом в центре, белая борода из муки, тюбетейка и трость.",
-      "catchphrases": ["Shoshgan qiz erga yolchimas.", "Sabr tagi — sariq oltin."],
-      "voice": { "azure": "uz-UZ-SardorNeural", "rate": "-12%", "pitch": "-10%" }
+      "catchphrases": [
+        "Shoshgan qiz erga yolchimas.",
+        "Sabr tagi — sariq oltin."
+      ],
+      "voice": {
+        "azure": "uz-UZ-SardorNeural",
+        "rate": "-12%",
+        "pitch": "-10%"
+      }
     },
     {
       "id": "sabzi",
       "name": "Sabzi",
       "role": "Парень-морковка, мечтает попасть в самый вкусный плов",
+      "color": "#E8590C",
       "personality": "Простой, застенчивый, влюблён в Anor, всё время попадает в нелепые истории.",
       "look": "Высокая стройная оранжевая морковка с зелёной чёлкой-ботвой, кепка, кроссовки.",
-      "catchphrases": ["Men oshga tayyorman!", "Anor, bir daqiqa..."],
-      "voice": { "azure": "uz-UZ-SardorNeural", "rate": "+6%", "pitch": "+10%" }
+      "catchphrases": [
+        "Men oshga tayyorman!",
+        "Anor, bir daqiqa..."
+      ],
+      "voice": {
+        "azure": "uz-UZ-SardorNeural",
+        "rate": "+6%",
+        "pitch": "+10%"
+      }
     }
   ],
   "rubrics": [
@@ -90,5 +130,10 @@
     "Каждая серия заканчивается шуткой или клиффхэнгером."
   ],
   "target_duration_sec": 30,
-  "hashtags": ["#bozorseriali", "#uzbekistan", "#multfilm", "#kulgili"]
+  "hashtags": [
+    "#bozorseriali",
+    "#uzbekistan",
+    "#multfilm",
+    "#kulgili"
+  ]
 }

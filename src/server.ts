@@ -1,12 +1,31 @@
 import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { budgetSummary, localDay } from "./budget.js";
 import { config, describeProviders } from "./config.js";
 import { errorMessage, log } from "./log.js";
-import { approveEpisode, dailyJob, newEpisode, redoEpisode, rejectEpisode } from "./pipeline.js";
-import { episodeDir, listEpisodes, loadState, saveState } from "./store.js";
-import { type Episode, STATUS_LABEL } from "./types.js";
+import { approveEpisode, dailyJob, newEpisode, redoEpisode, rejectEpisode, runEpisode } from "./pipeline.js";
+import { episodeDir, loadState, saveState } from "./store.js";
+import { buildStudioState } from "./studioState.js";
+
+/** Интерфейс студии — один HTML-файл в ui/ (от dist/src/ это ../../ui). */
+export const UI_FILE = fileURLToPath(new URL("../../ui/app.html", import.meta.url));
+
+/** Обёртка документа вокруг ui/app.html (сам файл — фрагмент, его же публикуем как превью). */
+export function renderAppPage(fragment: string): string {
+  return `<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+${fragment}
+</body>
+</html>`;
+}
 
 /** Какие файлы эпизода доступны по публичной ссылке: готовый ролик и ключевые кадры. */
 export function publicMediaPath(id: string, file: string): string | undefined {
@@ -52,7 +71,7 @@ function authorized(req: http.IncomingMessage): boolean {
 }
 
 function json(res: http.ServerResponse, status: number, body: unknown): void {
-  res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" }).end(JSON.stringify(body));
+  res.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" }).end(JSON.stringify(body));
 }
 
 async function readForm(req: http.IncomingMessage): Promise<URLSearchParams> {
@@ -64,62 +83,9 @@ async function readForm(req: http.IncomingMessage): Promise<URLSearchParams> {
   return new URLSearchParams(body);
 }
 
-function escapeHtml(text: string): string {
-  return text.replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]!);
-}
-
-function episodeCard(ep: Episode): string {
-  const poster = ep.keyframes?.s1 ? ` poster="/media/${ep.id}/${ep.keyframes.s1}"` : "";
-  const video = ep.final ? `<video src="/media/${ep.id}/${ep.final}"${poster} controls preload="none" playsinline></video>` : "";
-  const lines = (ep.script?.scenes ?? [])
-    .flatMap((s) => s.lines)
-    .map((l) => `<li><b>${escapeHtml(l.character)}</b>: ${escapeHtml(l.text)}<br><small>${escapeHtml(l.translation_ru)}</small></li>`)
-    .join("");
-  const canDecide = ep.status === "awaiting_approval" || ep.status === "awaiting_feedback";
-  const actions = canDecide
-    ? `<form method="post" action="/api/episodes/${ep.id}/approve"><button>✅ Одобрить</button></form>
-       <form method="post" action="/api/episodes/${ep.id}/redo"><input name="feedback" placeholder="Что исправить"><button>🔁 Переделать</button></form>
-       <form method="post" action="/api/episodes/${ep.id}/reject"><button>🗑 Отклонить</button></form>`
-    : "";
-  return `<article>
-    <header><h2>${escapeHtml(ep.script?.title ?? ep.id)}</h2><span class="st">${STATUS_LABEL[ep.status]}</span></header>
-    <p class="meta">${ep.id} · ${ep.createdAt.slice(0, 16).replace("T", " ")} · $${ep.costUsd.toFixed(2)}${ep.step ? ` · шаг: ${ep.step}` : ""}</p>
-    ${ep.error ? `<p class="err">${escapeHtml(ep.error)}</p>` : ""}
-    ${ep.qa ? `<p>${ep.qa.pass ? "✅" : "⚠️"} ${escapeHtml(ep.qa.review.summary_ru)}</p>` : ""}
-    ${video}
-    ${lines ? `<details><summary>Сценарий</summary><ul>${lines}</ul></details>` : ""}
-    ${ep.publish?.permalink ? `<p><a href="${escapeHtml(ep.publish.permalink)}">Открыть в Instagram</a></p>` : ""}
-    <div class="actions">${actions}</div>
-  </article>`;
-}
-
-function dashboard(): string {
-  const cards = listEpisodes().slice(0, 30).map(episodeCard).join("");
-  return `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AI-студия</title><style>
-:root{color-scheme:light dark;--bg:#f6f5f2;--card:#fff;--ink:#1d1d1b;--muted:#6b6b66;--line:#e2e0da;--accent:#2f7d4f}
-@media (prefers-color-scheme:dark){:root{--bg:#161615;--card:#22221f;--ink:#efeee9;--muted:#a3a29b;--line:#383732;--accent:#5fbf86}}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,sans-serif}
-main{max-width:760px;margin:0 auto;padding:16px}
-h1{font-size:22px;margin:8px 0}.meta,small{color:var(--muted)}
-article{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin:14px 0}
-article header{display:flex;justify-content:space-between;gap:8px;align-items:baseline}h2{font-size:17px;margin:0}
-.st{font-size:12px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);white-space:nowrap}
-video{width:100%;max-width:300px;aspect-ratio:9/16;background:#000;border-radius:8px;display:block;margin:8px 0}
-.actions{display:flex;flex-wrap:wrap;gap:8px}.actions form{display:flex;gap:6px}
-button{background:var(--accent);color:#fff;border:0;border-radius:6px;padding:7px 12px;font:inherit;cursor:pointer}
-input{border:1px solid var(--line);border-radius:6px;padding:6px;background:var(--bg);color:var(--ink);min-width:0}
-.err{color:#c0392b}ul{padding-left:18px}
-</style></head><body><main>
-<h1>🎬 AI-студия</h1>
-<p class="meta">${escapeHtml(describeProviders())}<br>${escapeHtml(budgetSummary())}</p>
-<form method="post" action="/api/episodes"><button>➕ Новая серия</button></form>
-${cards || "<p>Эпизодов пока нет.</p>"}
-</main></body></html>`;
-}
-
-function redirectHome(res: http.ServerResponse): void {
-  res.writeHead(303, { Location: "/" }).end();
+/** Запускает долгую задачу в фоне: интерфейс сразу получает ответ, а ход работы видит через /api/state. */
+function background(label: string, task: Promise<unknown>): void {
+  task.catch((e) => log.error(`${label}: ${errorMessage(e)}`));
 }
 
 async function handle(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
@@ -142,31 +108,48 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse): Prom
     if (!config.server.adminPassword && config.server.production) {
       res.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" }).end("Задай STUDIO_ADMIN_PASSWORD, чтобы открыть панель.");
     } else {
-      res.writeHead(401, { "WWW-Authenticate": 'Basic realm="ai-studio"' }).end();
+      res.writeHead(401, { "WWW-Authenticate": 'Basic realm="ai-studio", charset="UTF-8"' }).end();
     }
     return;
   }
 
   if (url.pathname === "/" && req.method === "GET") {
-    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" }).end(dashboard());
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" }).end(
+      renderAppPage(fs.readFileSync(UI_FILE, "utf8")),
+    );
+    return;
+  }
+
+  if (url.pathname === "/api/state" && req.method === "GET") {
+    json(res, 200, buildStudioState());
     return;
   }
 
   if (url.pathname === "/api/episodes" && req.method === "POST") {
-    newEpisode().catch((e) => log.error(`Новая серия: ${errorMessage(e)}`));
-    redirectHome(res);
+    background("Новая серия", newEpisode());
+    json(res, 202, { ok: true });
     return;
   }
 
-  const action = /^\/api\/episodes\/(ep-\d{8}-[0-9a-f]{8})\/(approve|reject|redo)$/.exec(url.pathname);
+  const action = /^\/api\/episodes\/(ep-\d{8}-[0-9a-f]{8})\/(approve|reject|redo|run)$/.exec(url.pathname);
   if (action && req.method === "POST") {
     const id = action[1]!;
     const verb = action[2]!;
     const form = await readForm(req);
-    const task =
-      verb === "approve" ? approveEpisode(id) : verb === "reject" ? rejectEpisode(id) : redoEpisode(id, form.get("feedback") ?? "");
-    task.catch((e) => log.error(`${verb} ${id}: ${errorMessage(e)}`));
-    redirectHome(res);
+    try {
+      if (verb === "reject") {
+        await rejectEpisode(id);
+      } else if (verb === "approve") {
+        background(`Публикация ${id}`, approveEpisode(id));
+      } else if (verb === "redo") {
+        background(`Переделка ${id}`, redoEpisode(id, form.get("feedback") ?? ""));
+      } else {
+        background(`Продолжение ${id}`, runEpisode(id));
+      }
+      json(res, 202, { ok: true });
+    } catch (error) {
+      json(res, 400, { error: errorMessage(error) });
+    }
     return;
   }
 
@@ -180,7 +163,7 @@ export function startServer(): http.Server {
       if (!res.headersSent) json(res, 500, { error: errorMessage(error) });
     });
   });
-  server.listen(config.server.port, () => log.info(`Сервер: http://localhost:${config.server.port}`));
+  server.listen(config.server.port, () => log.info(`Студия: http://localhost:${config.server.port}`));
   return server;
 }
 
