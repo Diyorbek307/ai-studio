@@ -16,6 +16,7 @@ import { voiceEpisode } from "./agents/voiceUz.js";
 import { assertBudget, BudgetExceededError, budgetSummary, localDay } from "./budget.js";
 import { audit } from "./audit.js";
 import { autopilotDue, clientForBrand, listClients } from "./clients.js";
+import { pickOccasion } from "./occasions.js";
 import { config } from "./config.js";
 import { sendMessage, telegramEnabled } from "./integrations/telegram.js";
 import { isEngine, resolveEngine } from "./providers/engines.js";
@@ -231,22 +232,31 @@ export function runEpisode(id: string): Promise<Episode> {
 }
 
 /** Проверки до запуска, чтобы не создавать эпизод, который сразу упадёт. */
-export function prepareEpisode(series = config.series, opts: { brief?: string; engine?: string; orderedBy?: string } = {}): Episode {
+export interface EpisodeOptions {
+  brief?: string;
+  engine?: string;
+  orderedBy?: string;
+  /** Повод из календаря (ключ «id:год»), если серия к празднику. */
+  occasion?: string;
+}
+
+export function prepareEpisode(series = config.series, opts: EpisodeOptions = {}): Episode {
   loadSeries(series); // упадёт сразу, если сериала нет
   if (opts.engine && opts.engine !== "auto") {
     if (!isEngine(opts.engine)) throw new Error(`Нет движка «${opts.engine}»`);
     resolveEngine(opts.engine, "video"); // упадёт, если у движка нет ключа
   }
   const ep = createEpisode(series, opts);
-  if (opts.orderedBy) {
-    ep.orderedBy = opts.orderedBy;
+  if (opts.orderedBy || opts.occasion) {
+    if (opts.orderedBy) ep.orderedBy = opts.orderedBy;
+    if (opts.occasion) ep.occasion = opts.occasion;
     saveEpisode(ep);
   }
   log.agent(PRODUCER, `новый эпизод ${ep.id} (${series})${ep.brief ? ` — задание: «${ep.brief}»` : ""}`);
   return ep;
 }
 
-export async function newEpisode(series = config.series, opts: { brief?: string; engine?: string; orderedBy?: string } = {}): Promise<Episode> {
+export async function newEpisode(series = config.series, opts: EpisodeOptions = {}): Promise<Episode> {
   return runEpisode(prepareEpisode(series, opts).id);
 }
 
@@ -373,12 +383,20 @@ export async function dailyJob(seriesSlug = config.series): Promise<Episode[]> {
     results.push(await runEpisode(paused.id));
   }
   for (let i = 0; i < config.schedule.episodesPerDay; i++) {
-    const ep = await newEpisode(seriesSlug);
+    const ep = await newEpisode(seriesSlug, occasionOptions(seriesSlug));
     results.push(ep);
     if (ep.status === "paused_budget") break;
   }
   saveState({ lastDailyRun: localDay() });
   return results;
+}
+
+/** Задание к ближайшему празднику из календаря поводов, если к нему у сериала ещё нет серии. */
+function occasionOptions(series: string): EpisodeOptions {
+  const o = pickOccasion(series, localDay());
+  if (!o) return {};
+  log.agent(PRODUCER, `повод для серии: ${o.name} (${o.date})`);
+  return { brief: o.brief, occasion: o.key };
 }
 
 /**
@@ -389,7 +407,7 @@ export async function clientsAutopilot(): Promise<Episode[]> {
   const results: Episode[] = [];
   for (const client of listClients()) {
     for (let n = autopilotDue(client); n > 0; n--) {
-      const ep = await newEpisode(client.brand, { orderedBy: "Автопилот" });
+      const ep = await newEpisode(client.brand, { orderedBy: "Автопилот", ...occasionOptions(client.brand) });
       results.push(ep);
       if (ep.status === "paused_budget") return results;
     }

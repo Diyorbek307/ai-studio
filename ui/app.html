@@ -179,6 +179,7 @@ main { padding-block: 20px 48px; }
 .quick { display: flex; gap: 6px; flex-wrap: wrap; }
 .quick button { border: 1px dashed var(--line); background: var(--surface); border-radius: 99px; padding: 4px 10px; font-size: 13px; cursor: pointer; color: var(--muted); }
 .quick button:hover { color: var(--ink); border-color: var(--muted); }
+.quick button.occ { border-style: solid; border-color: var(--saffron); color: var(--saffron); background: var(--saffron-soft); }
 .panel-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
 .empty { text-align: center; padding: 48px 16px; background: var(--surface); border: 1px dashed var(--line); border-radius: var(--radius); color: var(--muted); display: grid; gap: 12px; justify-items: center; }
@@ -1418,7 +1419,16 @@ main { padding-block: 20px 48px; }
     $("#epBriefLabel").innerHTML = client ? "Задание" : "Задание агентам <small>необязательно</small>";
     $("#epBrief").required = client;
     $("#epSubmit").textContent = client ? "Отправить задание" : "Запустить агентов";
-    $("#briefIdeas").innerHTML = (client ? CLIENT_IDEAS : BRIEF_IDEAS).map((t) => `<button type="button" data-brief="${esc(t)}">${esc(t)}</button>`).join("");
+    // Сначала ближайшие праздники из календаря поводов, потом обычные подсказки.
+    const occasions = (state.occasions || []).slice(0, 3).map((o) => ({
+      label: `${o.name.split(" · ").pop()} · ${o.daysLeft === 0 ? "сегодня" : `через ${o.daysLeft} ${plural(o.daysLeft, "день", "дня", "дней")}`}`,
+      text: o.brief,
+      occ: true,
+    }));
+    const ideas = [...occasions, ...(client ? CLIENT_IDEAS : BRIEF_IDEAS).map((t) => ({ label: t, text: t, occ: false }))];
+    $("#briefIdeas").innerHTML = ideas
+      .map((i) => `<button type="button" class="${i.occ ? "occ" : ""}" data-brief="${esc(i.text)}" title="${esc(i.text)}">${i.occ ? "🗓 " : ""}${esc(i.label)}</button>`)
+      .join("");
     if (client) return;
     const select = $("#epBrand");
     const current = slug || select.value || (brandFilter !== "all" ? brandFilter : state.defaultSeries);

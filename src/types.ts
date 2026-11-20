@@ -272,6 +272,8 @@ export interface Episode {
   orderedBy?: string;
   /** Чьи правки ждём после «Переделать»: студии или клиента. */
   feedbackFrom?: "studio" | "client";
+  /** Повод из календаря («navruz:2027»), если серия к празднику: второй к тому же поводу автопилот не сделает. */
+  occasion?: string;
   publish?: {
     at: string;
     mediaId?: string;

@@ -2,7 +2,8 @@ import fs from "node:fs";
 import { STARTER_AGENTS } from "./agents/index.js";
 import { type AuditEntry, recentAudit } from "./audit.js";
 import type { Viewer } from "./auth.js";
-import { spentToday } from "./budget.js";
+import { localDay, spentToday } from "./budget.js";
+import { type UpcomingOccasion, upcomingOccasions } from "./occasions.js";
 import {
   APPROVAL_LABEL,
   APPROVAL_MODES,
@@ -118,6 +119,8 @@ export interface StudioState {
   episodes: UiEpisode[];
   plans: Plan[];
   approvalModes: { id: string; label: string }[];
+  /** Ближайшие праздники и поводы — подсказки для заданий. */
+  occasions: UpcomingOccasion[];
   /** Только у владельца студии. */
   clients?: PublicClient[];
   invoices?: UiInvoice[];
@@ -294,6 +297,7 @@ export function buildStudioState(
     steps: STEPS.map((key) => ({ key, ...STEP_INFO[key] })),
     plans: PLAN_IDS.map((id) => PLANS[id]),
     approvalModes: APPROVAL_MODES.map((id) => ({ id, label: APPROVAL_LABEL[id] })),
+    occasions: upcomingOccasions(localDay(), 45, viewer.role === "client" ? viewer.client.brand : undefined).slice(0, 6),
   };
 
   if (viewer.role === "client") {
