@@ -293,6 +293,9 @@ main { padding-block: 20px 48px; }
 .asset figcaption { display: grid; gap: 2px; font-weight: 600; }
 .asset .tag { justify-self: center; font-size: 11px; padding: 1px 7px; }
 .hint { margin: 8px 0 0; font-size: 12.5px; color: var(--muted); }
+.states { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; }
+.states button { border: 1px dashed var(--line); background: var(--surface); border-radius: 99px; padding: 2px 8px; font-size: 11.5px; font-weight: 600; color: var(--muted); cursor: pointer; }
+.states button.on { border-style: solid; border-color: var(--good); color: var(--good); background: var(--good-soft); }
 .gallery { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
 .gallery figure { margin: 0; background: var(--surface-2); border-radius: 12px; padding: 10px; display: grid; gap: 6px; text-align: center; }
 .gallery .asset-img { border: 0; background: transparent; }
@@ -1064,13 +1067,17 @@ main { padding-block: 20px 48px; }
         <div class="asset-img">${a.art ? `<img src="${esc(a.art)}" alt="${esc(a.name)}" loading="lazy">` : ""}</div>
         <figcaption>${esc(a.name)}${a.placeholder ? '<span class="tag warn">заглушка</span>' : '<span class="tag ok">готово</span>'}</figcaption>
         <button class="btn small" type="button" data-upload="${esc(b.slug)}|${kind}|${esc(a.id)}">${a.placeholder ? "Загрузить" : "Заменить"}</button>
+        ${kind === "characters" && !a.placeholder ? `<div class="states">
+          <button type="button" class="${a.talk ? "on" : ""}" data-upload="${esc(b.slug)}|characters|${esc(a.id)}|talk" title="Та же картинка, но с открытым ртом: герой будет шевелить губами в такт голосу">${a.talk ? "✓ " : "+ "}рот</button>
+          <button type="button" class="${a.blink ? "on" : ""}" data-upload="${esc(b.slug)}|characters|${esc(a.id)}|blink" title="Та же картинка с закрытыми глазами: герой будет моргать">${a.blink ? "✓ " : "+ "}моргание</button>
+        </div>` : ""}
       </figure>`;
     const all = [...b.characters, ...b.locations];
     const ready = all.filter((a) => !a.placeholder).length;
     return `<details class="assets"${ready < all.length ? "" : ""}>
         <summary>Картинки для перекладки · ${ready} из ${all.length} готовы</summary>
         <div class="asset-grid">${b.characters.map((c) => tile("characters", c)).join("")}${b.locations.map((l) => tile("locations", l)).join("")}</div>
-        <p class="hint">Бесплатная анимация собирает кадр из этих картинок. Героя — PNG с прозрачным фоном (белый фон уберётся сам), место — вертикальная картинка. Нарисовать можно в Gemini, Grok или Higgsfield один раз — дальше серии бесплатные.</p>
+        <p class="hint">Бесплатная анимация собирает кадр из этих картинок. Героя — PNG с прозрачным фоном (белый фон уберётся сам), место — вертикальная картинка. Добавьте герою ту же картинку с открытым ртом и с закрытыми глазами — он будет говорить в такт голосу и моргать. Нарисовать можно в Gemini, Grok или Higgsfield один раз — дальше серии бесплатные.</p>
       </details>`;
   }
 
@@ -1537,8 +1544,8 @@ main { padding-block: 20px 48px; }
     const upload = t.closest("[data-upload]");
     if (upload) {
       if (PREVIEW) return toast("В превью загрузка не работает — запусти студию на сервере");
-      const [slug, kind, id] = upload.dataset.upload.split("|");
-      uploadTarget = { slug, kind, id };
+      const [slug, kind, id, variant] = upload.dataset.upload.split("|");
+      uploadTarget = { slug, kind, id, variant };
       $("#assetInput").value = "";
       $("#assetInput").click();
       return;
@@ -1643,7 +1650,8 @@ main { padding-block: 20px 48px; }
     }
     toast("Загружаю «" + file.name + "»…");
     try {
-      const res = await fetch(`/api/brands/${target.slug}/${target.kind}/${target.id}`, { method: "POST", headers: { "Content-Type": file.type }, body: file });
+      const query = target.variant ? `?variant=${target.variant}` : "";
+      const res = await fetch(`/api/brands/${target.slug}/${target.kind}/${target.id}${query}`, { method: "POST", headers: { "Content-Type": file.type }, body: file });
       const data = await res.json().catch(() => ({}));
       toast(res.ok ? "Картинка на месте — следующие серии будут с ней" : data.error || "Не получилось загрузить");
     } catch {

@@ -62,6 +62,46 @@ export async function pixelFormat(file: string): Promise<string> {
   return stdout.trim();
 }
 
+/**
+ * Громкость звука по окнам step секунд (RMS, дБ). Тишина — -120.
+ * По ней перекладка открывает рот героя: громко — рот открыт, пауза между словами — закрыт.
+ */
+export async function loudness(file: string, step = 0.08): Promise<number[]> {
+  const rate = 16000;
+  const { stdout } = await exec("ffmpeg", [
+    "-hide_banner", "-loglevel", "error", "-i", file,
+    "-af", `aresample=${rate},asetnsamples=n=${Math.round(rate * step)}:p=0,astats=metadata=1:reset=1,ametadata=print:key=lavfi.astats.Overall.RMS_level:file=-`,
+    "-f", "null", "-",
+  ]);
+  return stdout
+    .split("\n")
+    .filter((l) => l.startsWith("lavfi.astats.Overall.RMS_level="))
+    .map((l) => {
+      const v = Number(l.split("=")[1]);
+      return Number.isFinite(v) ? Math.max(-120, v) : -120;
+    });
+}
+
+/**
+ * Когда открыт рот: окна громче порога, через одно — чтобы рот «шлёпал», а не застывал открытым.
+ * Порог считается от самого громкого окна реплики: тихий и громкий голос двигают рот одинаково.
+ * Возвращает отрезки [начало, конец] в секундах от начала файла.
+ */
+export function mouthOpenRanges(levels: number[], step = 0.08): [number, number][] {
+  const peak = Math.max(-120, ...levels);
+  if (peak < -60) return []; // тишина: голоса нет
+  const threshold = Math.max(peak - 18, -50);
+  const out: [number, number][] = [];
+  levels.forEach((db, i) => {
+    if (db < threshold || i % 2 === 1) return;
+    const s = i * step;
+    const last = out.at(-1);
+    if (last && Math.abs(last[1] - s) < 1e-6) last[1] = s + step;
+    else out.push([s, s + step]);
+  });
+  return out;
+}
+
 export async function mediaDuration(file: string): Promise<number> {
   return (await probe(file)).duration;
 }

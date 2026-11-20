@@ -175,9 +175,16 @@ test("картинка героя заменяет заглушку; клиен�
   const file = characterAsset("bozor-seriali", "qovun");
   assert.ok(fs.existsSync(file) && !isPlaceholder(file));
 
+  const badVariant = await fetch(`${base}/api/brands/bozor-seriali/characters/qovun?variant=smile`, { method: "POST", headers: { ...owner, "Content-Type": "image/png" }, body: fs.readFileSync(png) });
+  assert.equal(badVariant.status, 400);
+  const talk = await fetch(`${base}/api/brands/bozor-seriali/characters/qovun?variant=talk`, { method: "POST", headers: { ...owner, "Content-Type": "image/png" }, body: fs.readFileSync(png) });
+  assert.equal(talk.status, 200, await talk.clone().text());
+
   const state = await clientState();
   const qovun = state.brands[0]!.characters.find((c) => c.id === "qovun")!;
   assert.equal(qovun.placeholder, false);
+  assert.match(qovun.talk ?? "", /^\/assets\/bozor-seriali\/characters\/qovun\.talk\.png\?v=/);
+  assert.equal((await fetch(base + qovun.talk!, { headers: { Cookie: clientCookie } })).status, 200);
   const art = await fetch(base + qovun.art!, { headers: { Cookie: clientCookie } });
   assert.equal(art.status, 200);
   assert.equal(art.headers.get("content-type"), "image/png");

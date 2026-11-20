@@ -16,7 +16,7 @@ import {
 } from "./clients.js";
 import { config } from "./config.js";
 import { type Lead, listLeads } from "./leads.js";
-import { characterAsset, isPlaceholder, locationAsset } from "./media/cutout.js";
+import { CHARACTER_VARIANTS, type CharacterVariant, characterAsset, isPlaceholder, locationAsset } from "./media/cutout.js";
 import { isStepDone, STEPS, type Step } from "./pipeline.js";
 import { PLAN_IDS, PLANS, type Plan } from "./plans.js";
 import { ENGINE_LABEL, engineStatus, isEngine, resolveEngine } from "./providers/engines.js";
@@ -81,6 +81,9 @@ export interface UiAsset {
   art?: string;
   /** true — сейчас стоит заглушка студии, а не настоящий рисунок. */
   placeholder: boolean;
+  /** Состояния героя для живой перекладки: ссылки на «рот открыт» и «глаза закрыты». */
+  talk?: string;
+  blink?: string;
 }
 
 export interface UiBrand {
@@ -127,13 +130,13 @@ export interface StudioState {
 /** Как интерфейс получает ссылку на файл эпизода (на сервере — /media/...). */
 export type MediaUrl = (ep: Episode, file: string) => string;
 /** Ссылка на картинку героя или локации (на сервере — /assets/...). */
-export type AssetUrl = (slug: string, kind: "characters" | "locations", id: string, file: string) => string;
+export type AssetUrl = (slug: string, kind: "characters" | "locations", id: string, file: string, variant?: CharacterVariant) => string;
 
 export const serverMediaUrl: MediaUrl = (ep, file) => `/media/${ep.id}/${file}`;
 
 /** Версия в ссылке — по времени файла: после замены картинки браузер не покажет старую из кеша. */
-export const serverAssetUrl: AssetUrl = (slug, kind, id, file) =>
-  `/assets/${slug}/${kind}/${id}.png?v=${Math.round(fs.statSync(file).mtimeMs)}`;
+export const serverAssetUrl: AssetUrl = (slug, kind, id, file, variant) =>
+  `/assets/${slug}/${kind}/${id}${variant ? `.${variant}` : ""}.png?v=${Math.round(fs.statSync(file).mtimeMs)}`;
 
 function engineLabel(ep: Episode): string | undefined {
   const used = ep.engines?.video ?? ep.engines?.image;
@@ -227,7 +230,14 @@ function assetInfo(slug: string, kind: "characters" | "locations", id: string, n
     return { id, name, placeholder: true };
   }
   if (!fs.existsSync(file)) return { id, name, placeholder: true };
-  return { id, name, art: assetUrl(slug, kind, id, file), placeholder: isPlaceholder(file) };
+  const info: UiAsset = { id, name, art: assetUrl(slug, kind, id, file), placeholder: isPlaceholder(file) };
+  if (kind === "characters") {
+    for (const variant of CHARACTER_VARIANTS) {
+      const extra = characterAsset(slug, id, variant);
+      if (fs.existsSync(extra)) info[variant] = assetUrl(slug, kind, id, extra, variant);
+    }
+  }
+  return info;
 }
 
 function toUiBrand(series: Series, episodes: Episode[], assetUrl: AssetUrl): UiBrand {

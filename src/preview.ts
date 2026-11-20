@@ -33,7 +33,7 @@ export function buildPreview(outDir: string): { page: string; landing: string; m
     return rel;
   };
   const mediaUrl: MediaUrl = (ep, file) => copy(path.join(episodeDir(ep.id), file), `media/${ep.id}/${file}`);
-  const assetUrl: AssetUrl = (slug, kind, id, file) => copy(file, `assets/${slug}/${kind}/${id}.png`);
+  const assetUrl: AssetUrl = (slug, kind, id, file, variant) => copy(file, `assets/${slug}/${kind}/${id}${variant ? `.${variant}` : ""}.png`);
 
   const episodes = listEpisodes();
   const owner = buildStudioState({ episodes, mediaUrl, assetUrl });

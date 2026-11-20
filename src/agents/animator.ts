@@ -6,6 +6,7 @@ import { ENGINE_LABEL, type EngineChoice, resolveEngine } from "../providers/eng
 import { animateImage } from "../providers/video.js";
 import { episodeFile, saveEpisode } from "../store.js";
 import { cutoutClip } from "../media/cutout.js";
+import { loudness, mouthOpenRanges } from "../media/ffmpeg.js";
 import type { Episode, Series } from "../types.js";
 import { agentInfo } from "./index.js";
 
@@ -33,10 +34,21 @@ export async function animateScenes(ep: Episode, series: Series): Promise<void> 
     if (engine === "cutout" && scene) {
       // Перекладка: герои двигаются по таймингу озвучки, бесплатно.
       const speaking: Record<string, [number, number][]> = {};
+      const mouth: Record<string, [number, number][]> = {};
       for (const line of ep.voice.lines.filter((l) => l.sceneId === span.sceneId)) {
         (speaking[line.character] ??= []).push([line.start - span.start, line.end - span.start]);
+        // Рот открывается по громкости голоса; если голоса нет (демо-тишина) — в ритм реплики.
+        try {
+          for (const [s, e] of mouthOpenRanges(await loudness(episodeFile(ep, line.file)))) {
+            const from = line.start + s - span.start;
+            const to = Math.min(line.end, line.start + e) - span.start;
+            if (to > from) (mouth[line.character] ??= []).push([from, to]);
+          }
+        } catch {
+          // не прочитали звук — рот будет двигаться в ритм реплики
+        }
       }
-      await cutoutClip({ series, scene, sceneIndex: i, seconds: span.end - span.start, speaking, out: episodeFile(ep, rel) });
+      await cutoutClip({ series, scene, sceneIndex: i, seconds: span.end - span.start, speaking, mouth, out: episodeFile(ep, rel) });
       ep.clips[span.sceneId] = rel;
       saveEpisode(ep);
       continue;

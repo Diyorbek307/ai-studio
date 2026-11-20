@@ -34,7 +34,7 @@ import { addLead } from "./leads.js";
 import { errorMessage, log } from "./log.js";
 import { designBrandSeries } from "./agents/mascotDesigner.js";
 import { botUsername, sendMessage, telegramEnabled } from "./integrations/telegram.js";
-import { type AssetKind, characterAsset, locationAsset, saveAsset } from "./media/cutout.js";
+import { type AssetKind, characterAsset, type CharacterVariant, isCharacterVariant, locationAsset, saveAsset } from "./media/cutout.js";
 import { approveEpisode, dailyAll, prepareEpisode, redoEpisode, rejectEpisode, runEpisode } from "./pipeline.js";
 import { PLAN_IDS, PLANS } from "./plans.js";
 import { BUNDLED_SERIES_DIR, episodeDir, loadEpisode, loadSeries, loadState, saveState } from "./store.js";
@@ -337,11 +337,12 @@ async function handlePrivate(req: http.IncomingMessage, res: http.ServerResponse
     return;
   }
 
-  const asset = /^\/assets\/([a-z0-9-]+)\/(characters|locations)\/([a-z0-9-]+)\.png$/.exec(url.pathname);
+  const asset = /^\/assets\/([a-z0-9-]+)\/(characters|locations)\/([a-z0-9-]+)(?:\.(talk|blink))?\.png$/.exec(url.pathname);
   if (asset && req.method === "GET") {
-    const [, slug, kind, id] = asset as unknown as [string, string, AssetKind, string];
+    const [, slug, kind, id, variant] = asset as unknown as [string, string, AssetKind, string, CharacterVariant | undefined];
     if (viewer.role === "client" && viewer.client.brand !== slug) throw new HttpError(404, "not found");
-    const file = kind === "characters" ? characterAsset(slug, id) : locationAsset(slug, id);
+    if (variant && kind !== "characters") throw new HttpError(404, "not found");
+    const file = kind === "characters" ? characterAsset(slug, id, variant) : locationAsset(slug, id);
     if (!fs.existsSync(file)) throw new HttpError(404, "not found");
     sendFile(req, res, file, "private, max-age=86400");
     return;
@@ -357,13 +358,17 @@ async function handlePrivate(req: http.IncomingMessage, res: http.ServerResponse
     const series = loadSeries(slug);
     const known = kind === "characters" ? series.characters.some((c) => c.id === id) : series.locations.some((l) => l.id === id);
     if (!known) throw new HttpError(404, "Нет такого героя или места");
+    const variantParam = url.searchParams.get("variant");
+    if (variantParam && !isCharacterVariant(variantParam)) throw new HttpError(400, "Состояние героя: talk или blink");
+    const variant = isCharacterVariant(variantParam) ? variantParam : undefined;
     const tmp = await readUpload(req);
     try {
-      await saveAsset(slug, kind, id, tmp);
+      await saveAsset(slug, kind, id, tmp, variant);
     } finally {
       fs.rmSync(path.dirname(tmp), { recursive: true, force: true });
     }
-    audit("Студия", kind === "characters" ? "загрузила героя" : "загрузила локацию", slug, id);
+    const what = variant === "talk" ? "рот героя" : variant === "blink" ? "моргание героя" : kind === "characters" ? "героя" : "локацию";
+    audit("Студия", `загрузила ${what}`, slug, id);
     json(res, 200, { ok: true });
     return;
   }
