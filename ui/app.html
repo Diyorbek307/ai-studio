@@ -305,6 +305,8 @@ main { padding-block: 20px 48px; }
 
 /* ---------- Клиенты, тариф, настройки ---------- */
 .stack { display: grid; gap: 24px; }
+/* Элементы сетки не шире экрана: широкие таблицы прокручиваются внутри своей рамки. */
+.stack > *, .charts > *, .kpis > *, .clients > * { min-width: 0; }
 .block-title { margin: 0 0 10px; font: 700 16px/1.3 var(--font-display); display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
 .clients { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
 .client-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; display: grid; gap: 12px; align-content: start; }
@@ -358,6 +360,33 @@ main { padding-block: 20px 48px; }
   .top-actions .budget { flex: 1; min-width: 0; }
 }
 .client-card .brand-actions .btn { padding: 7px 11px; font-size: 13px; }
+
+/* ---------- Аналитика ---------- */
+.kpis { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 4px; }
+.kpi span { font-size: 12.5px; color: var(--muted); }
+.kpi b { font: 600 24px/1.1 var(--font-body); font-variant-numeric: tabular-nums; }
+.kpi small { font-size: 12px; color: var(--muted); }
+.charts { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
+.chart { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: grid; gap: 8px; position: relative; }
+.chart h3 { margin: 0; font-size: 15px; }
+.chart p { margin: 0; font-size: 12.5px; color: var(--muted); }
+.chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart .tick { fill: var(--muted); font: 11px var(--font-body); }
+.chart .cap { fill: var(--ink); font: 600 12px var(--font-body); }
+.chart .col { fill: var(--accent); }
+.chart .hit { fill: transparent; cursor: default; }
+.chart .col.on { fill: color-mix(in srgb, var(--accent) 80%, var(--ink)); }
+.chart table, .atable { width: 100%; border-collapse: collapse; font-size: 13px; }
+.chart th, .chart td, .atable th, .atable td { text-align: left; padding: 6px 8px; border-top: 1px solid var(--line); }
+.chart td.n, .atable td.n, .atable th.n { text-align: right; font-variant-numeric: tabular-nums; }
+.chart details summary { font-size: 12.5px; color: var(--muted); cursor: pointer; }
+.chart-tip { position: fixed; z-index: 30; pointer-events: none; background: var(--ink); color: var(--surface); padding: 6px 10px; border-radius: 8px; font-size: 12.5px; white-space: nowrap; box-shadow: var(--shadow); }
+.table-wrap { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow-x: auto; }
+.atable th { color: var(--muted); font-weight: 600; font-size: 12px; border-top: 0; }
+.mini { display: inline-block; width: 70px; height: 6px; border-radius: 99px; background: var(--accent-soft); vertical-align: middle; margin-right: 6px; overflow: hidden; }
+.mini > i { display: block; height: 100%; background: var(--accent); border-radius: inherit; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before { animation: none !important; transition: none !important; }
@@ -458,6 +487,11 @@ main { padding-block: 20px 48px; }
     </div>
     <div class="facts" id="clientFacts"></div>
     <div class="stack" id="clientsBox" style="margin-top:20px"></div>
+  </section>
+
+  <section data-view="analytics" hidden aria-label="Аналитика">
+    <div class="section-head"><h2>Аналитика</h2><p>Деньги, серии и скорость согласования по всем клиентам. Цифры Instagram появляются, когда Аналитик собирает статистику опубликованных серий.</p></div>
+    <div class="stack" id="analyticsBox"></div>
   </section>
 
   <section data-view="plan" hidden aria-label="Тариф и счета">
@@ -742,7 +776,7 @@ main { padding-block: 20px 48px; }
   }
 
   // ---------- Шапка и вкладки ----------
-  const OWNER_TABS = [["series", "Серии", "countYou"], ["brands", "Бренды"], ["clients", "Клиенты", "countClients"], ["agents", "Агенты"], ["connections", "Подключения"]];
+  const OWNER_TABS = [["series", "Серии", "countYou"], ["brands", "Бренды"], ["clients", "Клиенты", "countClients"], ["analytics", "Аналитика"], ["agents", "Агенты"], ["connections", "Подключения"]];
   const CLIENT_TABS = [["series", "Серии", "countYou"], ["brands", "Ваш сериал"], ["plan", "Тариф и счета", "countUnpaid"], ["settings", "Настройки"]];
   const tabs = () => (isClient() ? CLIENT_TABS : OWNER_TABS);
   function currentTab() {
@@ -1311,6 +1345,118 @@ main { padding-block: 20px 48px; }
       <div><h3 class="block-title">Журнал действий</h3>${auditRows ? `<div class="rows">${auditRows}</div>` : '<p class="hint">Здесь видно, кто что одобрил, оплатил и поменял.</p>'}</div>`;
   }
 
+  // ---------- Аналитика (владелец) ----------
+  const MONTHS = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
+  const monthLabel = (ym) => MONTHS[Number(ym.slice(5, 7)) - 1] + (ym.slice(5, 7) === "01" ? ` ${ym.slice(0, 4)}` : "");
+  const pct = (x) => (x === undefined || x === null ? "—" : Math.round(x * 100) + "%");
+  const hours = (h) => (h === undefined || h === null ? "—" : h < 1 ? "меньше часа" : h < 48 ? `${Math.round(h)} ч` : `${Math.round(h / 24)} дн`);
+
+  /** Чистые деления оси: 1, 2, 5 × 10ⁿ, около трёх делений. */
+  function niceMax(max) {
+    if (max <= 0) return { top: 1, step: 1 };
+    const raw = max / 3;
+    const pow = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = [1, 2, 5, 10].map((k) => k * pow).find((s) => s >= raw);
+    return { top: Math.ceil(max / step) * step, step };
+  }
+
+  /**
+   * Столбики одного ряда: тонкие (≤24px), скругление 4px только сверху, значение над последним и самым большим,
+   * подсказка при наведении на всю полосу столбика; ниже — таблица с теми же цифрами.
+   */
+  function columnChart({ title, note, data, format, tableHead }) {
+    // На телефоне — узкий холст, чтобы подписи осей не мельчали при сжатии.
+    const W = innerWidth < 640 ? 360 : 600, H = innerWidth < 640 ? 230 : 210, L = 44, B = 26, T = 18;
+    const plotW = W - L - 8, plotH = H - B - T;
+    const { top, step } = niceMax(Math.max(...data.map((d) => d.value)));
+    const slot = plotW / data.length;
+    const bw = Math.min(24, slot * 0.55);
+    const y = (v) => T + plotH - (v / top) * plotH;
+    const maxI = data.reduce((best, d, i) => (d.value > data[best].value ? i : best), 0);
+    let grid = "";
+    for (let v = 0; v <= top + 1e-9; v += step) {
+      grid += `<line class="grid" x1="${L}" x2="${W - 8}" y1="${y(v)}" y2="${y(v)}"/><text class="tick" x="${L - 8}" y="${y(v) + 4}" text-anchor="end">${esc(format(v, true))}</text>`;
+    }
+    const cols = data
+      .map((d, i) => {
+        const cx = L + slot * i + slot / 2;
+        const h = (d.value / top) * plotH;
+        const x0 = cx - bw / 2, base = T + plotH, r = Math.min(4, h, bw / 2);
+        const path = h <= 0 ? "" : `M${x0},${base} V${base - h + r} Q${x0},${base - h} ${x0 + r},${base - h} H${x0 + bw - r} Q${x0 + bw},${base - h} ${x0 + bw},${base - h + r} V${base} Z`;
+        const label = (i === data.length - 1 || i === maxI) && d.value > 0 ? `<text class="cap" x="${cx}" y="${base - h - 6}" text-anchor="middle">${esc(format(d.value))}</text>` : "";
+        // Сначала столбик, поверх — прозрачная полоса наведения на всю высоту, чтобы подсказка ловилась и над самим столбиком.
+        return `${path ? `<path class="col" data-col="${i}" d="${path}"/>` : ""}${label}<rect class="hit" data-i="${i}" x="${L + slot * i}" y="${T}" width="${slot}" height="${plotH}" data-tip="${esc(d.tip)}"/>
+          <text class="tick" x="${cx}" y="${H - 8}" text-anchor="middle">${esc(d.label)}</text>`;
+      })
+      .join("");
+    const rows = data.map((d) => `<tr><td>${esc(d.label)}</td>${d.cells.map((c) => `<td class="n">${esc(c)}</td>`).join("")}</tr>`).join("");
+    return `<div class="chart"><h3>${esc(title)}</h3>${note ? `<p>${esc(note)}</p>` : ""}
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">${grid}${cols}<line class="grid" x1="${L}" x2="${W - 8}" y1="${T + plotH}" y2="${T + plotH}"/></svg>
+      <details><summary>Таблицей</summary><table><thead><tr>${tableHead.map((h, i) => `<th class="${i ? "n" : ""}">${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></details>
+    </div>`;
+  }
+
+  function renderAnalytics() {
+    const a = state.analytics;
+    if (!a) return;
+    const k = a.kpi;
+    const tiles = [
+      ["Подписки в месяц", usd(k.mrrUsd), "активные месячные тарифы"],
+      ["Оплачено за 30 дней", usd(k.paid30Usd), `всего ${usd(k.paidTotalUsd)}`],
+      ["Ждёт оплаты", usd(k.unpaidUsd), "по выставленным счетам"],
+      ["Серий за 30 дней", String(k.episodes30), "без языковых версий"],
+      ["Одобрено с первого раза", pct(k.firstTimeRate), "серии клиентов без правок"],
+      ["Клиент решает за", hours(k.decisionHours), "медиана от отправки до ответа"],
+    ];
+    const money = columnChart({
+      title: "Оплачено по месяцам",
+      note: "По дате оплаты счёта",
+      data: a.months.map((m) => ({ label: monthLabel(m.month), value: m.paidUsd, tip: `${monthLabel(m.month)}: оплачено ${usd(m.paidUsd)}, выставлено ${usd(m.invoicedUsd)}`, cells: [usd(m.paidUsd), usd(m.invoicedUsd)] })),
+      format: (v, axis) => (axis && v >= 1000 ? `$${(v / 1000).toFixed(v % 1000 ? 1 : 0)}K` : usd(v)),
+      tableHead: ["Месяц", "Оплачено", "Выставлено"],
+    });
+    const weeks = columnChart({
+      title: "Серий по неделям",
+      note: "Новые серии всех сериалов, с понедельника",
+      data: a.weeks.map((w) => ({ label: innerWidth < 640 ? day(w.weekStart).replace(/\s.*/, "") : day(w.weekStart), value: w.episodes, tip: `Неделя с ${day(w.weekStart)}: ${w.episodes} ${plural(w.episodes, "серия", "серии", "серий")}`, cells: [String(w.episodes)] })),
+      format: (v) => String(Math.round(v)),
+      tableHead: ["Неделя", "Серий"],
+    });
+    const clientRows = a.clients
+      .map((c) => {
+        const share = c.limit ? Math.min(1, c.used / c.limit) : 0;
+        return `<tr><td><b>${esc(c.company)}</b></td><td>${esc(c.planName)}</td>
+          <td class="n"><span class="mini" aria-hidden="true"><i style="width:${(share * 100).toFixed(0)}%"></i></span>${c.used} из ${c.limit}</td>
+          <td class="n">${pct(c.firstTimeRate)}</td><td class="n">${hours(c.decisionHours)}</td><td class="n">${usd(c.paidUsd)}</td></tr>`;
+      })
+      .join("");
+    const topRows = a.top
+      .map((t) => `<tr><td><b>${esc(t.title)}</b></td><td>${esc((state.brands.find((b) => b.slug === t.brand) || {}).title || t.brand)}</td><td class="n">${Number(t.views).toLocaleString("ru-RU")}</td><td class="n">${t.likes !== undefined ? Number(t.likes).toLocaleString("ru-RU") : "—"}</td></tr>`)
+      .join("");
+    $("#analyticsBox").innerHTML = `
+      <div class="kpis">${tiles.map(([l, v, s]) => `<div class="kpi"><span>${esc(l)}</span><b>${esc(v)}</b><small>${esc(s)}</small></div>`).join("")}</div>
+      <div class="charts">${money}${weeks}</div>
+      <div><h3 class="block-title">По клиентам</h3>${clientRows ? `<div class="table-wrap"><table class="atable"><thead><tr><th>Клиент</th><th>Тариф</th><th class="n">Серии в периоде</th><th class="n">С первого раза</th><th class="n">Решает за</th><th class="n">Оплачено</th></tr></thead><tbody>${clientRows}</tbody></table></div>` : '<p class="hint">Клиентов пока нет.</p>'}</div>
+      <div><h3 class="block-title">Лучшие серии в Instagram</h3>${topRows ? `<div class="table-wrap"><table class="atable"><thead><tr><th>Серия</th><th>Сериал</th><th class="n">Просмотры</th><th class="n">Лайки</th></tr></thead><tbody>${topRows}</tbody></table></div>` : '<p class="hint">Появятся после первых публикаций: Аналитик собирает просмотры, лайки и сохранения раз в день.</p>'}</div>`;
+  }
+
+  // Подсказка у столбиков: следует за указателем.
+  const tip = document.createElement("div");
+  tip.className = "chart-tip";
+  tip.hidden = true;
+  document.body.appendChild(tip);
+  document.addEventListener("pointermove", (e) => {
+    const hit = e.target.closest?.(".chart [data-tip]");
+    document.querySelectorAll(".chart .col.on").forEach((c) => c.classList.remove("on"));
+    if (!hit) return void (tip.hidden = true);
+    hit.closest("svg")?.querySelector(`[data-col="${hit.dataset.i}"]`)?.classList.add("on");
+    tip.textContent = hit.dataset.tip;
+    tip.hidden = false;
+    const x = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8);
+    tip.style.left = Math.max(8, x) + "px";
+    tip.style.top = Math.max(8, e.clientY - tip.offsetHeight - 12) + "px";
+  });
+
   // ---------- Тариф и настройки (клиент) ----------
   function renderPlan() {
     const me = state.me;
@@ -1468,6 +1614,7 @@ main { padding-block: 20px 48px; }
       renderAgents();
       renderConnections();
       renderClients();
+      renderAnalytics();
     }
   }
 

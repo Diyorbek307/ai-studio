@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import { STARTER_AGENTS } from "./agents/index.js";
+import { buildAnalytics, type StudioAnalytics } from "./analytics.js";
 import { type AuditEntry, recentAudit } from "./audit.js";
 import type { Viewer } from "./auth.js";
 import { localDay, spentToday } from "./budget.js";
@@ -142,6 +143,8 @@ export interface StudioState {
   invoices?: UiInvoice[];
   leads?: Lead[];
   audit?: AuditEntry[];
+  /** Цифры студии — только у владельца. */
+  analytics?: StudioAnalytics;
   /** Последние отчёты за неделю (у владельца — по всем клиентам). */
   reports?: WeeklyReport[];
   /** Только у клиента: его карточка, тариф, счета и отчёты. */
@@ -390,6 +393,7 @@ export function buildStudioState(
     invoices: uiInvoices(listInvoices(), clients, invoiceUrl),
     leads: listLeads(50),
     reports: listReports().slice(0, 40),
+    analytics: buildAnalytics(clients, listInvoices(), all),
     audit: recentAudit(60),
   };
 }
