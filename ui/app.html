@@ -2,7 +2,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@500;600;700&family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700&family=Onest:wght@500;600;700&family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
 /* Монтажная студия: слева рельса разделов со счётчиками, справа рабочий стол.
    Серия — строка рендера: вертикальное превью и дорожка из 11 шагов агентов, текущий шаг «рендерится».
@@ -624,6 +624,122 @@ body::before { background: rgba(12, 10, 34, .9); }
 .rise { animation: rise .45s var(--ease) both; animation-delay: calc(var(--i, 0) * 50ms); }
 @keyframes rise { from { opacity: 0; transform: translateY(10px); } }
 
+/* ================= Сцена студии, конвейер, подсветка, палитра команд ================= */
+:root { --font-hero: "Unbounded", "Onest", system-ui, sans-serif; }
+.section-head h2 { font-family: var(--font-hero); font-weight: 700; letter-spacing: -.01em; }
+.grain {
+  position: fixed; inset: -50%; z-index: 0; pointer-events: none; opacity: .06; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain 1.2s steps(4) infinite;
+}
+@keyframes grain { 25% { transform: translate(-2%, 1%); } 50% { transform: translate(1%, -2%); } 75% { transform: translate(2%, 2%); } }
+
+/* Сцена: приветствие, цифры дня и маскот в полный рост */
+.hero {
+  position: relative; overflow: hidden; isolation: isolate; border-radius: 26px; margin-bottom: 22px;
+  border: 1px solid rgba(255, 255, 255, .1); background:
+    radial-gradient(70% 120% at 100% 0%, rgba(155, 92, 255, .32), transparent 60%),
+    radial-gradient(60% 120% at 0% 100%, rgba(46, 230, 214, .22), transparent 60%),
+    linear-gradient(160deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .02));
+  box-shadow: 0 30px 80px rgba(3, 2, 15, .55), inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+.hero-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 24px; padding: 26px 28px 8px; align-items: center; }
+.hero-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); display: flex; gap: 10px; align-items: center; }
+.hero-eyebrow::before { content: ""; width: 26px; height: 1.5px; background: var(--grad); border-radius: 2px; }
+.hero h1 { margin: 10px 0 8px; font: 700 clamp(26px, 3.6vw, 42px)/1.08 var(--font-hero); letter-spacing: -.02em; max-width: 18ch;
+  background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero h1 em { font-style: normal; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero-lead { margin: 0; color: var(--muted); max-width: 56ch; }
+.hero-art { position: relative; width: 190px; height: 210px; align-self: end; justify-self: end; }
+.hero-art img { position: absolute; right: 6px; bottom: -36px; height: 250px; width: auto; filter: drop-shadow(0 18px 30px rgba(0, 0, 0, .45)); animation: float 5s ease-in-out infinite; transform-origin: bottom center; }
+.hero-art .halo { position: absolute; right: -20px; bottom: -70px; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(closest-side, rgba(46, 230, 214, .35), transparent 70%); animation: breathe 5s ease-in-out infinite; }
+.bubble {
+  position: absolute; right: 150px; top: 4px; z-index: 2; width: max-content; max-width: 230px; padding: 10px 13px; border-radius: 16px 16px 4px 16px;
+  background: rgba(255, 255, 255, .95); color: #120F2B; font: 600 13.5px/1.3 var(--font-body); box-shadow: 0 12px 30px rgba(0, 0, 0, .35);
+  animation: pop .6s var(--spring) both .5s;
+}
+.bubble small { display: block; font-weight: 500; color: #5B5880; font-size: 12px; margin-top: 2px; }
+@keyframes float { 50% { transform: translateY(-8px) rotate(-1.5deg); } }
+@keyframes breathe { 50% { transform: scale(1.1); opacity: .75; } }
+@keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.9); } }
+.hero-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; margin: 18px 28px 0; border-radius: 16px; overflow: hidden; background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .08); }
+.hero-stat { background: rgba(10, 8, 32, .55); padding: 14px 16px; display: grid; gap: 2px; }
+.hero-stat b { font: 700 28px/1.1 var(--font-hero); font-variant-numeric: tabular-nums; background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero-stat span { font-size: 12.5px; color: var(--muted); }
+.hero-stat.hot b { background: linear-gradient(100deg, #FFC25E, #FF4D9D); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* Конвейер агентов: 11 узлов, по линии бегут огоньки, узлы с сериями светятся */
+.conveyor { margin: 18px 0 0; padding: 18px 0 22px; }
+.belt-wrap { overflow-x: auto; scrollbar-width: none; padding: 6px 28px 2px; scroll-behavior: smooth; }
+.belt-wrap::-webkit-scrollbar { display: none; }
+.conveyor-title { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--faint); text-transform: uppercase; letter-spacing: .1em; font-weight: 600; margin: 0 28px 8px; flex-wrap: wrap; }
+.belt { position: relative; display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); min-width: 760px; }
+.belt::before { content: ""; position: absolute; left: 4.5%; right: 4.5%; top: 21px; height: 3px; border-radius: 3px; background: rgba(255, 255, 255, .08); }
+.belt::after {
+  content: ""; position: absolute; left: 4.5%; right: 4.5%; top: 21px; height: 3px; border-radius: 3px; opacity: .9;
+  background: repeating-linear-gradient(90deg, transparent 0 34px, rgba(46, 230, 214, .9) 34px 46px, transparent 46px 80px), var(--grad);
+  background-size: 80px 100%, 100% 100%; -webkit-mask: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  animation: belt 1.6s linear infinite; filter: drop-shadow(0 0 6px rgba(77, 124, 255, .6));
+}
+@keyframes belt { to { background-position: 80px 0, 0 0; } }
+.node { position: relative; z-index: 1; display: grid; justify-items: center; gap: 7px; text-align: center; }
+.node-dot {
+  width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font: 600 11.5px var(--font-mono); color: var(--muted);
+  background: #120F30; border: 1.5px solid rgba(255, 255, 255, .14); transition: transform .3s var(--spring);
+}
+.node:hover .node-dot { transform: scale(1.1); }
+.node.busy .node-dot { color: #fff; border-color: transparent; background: var(--grad) border-box; box-shadow: 0 0 0 4px rgba(46, 230, 214, .15), 0 0 24px rgba(77, 124, 255, .7); animation: node-pulse 1.6s ease-in-out infinite; }
+.node.wait .node-dot { color: #1A1200; border-color: transparent; background: linear-gradient(135deg, #FFC25E, #FF8A5B); box-shadow: 0 0 0 4px rgba(255, 194, 94, .16), 0 0 22px rgba(255, 194, 94, .55); }
+@keyframes node-pulse { 50% { box-shadow: 0 0 0 9px rgba(46, 230, 214, 0), 0 0 30px rgba(155, 92, 255, .8); } }
+.node-badge { position: absolute; top: -6px; left: calc(50% + 12px); min-width: 20px; height: 20px; padding: 0 6px; border-radius: 99px; background: #FF4D9D; color: #fff; font: 700 11px/20px var(--font-mono); box-shadow: 0 4px 12px rgba(255, 77, 157, .5); animation: pop .5s var(--spring) both; }
+.node-label { font-size: 11.5px; font-weight: 600; color: var(--ink); }
+.node-agents { font: 500 10.5px var(--font-mono); color: var(--faint); }
+@media (max-width: 760px) {
+  .hero-top { grid-template-columns: minmax(0, 1fr); padding: 20px 18px 0; }
+  .hero-art { display: none; }
+  .hero-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 16px 18px 0; }
+  .conveyor-title { margin: 0 18px 8px; }
+  .belt-wrap { padding: 6px 18px 2px; }
+}
+
+/* Подсветка за курсором на карточках */
+.ep, .brand-card, .client-card, .kpi { position: relative; }
+:is(.ep, .brand-card, .client-card, .kpi, .chart, .hero)::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .35s var(--ease);
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgba(46, 230, 214, .10), rgba(155, 92, 255, .06) 35%, transparent 60%);
+}
+:is(.ep, .brand-card, .client-card, .kpi, .chart, .hero):hover::after { opacity: 1; }
+
+/* Палитра команд ⌘K */
+.search-btn { display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255, 255, 255, .04); color: var(--faint); font-size: 13px; cursor: pointer; transition: all .2s var(--ease); }
+.search-btn:hover { color: var(--ink); border-color: var(--line-strong); }
+.search-btn svg { width: 16px; height: 16px; flex: none; }
+.search-btn span { white-space: nowrap; }
+.search-btn kbd { white-space: nowrap; }
+.search-btn kbd { margin-left: auto; font: 500 11px var(--font-mono); padding: 2px 6px; border-radius: 6px; border: 1px solid var(--line-strong); color: var(--muted); }
+@media (max-width: 999px) { .search-btn { order: 2; width: 36px; padding: 0; justify-content: center; } .search-btn span, .search-btn kbd { display: none; } }
+.cmdk { border: 0; padding: 0; background: transparent; width: min(620px, calc(100vw - 24px)); margin-top: 12vh; color: var(--ink); }
+.cmdk[open] { animation: sheet-in .25s var(--ease); }
+.cmdk::backdrop { background: rgba(4, 3, 16, .55); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); animation: fade-in .2s; }
+.cmdk-body { background: rgba(16, 14, 42, .88); backdrop-filter: blur(26px) saturate(160%); -webkit-backdrop-filter: blur(26px) saturate(160%); border: 1px solid rgba(255, 255, 255, .14); border-radius: 18px; box-shadow: var(--shadow-pop), 0 0 0 1px rgba(46, 230, 214, .1); overflow: hidden; }
+.cmdk-input { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.cmdk-input svg { width: 18px; height: 18px; color: var(--accent); flex: none; }
+.cmdk-input input { flex: 1; min-width: 0; border: 0; background: transparent; font-size: 16px; outline: none; color: var(--ink); }
+.cmdk-list { max-height: min(52vh, 420px); overflow-y: auto; padding: 8px; display: grid; gap: 2px; }
+.cmdk-group { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); padding: 10px 10px 4px; }
+.cmdk-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; cursor: pointer; color: var(--muted); border: 0; background: transparent; width: 100%; text-align: left; font: inherit; }
+.cmdk-item b { color: var(--ink); font-weight: 500; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cmdk-item svg { width: 18px; height: 18px; flex: none; }
+.cmdk-item small { font-size: 12px; color: var(--faint); white-space: nowrap; }
+.cmdk-item[aria-selected="true"] { background: var(--grad-soft); box-shadow: inset 0 0 0 1px rgba(46, 230, 214, .25); color: var(--accent); }
+.cmdk-empty { padding: 24px; text-align: center; color: var(--muted); }
+.cmdk-foot { display: flex; gap: 14px; padding: 10px 16px; border-top: 1px solid var(--line); font-size: 12px; color: var(--faint); }
+.cmdk-foot kbd { font: 500 11px var(--font-mono); padding: 1px 5px; border-radius: 5px; border: 1px solid var(--line-strong); margin-right: 4px; }
+.ep.flash { animation: flash 1.4s var(--ease); }
+@keyframes flash { 20% { box-shadow: 0 0 0 2px rgba(46, 230, 214, .8), 0 0 60px rgba(46, 230, 214, .35); } }
+.confetti { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 200; pointer-events: none; }
+#seriesHead { display: none; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
@@ -631,6 +747,7 @@ body::before { background: rgba(12, 10, 34, .9); }
 
 <div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
 <div class="girih" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <defs><linearGradient id="gradCol" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#4D7CFF"></stop><stop offset=".55" stop-color="#9B5CFF"></stop><stop offset="1" stop-color="#2EE6D6"></stop></linearGradient></defs>
 </svg>
@@ -651,6 +768,10 @@ body::before { background: rgba(12, 10, 34, .9); }
     <button class="btn primary block" id="newEpisode" type="button" aria-label="Новая серия">
       <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
       <span id="newEpisodeLabel">Новая серия</span>
+    </button>
+    <button class="search-btn" id="cmdSearch" type="button" aria-label="Поиск и команды" title="Поиск и команды">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="9" cy="9" r="5.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M13.2 13.2l3.6 3.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      <span>Поиск</span><kbd><span class="kbd-mod">Ctrl</span> K</kbd>
     </button>
     <nav class="nav" role="tablist" aria-label="Разделы" id="tabs"></nav>
     <div class="rail-foot">
@@ -676,7 +797,8 @@ body::before { background: rgba(12, 10, 34, .9); }
 
 <main class="main">
   <section data-view="series" aria-label="Серии">
-    <div class="section-head"><h2 id="seriesTitle">Серии</h2><p id="seriesLead">Каждая серия проходит 11 шагов агентов и приходит на одобрение.</p></div>
+    <div class="hero" id="hero" aria-label="Сегодня в студии"></div>
+    <div class="section-head" id="seriesHead"><h2 id="seriesTitle">Серии</h2><p id="seriesLead">Каждая серия проходит 11 шагов агентов и приходит на одобрение.</p></div>
     <div class="client-panel" id="clientPanel" hidden></div>
     <div class="filters" id="brandFilters"></div>
     <div class="filters" id="filters"></div>
@@ -903,6 +1025,17 @@ body::before { background: rgba(12, 10, 34, .9); }
 </dialog>
 
 <input type="file" id="assetInput" accept="image/png,image/jpeg,image/webp" hidden>
+
+<dialog class="cmdk" id="cmdk" aria-label="Поиск и команды">
+  <div class="cmdk-body">
+    <label class="cmdk-input">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="9" cy="9" r="5.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M13.2 13.2l3.6 3.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      <input id="cmdInput" type="text" placeholder="Серия, раздел или действие…" autocomplete="off" role="combobox" aria-controls="cmdList" aria-expanded="true">
+    </label>
+    <div class="cmdk-list" id="cmdList" role="listbox"></div>
+    <div class="cmdk-foot"><span><kbd>↑</kbd><kbd>↓</kbd>выбрать</span><span><kbd>Enter</kbd>открыть</span><span><kbd>Esc</kbd>закрыть</span></div>
+  </div>
+</dialog>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
@@ -2005,6 +2138,316 @@ body::before { background: rgba(12, 10, 34, .9); }
       .join("");
   }
 
+  // ---------- Сцена студии: приветствие, цифры дня, маскот и конвейер агентов ----------
+  const UZ_GREETING = [[5, "Xayrli tong", "Доброе утро"], [11, "Xayrli kun", "Добрый день"], [17, "Xayrli kech", "Добрый вечер"], [23, "Xayrli tun", "Доброй ночи"]];
+  function greeting(now = new Date()) {
+    const h = now.getHours();
+    const row = [...UZ_GREETING].reverse().find(([from]) => h >= from) || UZ_GREETING[3];
+    return h < 5 ? UZ_GREETING[3] : row;
+  }
+
+  function heroMascot() {
+    const brands = state.brands || [];
+    const order = isClient() ? brands : [brandBySlug(state.defaultSeries), ...brands];
+    for (const b of order) {
+      const c = b?.characters.find((x) => x.art && !x.placeholder);
+      if (c) return { brand: b, c };
+    }
+    return null;
+  }
+
+  // Реплика маскота: по-узбекски, с переводом. Зависит от того, что сейчас ждёт человека.
+  function heroLine(waiting, working, client) {
+    if (waiting) return [`${waiting} ta qism sizni kutmoqda!`, `${waiting} ${plural(waiting, "серия ждёт", "серии ждут", "серий ждут")} ${client ? "вас" : "тебя"}`];
+    if (working) return ["Agentlar ishlayapti — choy iching!", "Агенты работают — можно выпить чаю"];
+    return ["Yangi qism qilamizmi?", "Снимем новую серию?"];
+  }
+
+  let heroKey = "";
+  function renderHero() {
+    const box = $("#hero");
+    if (!box) return;
+    const client = isClient();
+    const eps = state.episodes;
+    const waiting = eps.filter(filters()[1][2]).length;
+    const working = eps.filter((e) => e.status === "in_progress").length;
+    const published = eps.filter((e) => e.status === "published").length;
+    const [, uz, ru] = greeting();
+    const date = new Date().toLocaleDateString("ru-RU", { weekday: "long", day: "numeric", month: "long" });
+    const name = (client ? state.me.contactName || "" : isOperator() ? state.operator.name : "").split(/\s+/)[0].replace(/[,.;:]+$/, "");
+    const n = (k, one, few, many) => `${k} ${plural(k, one, few, many)}`;
+    const title = waiting
+      ? `<em>${n(waiting, "серия ждёт", "серии ждут", "серий ждут")}</em> ${client ? "вашего решения" : "твоего решения"}`
+      : working
+        ? `Агенты снимают <em>${n(working, "серию", "серии", "серий")}</em> прямо сейчас`
+        : client ? `Всё согласовано. <em>Новое задание?</em>` : `Всё одобрено. <em>Время новой серии</em>`;
+    const lead = client
+      ? `Сериал «${state.me.brandTitle}» · по тарифу осталось ${n(state.me.usage.left, "серия", "серии", "серий")} из ${state.me.usage.limit}`
+      : `${n(state.brands.length, "бренд", "бренда", "брендов")} · ${n(eps.length, "серия", "серии", "серий")} за всё время · ${state.steps.length} шагов, ${n((state.agents || []).length, "агент", "агента", "агентов")}`;
+    const stats = client
+      ? [[waiting, "ждут вашего решения", waiting > 0], [working, "в работе у студии"], [published, "опубликовано"], [`${state.me.usage.left}/${state.me.usage.limit}`, "серий осталось по тарифу"]]
+      : [[waiting, "ждут одобрения", waiting > 0], [working, "в работе у агентов"], [published, "опубликовано"], [money(state.budget.spent), `расход сегодня из ${money(state.budget.limit)}`]];
+    const m = heroMascot();
+    const [lineUz, lineRu] = heroLine(waiting, working, client);
+    const art = m
+      ? `<div class="hero-art" aria-hidden="true"><span class="halo"></span>
+          <div class="bubble">${esc(lineUz)}<small>${esc(lineRu)} — ${esc(m.c.name)}</small></div>
+          <img id="heroImg" src="${esc(m.c.art)}" alt="" data-base="${esc(m.c.art)}" data-talk="${esc(m.c.talk || "")}" data-blink="${esc(m.c.blink || "")}"></div>`
+      : "";
+    const key = JSON.stringify([title, lead, stats, art, uz, date]);
+    if (key !== heroKey) {
+      heroKey = key;
+      box.innerHTML = `<div class="hero-top">
+          <div style="min-width:0">
+            <div class="hero-eyebrow">${esc(uz)}${name ? `, ${esc(name)}` : ""} · ${esc(date)}</div>
+            <h1>${title}</h1>
+            <p class="hero-lead">${esc(lead)}</p>
+          </div>${art}
+        </div>
+        <div class="hero-stats">${stats.map(([v, label, hot]) => `<div class="hero-stat${hot ? " hot" : ""}"><b>${esc(v)}</b><span>${esc(label)}</span></div>`).join("")}</div>
+        <div class="conveyor" id="conveyor"></div>`;
+      box.title = `${uz} — ${ru}`;
+      animateMascot();
+    }
+    renderConveyor();
+  }
+
+  // Маскот живой: моргает и «произносит» реплику — теми же кадрами рта и глаз, что и в роликах.
+  let mascotTimers = [];
+  function animateMascot() {
+    mascotTimers.forEach(clearTimeout);
+    mascotTimers = [];
+    const img = $("#heroImg");
+    if (!img || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const { base, talk, blink } = img.dataset;
+    [talk, blink].filter(Boolean).forEach((src) => { const p = new Image(); p.src = src; });
+    const later = (fn, ms) => mascotTimers.push(setTimeout(fn, ms));
+    if (talk) {
+      // Говорит, пока всплывает реплика: рот открыт-закрыт в ритме слогов.
+      const beats = [0, 140, 300, 420, 560, 700, 860, 980, 1140, 1300];
+      beats.forEach((t, i) => later(() => { if (img.isConnected) img.src = i % 2 ? base : talk; }, 600 + t));
+      later(() => { if (img.isConnected) img.src = base; }, 600 + 1450);
+    }
+    if (blink) {
+      const loop = () => {
+        later(() => {
+          if (!img.isConnected) return;
+          if (img.src.endsWith(base) || img.getAttribute("src") === base) {
+            img.src = blink;
+            later(() => { if (img.isConnected) img.src = base; }, 140);
+          }
+          loop();
+        }, 2600 + Math.random() * 2600);
+      };
+      loop();
+    }
+  }
+
+  // Конвейер: 11 шагов агентов. Узел светится, если на нём сейчас серия; на «Одобрении» — сколько ждут.
+  function renderConveyor() {
+    const box = $("#conveyor");
+    if (!box) return;
+    const steps = state.steps;
+    const last = steps.length - 1;
+    const counts = steps.map(() => 0);
+    let waiting = 0;
+    for (const e of state.episodes) {
+      if (e.status === "in_progress" && e.stepsDone < steps.length) counts[e.stepsDone]++;
+      if (e.status === "awaiting_approval" || waitingClient(e) || (e.status === "awaiting_feedback" && e.feedbackFrom !== "client")) waiting++;
+    }
+    const busy = counts.reduce((a, b) => a + b, 0);
+    const html = `<div class="conveyor-title"><span>Конвейер агентов</span><span>${busy ? `${busy} ${plural(busy, "серия", "серии", "серий")} на ленте` : "лента свободна"}${waiting ? ` · ${waiting} на одобрении` : ""}</span></div>
+      <div class="belt-wrap"><div class="belt">${steps
+        .map((s, i) => {
+          const k = i === last ? waiting + counts[i] : counts[i];
+          const cls = i === last && waiting ? "wait" : counts[i] ? "busy" : "";
+          return `<div class="node ${cls}" title="${esc(s.label)} · агент № ${s.agents.join(", № ")}">
+            <span class="node-dot">${String(i + 1).padStart(2, "0")}</span>${k ? `<span class="node-badge">${k}</span>` : ""}
+            <span class="node-label">${esc(s.label)}</span><span class="node-agents">№ ${s.agents.join("·")}</span></div>`;
+        })
+        .join("")}</div></div>`;
+    // Не перерисовываем ту же ленту: иначе значки заново «выпрыгивают» при каждом обновлении.
+    if (box.dataset.html === html) return;
+    box.dataset.html = html;
+    box.innerHTML = html;
+    // На телефоне лента шире экрана — подкручиваем к первому узлу, где сейчас серия.
+    const wrap = box.querySelector(".belt-wrap");
+    const hot = box.querySelector(".node.busy, .node.wait");
+    if (wrap && hot && wrap.scrollWidth > wrap.clientWidth) {
+      wrap.style.scrollBehavior = "auto";
+      wrap.scrollLeft = Math.max(0, hot.offsetLeft - 24);
+      wrap.style.scrollBehavior = "";
+    }
+  }
+
+  // ---------- Подсветка за курсором ----------
+  const SPOT = ".ep, .brand-card, .client-card, .kpi, .chart, .hero";
+  addEventListener("pointermove", (e) => {
+    const el = e.target.closest?.(SPOT);
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty("--mx", `${e.clientX - r.left}px`);
+    el.style.setProperty("--my", `${e.clientY - r.top}px`);
+  }, { passive: true });
+
+  // ---------- Салют, когда серия одобрена ----------
+  let lastClick = null;
+  function celebrate(origin) {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const canvas = document.createElement("canvas");
+    canvas.className = "confetti";
+    const dpr = Math.min(2, devicePixelRatio || 1);
+    canvas.width = innerWidth * dpr;
+    canvas.height = innerHeight * dpr;
+    document.body.append(canvas);
+    const ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+    const colors = ["#2EE6D6", "#4D7CFF", "#9B5CFF", "#FF4D9D", "#FFC25E", "#FFFFFF"];
+    const x0 = origin ? origin.left + origin.width / 2 : innerWidth / 2;
+    const y0 = origin ? origin.top + origin.height / 2 : innerHeight / 2;
+    const parts = Array.from({ length: 110 }, () => {
+      const a = Math.random() * Math.PI * 2;
+      const v = 4 + Math.random() * 9;
+      return { x: x0, y: y0, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 5, r: 3 + Math.random() * 4, c: colors[(Math.random() * colors.length) | 0], spin: Math.random() * 6, shape: Math.random() < 0.35 ? "star" : "rect" };
+    });
+    const start = performance.now();
+    const star = (x, y, r) => {
+      ctx.beginPath();
+      for (let i = 0; i < 8; i++) {
+        const rr = i % 2 ? r * 0.45 : r * 1.4;
+        const a = (i * Math.PI) / 4;
+        ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+      }
+      ctx.closePath();
+      ctx.fill();
+    };
+    const frame = (now) => {
+      const t = (now - start) / 1000;
+      ctx.clearRect(0, 0, innerWidth, innerHeight);
+      for (const p of parts) {
+        p.vy += 0.32;
+        p.vx *= 0.985;
+        p.x += p.vx;
+        p.y += p.vy;
+        ctx.globalAlpha = Math.max(0, 1 - t / 1.8);
+        ctx.fillStyle = p.c;
+        if (p.shape === "star") star(p.x, p.y, p.r);
+        else {
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.spin * t * 3);
+          ctx.fillRect(-p.r, -p.r / 2, p.r * 2, p.r);
+          ctx.restore();
+        }
+      }
+      if (t < 1.8) requestAnimationFrame(frame);
+      else canvas.remove();
+    };
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- Палитра команд: ⌘K / Ctrl+K ----------
+  const CMD_ICON = {
+    go: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 5l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    add: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4.5v11M4.5 10h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    ep: '<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="6" y="2.5" width="8" height="15" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 8.2v3.6l3-1.8z" fill="currentColor"/></svg>',
+  };
+  let cmdItems = [];
+  let cmdIndex = 0;
+  function commands(query) {
+    const q = query.trim().toLowerCase();
+    const list = [];
+    for (const [id, label] of tabs()) list.push({ group: "Разделы", icon: "go", label, hint: "открыть", run: () => { location.hash = id; } });
+    list.push({ group: "Действия", icon: "add", label: isClient() ? "Новое задание" : "Новая серия", hint: "агенты начнут", run: () => openSheet("episodeSheet") });
+    if (!isClient()) {
+      list.push({ group: "Действия", icon: "add", label: "Новый бренд", hint: "маскот и герои", run: () => openSheet("brandSheet") });
+      if (!isOperator()) list.push({ group: "Действия", icon: "add", label: "Новый клиент", hint: "доступ в кабинет", run: () => { location.hash = "clients"; openSheet("clientSheet"); } });
+    }
+    const status = { awaiting_approval: "ждёт одобрения", awaiting_client: "у клиента", awaiting_feedback: "правки", in_progress: "в работе", approved: "одобрена", published: "опубликована", failed: "ошибка", rejected: "отклонена", paused_budget: "пауза" };
+    for (const e of state.episodes) {
+      list.push({ group: "Серии", icon: "ep", label: e.title || e.id, hint: status[e.status] || e.status, text: `${brandBySlug(e.series)?.title || ""} ${e.brief || ""} ${e.logline || ""}`, run: () => openEpisode(e.id) });
+    }
+    if (!q) return list.filter((c) => c.group !== "Серии").concat(list.filter((c) => c.group === "Серии").slice(0, 5));
+    return list.filter((c) => `${c.label} ${c.hint} ${c.group} ${c.text || ""}`.toLowerCase().includes(q));
+  }
+
+  function openEpisode(id) {
+    filter = "all";
+    brandFilter = "all";
+    location.hash = "series";
+    render();
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`.ep[data-id="${CSS.escape(id)}"]`);
+      if (!el) return;
+      el.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
+      el.classList.remove("flash");
+      void el.offsetWidth;
+      el.classList.add("flash");
+    });
+  }
+
+  function renderCmd() {
+    const query = $("#cmdInput").value;
+    cmdItems = commands(query);
+    cmdIndex = Math.min(cmdIndex, Math.max(0, cmdItems.length - 1));
+    let group = "";
+    $("#cmdList").innerHTML = cmdItems.length
+      ? cmdItems
+          .map((c, i) => {
+            const head = c.group !== group ? `<div class="cmdk-group">${esc((group = c.group))}</div>` : "";
+            return `${head}<button type="button" class="cmdk-item" role="option" id="cmd-${i}" data-cmd="${i}" aria-selected="${i === cmdIndex}">${CMD_ICON[c.icon]}<b>${esc(c.label)}</b><small>${esc(c.hint)}</small></button>`;
+          })
+          .join("")
+      : `<div class="cmdk-empty">Ничего не нашлось по «${esc(query)}»</div>`;
+    $("#cmdInput").setAttribute("aria-activedescendant", cmdItems.length ? `cmd-${cmdIndex}` : "");
+    document.getElementById(`cmd-${cmdIndex}`)?.scrollIntoView({ block: "nearest" });
+  }
+
+  function openCmd() {
+    const d = $("#cmdk");
+    if (!state || d.open) return;
+    $("#cmdInput").value = "";
+    cmdIndex = 0;
+    renderCmd();
+    d.showModal();
+    $("#cmdInput").focus();
+  }
+
+  function runCmd(i) {
+    const c = cmdItems[i];
+    if (!c) return;
+    $("#cmdk").close();
+    c.run();
+  }
+
+  addEventListener("keydown", (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      $("#cmdk").open ? $("#cmdk").close() : openCmd();
+    }
+  });
+  $("#cmdSearch").addEventListener("click", openCmd);
+  $("#cmdInput").addEventListener("input", () => { cmdIndex = 0; renderCmd(); });
+  $("#cmdInput").addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      const n = cmdItems.length;
+      if (!n) return;
+      cmdIndex = (cmdIndex + (e.key === "ArrowDown" ? 1 : -1) + n) % n;
+      renderCmd();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      runCmd(cmdIndex);
+    }
+  });
+  $("#cmdList").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-cmd]");
+    if (b) runCmd(Number(b.dataset.cmd));
+  });
+  $("#cmdk").addEventListener("click", (e) => { if (e.target === $("#cmdk")) $("#cmdk").close(); });
+  const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+  document.querySelectorAll(".kbd-mod").forEach((el) => (el.textContent = isMac ? "⌘" : "Ctrl"));
+
   function render() {
     if (renderedRole !== state.role) {
       renderedRole = state.role;
@@ -2015,6 +2458,7 @@ body::before { background: rgba(12, 10, 34, .9); }
     }
     showTab();
     renderHeader();
+    renderHero();
     renderFilters();
     renderEpisodes();
     if (!document.querySelector("#brands :focus")) renderBrands();
@@ -2132,6 +2576,8 @@ body::before { background: rgba(12, 10, 34, .9); }
     setUi(id, { busy: true });
     const ok = await post(url, body);
     setUi(id, { busy: false });
+    // Салют и в демо-превью: там кнопки ничего не меняют, но показать радость одобрения можно.
+    if (url.endsWith("/approve") && (ok || PREVIEW)) celebrate(lastClick);
     if (ok) {
       toast(done);
       if (done && ui[id]) { ui[id].redo = false; ui[id].confirmReject = false; }
@@ -2277,6 +2723,7 @@ body::before { background: rgba(12, 10, 34, .9); }
 
     const btn = t.closest("[data-act]");
     if (!btn) return;
+    lastClick = btn.getBoundingClientRect();
     const id = btn.dataset.id;
     const base = "/api/episodes/" + id;
     switch (btn.dataset.act) {
