@@ -8,6 +8,7 @@ import { type UpcomingOccasion, upcomingOccasions } from "./occasions.js";
 import {
   APPROVAL_LABEL,
   APPROVAL_MODES,
+  autopilotPlan,
   type Client,
   ensureInvoices,
   type Invoice,
@@ -153,7 +154,7 @@ export interface StudioState {
   /** Последние отчёты за неделю (у владельца — по всем клиентам). */
   reports?: WeeklyReport[];
   /** Только у клиента: его карточка, тариф, счета и отчёты. */
-  me?: PublicClient & { features: string[]; invoices: UiInvoice[]; weeklyReport: boolean };
+  me?: PublicClient & { features: string[]; invoices: UiInvoice[]; weeklyReport: boolean; plan14: { date: string; episodes: number }[] };
 }
 
 /** Как интерфейс получает ссылку на файл эпизода (на сервере — /media/...). */
@@ -369,7 +370,7 @@ export function buildStudioState(
       schedule: { dailyAt: "", timezone: config.schedule.timezone, episodesPerDay: 0 },
       agents: [],
       episodes: mine.slice(0, 60).map((ep) => forClient(toUiEpisode(ep, titles.get(ep.series) ?? ep.series, opts.mediaUrl), ep)),
-      me: { ...publicClient(me, localDay(), all), features: PLANS[me.plan].features, invoices: uiInvoices(listInvoices(me.id), clients, invoiceUrl), weeklyReport: PLANS[me.plan].weeklyReport },
+      me: { ...publicClient(me, localDay(), all), features: PLANS[me.plan].features, invoices: uiInvoices(listInvoices(me.id), clients, invoiceUrl), weeklyReport: PLANS[me.plan].weeklyReport, plan14: autopilotPlan(me, localDay(), 14, all) },
       reports: listReports(me.id).slice(0, 8),
     };
   }

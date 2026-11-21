@@ -236,7 +236,7 @@ test("оператор: входит по приглашению, ведёт с�
   assert.equal((await asOp("/api/brands/bozor-seriali/endcard", { enabled: "0" })).status, 200);
   assert.equal((await asOp("/api/clients", { brand: "x", contactName: "x", email: "x@x.uz", plan: "start" })).status, 403);
   assert.equal((await fetch(`${base}/api/backup`, { headers: { Cookie: cookie } })).status, 403);
-  const inv = st.clients![0] && (await (await fetch(base + "/api/state", { headers: owner })).json() as State).invoices![0]!;
+  const inv = ((await (await fetch(base + "/api/state", { headers: owner })).json()) as State).invoices![0]!;
   assert.equal((await fetch(`${base}/invoices/${inv.id}`, { headers: { Cookie: cookie } })).status, 404);
 
   // Владелец отключает сотрудника — его сессия больше не действует.

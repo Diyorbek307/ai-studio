@@ -148,3 +148,20 @@ test("безопасность входа: сессия владельца пр�
   assert.equal(devOpen(req({}, "192.168.1.20")), false);
   assert.equal(devOpen(req({ "x-forwarded-for": "8.8.8.8" }, "127.0.0.1")), false);
 });
+
+test("план автопилота: ровно по тарифу за период, не больше 2 серий в день", () => {
+  const base = { id: "cl-plan0001", brand: "nobody", company: "X", contactName: "x", email: "x@plan.uz", approval: "studio" as const, status: "active" as const, createdAt: "" };
+  const start = clients.autopilotPlan({ ...base, plan: "start", periodStart: "2026-11-20" }, "2026-11-20", 30, []);
+  assert.equal(start.reduce((s, d) => s + d.episodes, 0), 12);
+  assert.ok(start.every((d) => d.episodes >= 1 && d.episodes <= 2));
+  assert.equal(start[0]!.date, "2026-11-20");
+
+  const pilot = clients.autopilotPlan({ ...base, plan: "pilot", periodStart: "2026-11-20" }, "2026-11-20", 14, []);
+  assert.equal(pilot.reduce((s, d) => s + d.episodes, 0), 5);
+  assert.ok(pilot.every((d) => d.date < "2026-11-27")); // пилот — 7 дней, дальше без серий
+
+  // Отстали от графика (середина месяца, серий нет) — догоняем по 2 в день.
+  const behind = clients.autopilotPlan({ ...base, plan: "business", periodStart: "2026-11-01" }, "2026-11-20", 3, []);
+  assert.deepEqual(behind.map((d) => d.episodes), [2, 2, 2]);
+  assert.deepEqual(clients.autopilotPlan({ ...base, plan: "business", periodStart: "2026-11-01", status: "paused" }, "2026-11-20", 3, []), []);
+});

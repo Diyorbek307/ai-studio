@@ -361,6 +361,22 @@ main { padding-block: 20px 48px; }
 }
 .client-card .brand-actions .btn { padding: 7px 11px; font-size: 13px; }
 
+/* ---------- Кабинет клиента: первые шаги и план ---------- */
+.client-panel { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); margin-bottom: 20px; }
+.client-panel > * { min-width: 0; }
+.steps-card, .plan-mini { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: grid; gap: 10px; align-content: start; }
+.steps-card h3, .plan-mini h3 { margin: 0; font-size: 15px; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.steps-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.steps-list li { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 10px; align-items: center; font-size: 14px; }
+.steps-list .dot { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; font-size: 12px; font-weight: 700; color: var(--muted); }
+.steps-list li.done .dot { background: var(--good); border-color: var(--good); color: var(--surface); }
+.steps-list li.done span:nth-child(2) { color: var(--muted); text-decoration: line-through; }
+.plan-days { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 14px; }
+.plan-days li { display: flex; justify-content: space-between; gap: 10px; border-top: 1px solid var(--line); padding-top: 6px; }
+.plan-days li:first-child { border-top: 0; padding-top: 0; }
+.plan-days b { font-weight: 600; }
+.linkish { border: 0; background: none; padding: 0; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; text-decoration: underline; }
+
 /* ---------- Аналитика ---------- */
 .kpis { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); }
 .kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 4px; }
@@ -430,6 +446,7 @@ main { padding-block: 20px 48px; }
 
 <main class="wrap">
   <section data-view="series" aria-label="Серии">
+    <div class="client-panel" id="clientPanel" hidden></div>
     <div class="filters" id="brandFilters"></div>
     <div class="filters" id="filters"></div>
     <div class="episodes" id="episodes"></div>
@@ -792,6 +809,10 @@ main { padding-block: 20px 48px; }
   }
   function showTab() {
     const tab = currentTab();
+    if (isClient() && tab === "brands" && pref.get("seenBrand", "") !== "1") {
+      pref.set("seenBrand", "1");
+      if (state) renderClientPanel();
+    }
     document.querySelectorAll("[data-view]").forEach((v) => (v.hidden = v.dataset.view !== tab));
     document.querySelectorAll("[data-tab]").forEach((a) => a.setAttribute("aria-selected", String(a.dataset.tab === tab)));
   }
@@ -1534,6 +1555,37 @@ main { padding-block: 20px 48px; }
       .join("")}</div>`;
   }
 
+  // Первые шаги клиента: чек-лист, пока не пройден или не скрыт; рядом — план автопилота на две недели.
+  function renderClientPanel() {
+    const box = $("#clientPanel");
+    if (!isClient()) {
+      box.hidden = true;
+      return;
+    }
+    const me = state.me;
+    const steps = [
+      ["Подключите Telegram — серии будут приходить в чат", me.telegramLinked, `<button class="btn small" type="button" data-goto="settings">Подключить</button>`],
+      ["Посмотрите свой сериал: герои и рубрики", pref.get("seenBrand", "") === "1", `<button class="btn small" type="button" data-goto="brands">Открыть</button>`],
+      ["Дайте первое задание: акция, новинка или праздник", state.episodes.some((e) => e.brief && e.orderedBy === me.company), `<button class="btn small" type="button" data-open="episodeSheet">Задание</button>`],
+      ["Подключите Telegram-канал — серии будут выходить в нём сами", Boolean(me.telegramChannel), `<button class="btn small" type="button" data-goto="settings">Подключить</button>`],
+    ];
+    const done = steps.filter((x) => x[1]).length;
+    const showSteps = done < steps.length && pref.get("stepsHidden", "") !== "1";
+    const stepsHtml = showSteps
+      ? `<div class="steps-card"><h3><span>Первые шаги · ${done} из ${steps.length}</span><button class="linkish" type="button" data-hide-steps>Скрыть</button></h3>
+          <ol class="steps-list">${steps.map(([text, ok, btn], i) => `<li class="${ok ? "done" : ""}"><span class="dot">${ok ? "✓" : i + 1}</span><span>${esc(text)}</span>${ok ? "" : btn}</li>`).join("")}</ol></div>`
+      : "";
+    const wd = (iso) => new Date(iso + "T00:00:00").toLocaleDateString("ru-RU", { weekday: "short", day: "numeric", month: "short" });
+    const days = (me.plan14 || []).slice(0, 7);
+    const occ = (state.occasions || []).slice(0, 3);
+    const planHtml = `<div class="plan-mini"><h3><span>План студии на 2 недели</span></h3>
+      ${days.length ? `<ul class="plan-days">${days.map((d) => `<li><span>${esc(wd(d.date))}</span><b>${d.episodes} ${plural(d.episodes, "серия", "серии", "серий")}</b></li>`).join("")}</ul>` : '<p class="hint">Серии по тарифу на этот период уже сделаны. Новые — с началом следующего периода.</p>'}
+      ${occ.length ? `<p class="hint">Скоро: ${occ.map((o) => `${esc(o.name.split(" · ").pop())} (${esc(day(o.date))})`).join(", ")} — студия сделает серии к этим датам.</p>` : ""}
+    </div>`;
+    box.innerHTML = stepsHtml + planHtml;
+    box.hidden = false;
+  }
+
   function renderSettings() {
     const me = state.me;
     const tg = me.telegramLinked
@@ -1640,6 +1692,7 @@ main { padding-block: 20px 48px; }
     renderFilters();
     renderEpisodes();
     if (!document.querySelector("#brands :focus")) renderBrands();
+    renderClientPanel();
     if (isClient()) {
       renderPlan();
       if (!document.querySelector("#settingsBox :focus")) renderSettings();
@@ -1850,6 +1903,16 @@ main { padding-block: 20px 48px; }
       uploadTarget = { slug, kind, id, variant };
       $("#assetInput").value = "";
       $("#assetInput").click();
+      return;
+    }
+    const goto = t.closest("[data-goto]");
+    if (goto) {
+      location.hash = goto.dataset.goto;
+      return;
+    }
+    if (t.closest("[data-hide-steps]")) {
+      pref.set("stepsHidden", "1");
+      renderClientPanel();
       return;
     }
     const teamInvite = t.closest("[data-team-invite]");

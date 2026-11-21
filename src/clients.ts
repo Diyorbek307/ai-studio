@@ -370,6 +370,36 @@ export function autopilotDue(client: Client, today = localDay()): number {
   return Math.max(0, Math.min(2, expected - u.used, u.left));
 }
 
+/**
+ * План автопилота на ближайшие дни: в какие дни и сколько серий сделает студия, чтобы тариф расходовался ровно.
+ * Та же логика, что в autopilotDue, прогнанная вперёд по дням (с переходом в следующий период тарифа).
+ */
+export function autopilotPlan(client: Client, today = localDay(), days = 14, episodes: Episode[] = listEpisodes()): { date: string; episodes: number }[] {
+  if (client.status !== "active") return [];
+  const plan = PLANS[client.plan];
+  const u = usage(client, today, episodes);
+  let period = { start: u.periodStart, end: u.periodEnd };
+  let used = u.used;
+  const between = (a: string, b: string) => Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / DAY_MS);
+  const out: { date: string; episodes: number }[] = [];
+  for (let i = 0; i < days; i++) {
+    const d = new Date(Date.parse(`${today}T00:00:00Z`) + i * DAY_MS).toISOString().slice(0, 10);
+    if (d >= period.end) {
+      if (plan.period === "once") break;
+      period = currentPeriod(plan, client.periodStart, d);
+      used = 0;
+    }
+    const total = between(period.start, period.end);
+    const expected = Math.ceil((plan.episodes * (between(period.start, d) + 1)) / total);
+    const due = Math.max(0, Math.min(2, expected - used, plan.episodes - used));
+    if (due > 0) {
+      out.push({ date: d, episodes: due });
+      used += due;
+    }
+  }
+  return out;
+}
+
 export function listInvoices(clientId?: string): Invoice[] {
   const all = readCollection<Invoice>(INVOICES);
   return (clientId ? all.filter((i) => i.clientId === clientId) : all).sort((a, b) => b.periodStart.localeCompare(a.periodStart));
