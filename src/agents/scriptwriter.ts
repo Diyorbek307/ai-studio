@@ -30,14 +30,20 @@ export async function writeScript(opts: {
   series: Series;
   idea: Idea;
   feedback: string[];
+  /** Уроки прошлых серий этого сериала: что клиент и студия просили исправить раньше. */
+  lessons?: string[];
   episodeId: string;
 }): Promise<Script> {
   const { series, idea, feedback } = opts;
+  const lessons = opts.lessons ?? [];
   log.agent(AGENT, `пишу сценарий «${idea.title}»`);
 
   const prompt = [
     `Идея серии:\n${JSON.stringify(idea, null, 2)}`,
     feedback.length ? `Замечания, которые нужно учесть:\n${feedback.map((f) => `- ${f}`).join("\n")}` : "",
+    lessons.length
+      ? `Уроки прошлых серий (так уже просили исправить — сразу учти, чтобы не повторять):\n${lessons.map((f) => `- ${f}`).join("\n")}`
+      : "",
     "Напиши сценарий.",
   ]
     .filter(Boolean)

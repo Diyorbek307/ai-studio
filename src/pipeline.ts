@@ -102,6 +102,28 @@ export function qaRedoStep(qa: QaReport): Step | undefined {
   }
 }
 
+/**
+ * Память правок: последние замечания клиента и студии по другим сериям этого сериала.
+ * Сценарист учитывает их сразу — серия реже уходит на переделку. Замечания контролёра качества не берём:
+ * они про технику конкретного ролика.
+ */
+export function pastLessons(series: string, exceptId?: string, limit = 8): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const e of listEpisodes()) {
+    if (e.series !== series || e.id === exceptId) continue;
+    for (const f of [...e.feedback].reverse()) {
+      if (!/^(Клиент|Продюсер):/.test(f)) continue;
+      const key = f.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(f);
+      if (out.length >= limit) return out;
+    }
+  }
+  return out;
+}
+
 // Один эпизод за раз: запросы из Telegram, панели и расписания встают в очередь.
 let queue: Promise<unknown> = Promise.resolve();
 function exclusive<T>(task: () => Promise<T>): Promise<T> {
@@ -132,7 +154,7 @@ async function runStep(ep: Episode, series: Series, step: Step): Promise<Series>
       break;
     }
     case "script":
-      ep.script = await writeScript({ series, idea: ep.idea!, feedback: ep.feedback, episodeId: ep.id });
+      ep.script = await writeScript({ series, idea: ep.idea!, feedback: ep.feedback, lessons: pastLessons(series.slug, ep.id), episodeId: ep.id });
       break;
     case "hook": {
       const hook = await makeHook({ series, script: ep.script!, episodeId: ep.id });
