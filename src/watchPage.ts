@@ -35,11 +35,9 @@ ${og}
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@600;700&family=Golos+Text:wght@400;500;600&display=swap">
 <style>
-:root { color-scheme: dark; --bg: #0B0D12; --surface: #12151C; --line: #262B37; --ink: #E9ECF3; --muted: #9098AB; --accent: #5B8CFF; --accent-ink: #06122E; --saffron: #F2B544; --saffron-soft: rgba(242, 181, 68, .14); }
-@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { color-scheme: light; --bg: #F3F4F8; --surface: #FFFFFF; --line: #E0E4EC; --ink: #121622; --muted: #586074; --accent: #2F5BEA; --accent-ink: #FFFFFF; --saffron: #A15F00; --saffron-soft: rgba(214, 137, 16, .14); } }
-:root[data-theme="light"] { color-scheme: light; --bg: #F3F4F8; --surface: #FFFFFF; --line: #E0E4EC; --ink: #121622; --muted: #586074; --accent: #2F5BEA; --accent-ink: #FFFFFF; --saffron: #A15F00; --saffron-soft: rgba(214, 137, 16, .14); }
+:root { color-scheme: dark; --bg: #07061A; --surface: rgba(255, 255, 255, .06); --line: rgba(255, 255, 255, .14); --ink: #F5F3FF; --muted: #ABA8CC; --accent: #2EE6D6; --accent-ink: #03141A; --saffron: #FFC25E; --saffron-soft: rgba(255, 194, 94, .15); }
 * { box-sizing: border-box; }
-body { margin: 0; min-height: 100dvh; background: var(--bg); color: var(--ink); font: 16px/1.55 "Golos Text", system-ui, -apple-system, "Segoe UI", sans-serif; display: grid; place-items: center; padding: 20px 16px 32px; }
+body { margin: 0; min-height: 100dvh; background: radial-gradient(50% 45% at 10% 5%, rgba(46, 230, 214, .26), transparent 70%), radial-gradient(45% 45% at 95% 10%, rgba(155, 92, 255, .3), transparent 70%), radial-gradient(55% 50% at 60% 105%, rgba(255, 77, 157, .2), transparent 70%), var(--bg); color: var(--ink); font: 16px/1.55 "Golos Text", system-ui, -apple-system, "Segoe UI", sans-serif; display: grid; place-items: center; padding: 20px 16px 32px; }
 main { width: min(960px, 100%); display: grid; gap: 28px; align-items: center; }
 @media (min-width: 820px) { main { grid-template-columns: 340px minmax(0, 1fr); } }
 .phone { justify-self: center; width: min(340px, 86vw); aspect-ratio: 9 / 16; background: #0A0F1A; border-radius: 34px; padding: 8px; box-shadow: 0 12px 32px rgba(18, 26, 43, .18); }
@@ -50,6 +48,11 @@ p { margin: 0 0 12px; color: var(--muted); max-width: 52ch; }
 .cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
 .btn { display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; padding: 12px 18px; font-weight: 700; text-decoration: none; border: 1px solid var(--line); color: var(--ink); background: var(--surface); }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+h1 { background: linear-gradient(100deg, #FFFFFF 10%, #BDF8F2 45%, #D6C6FF 75%, #FFC1DC); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.phone { padding: 3px; background: linear-gradient(115deg, #2EE6D6, #4D7CFF 38%, #9B5CFF 70%, #FF4D9D); box-shadow: 0 30px 80px rgba(77, 124, 255, .35); }
+.phone video { border-radius: 31px; }
+.btn.primary { background: linear-gradient(115deg, #0E9E96 0%, #3F5EFF 40%, #8B45F5 72%, #D93C8A 100%); border: 0; color: #fff; box-shadow: 0 10px 30px rgba(63, 94, 255, .4); }
+.kicker { background: linear-gradient(100deg, rgba(255, 194, 94, .18), rgba(255, 77, 157, .12)); }
 small { color: var(--muted); display: block; margin-top: 18px; font-size: 13px; }
 </style>
 </head>

@@ -8,59 +8,47 @@
    Серия — строка рендера: вертикальное превью и дорожка из 11 шагов агентов, текущий шаг «рендерится».
    Тёмная тема — основная (видео смотрится на тёмном), светлая — полноценная пара. */
 :root {
+  /* «Ночной Самарканд»: глубокая индиго-ночь, северное сияние цветов куполов (бирюза), лазурита, граната и шафрана,
+     узор гирих с изразцов Регистана, стеклянные панели. Одна тёмная тема — вау-эффект живёт в ней. */
   color-scheme: dark;
-  --bg: #0B0D12;
-  --surface: #12151C;
-  --surface-2: #191D26;
-  --surface-3: #222734;
-  --line: #262B37;
-  --line-strong: #363D4E;
-  --ink: #E9ECF3;
-  --muted: #9098AB;
-  --faint: #687086;
-  --accent: #5B8CFF;
-  --accent-ink: #06122E;
-  --accent-soft: rgba(91, 140, 255, .15);
-  --saffron: #F2B544;
-  --saffron-soft: rgba(242, 181, 68, .14);
-  --good: #3DD68C;
-  --good-soft: rgba(61, 214, 140, .13);
-  --bad: #FF6B6B;
-  --bad-soft: rgba(255, 107, 107, .13);
-  --screen: #05060A;
-  --scrim: rgba(4, 6, 10, .62);
-  --shadow: 0 1px 0 rgba(255, 255, 255, .03) inset, 0 10px 30px rgba(0, 0, 0, .32);
-  --shadow-pop: 0 24px 60px rgba(0, 0, 0, .55);
-  --glow: 0 0 0 1px rgba(91, 140, 255, .45), 0 8px 24px rgba(91, 140, 255, .22);
+  --bg: #07061A;
+  --solid: #100E2A;
+  --surface: rgba(255, 255, 255, .045);
+  --surface-2: rgba(255, 255, 255, .075);
+  --surface-3: rgba(255, 255, 255, .12);
+  --line: rgba(255, 255, 255, .085);
+  --line-strong: rgba(255, 255, 255, .17);
+  --ink: #F5F3FF;
+  --muted: #ABA8CC;
+  --faint: #7C789E;
+  --accent: #2EE6D6;
+  --accent-ink: #03141A;
+  --accent-soft: rgba(46, 230, 214, .14);
+  --lapis: #4D7CFF;
+  --violet: #9B5CFF;
+  --pomegranate: #FF4D9D;
+  --saffron: #FFC25E;
+  --saffron-soft: rgba(255, 194, 94, .15);
+  --good: #4BE3A1;
+  --good-soft: rgba(75, 227, 161, .14);
+  --bad: #FF6B8B;
+  --bad-soft: rgba(255, 107, 139, .15);
+  --grad: linear-gradient(115deg, #2EE6D6 0%, #4D7CFF 38%, #9B5CFF 70%, #FF4D9D 100%);
+  --grad-btn: linear-gradient(115deg, #0E9E96 0%, #3F5EFF 40%, #8B45F5 72%, #D93C8A 100%);
+  --grad-soft: linear-gradient(115deg, rgba(46, 230, 214, .16), rgba(77, 124, 255, .12) 45%, rgba(255, 77, 157, .14));
+  --grad-text: linear-gradient(100deg, #FFFFFF 10%, #BDF8F2 45%, #D6C6FF 75%, #FFC1DC);
+  --screen: #05040F;
+  --scrim: rgba(4, 3, 16, .6);
+  --shadow: 0 1px 0 rgba(255, 255, 255, .06) inset, 0 18px 50px rgba(3, 2, 15, .5);
+  --shadow-pop: 0 30px 80px rgba(2, 1, 12, .7);
+  --glow: 0 0 0 1px rgba(46, 230, 214, .35), 0 12px 40px rgba(77, 124, 255, .35);
   --font-display: "Onest", "Golos Text", system-ui, sans-serif;
   --font-body: "Golos Text", "Onest", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
-  --radius: 16px;
-  --radius-sm: 10px;
+  --radius: 18px;
+  --radius-sm: 12px;
   --ease: cubic-bezier(.2, .8, .2, 1);
   --spring: cubic-bezier(.34, 1.56, .64, 1);
-}
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) {
-    color-scheme: light;
-    --bg: #F3F4F8; --surface: #FFFFFF; --surface-2: #F0F2F7; --surface-3: #E4E8F0; --line: #E0E4EC; --line-strong: #CBD1DD;
-    --ink: #121622; --muted: #586074; --faint: #868EA2; --accent: #2F5BEA; --accent-ink: #FFFFFF; --accent-soft: rgba(47, 91, 234, .10);
-    --saffron: #A15F00; --saffron-soft: rgba(214, 137, 16, .14); --good: #0B8550; --good-soft: rgba(11, 133, 80, .11); --bad: #CF3434; --bad-soft: rgba(207, 52, 52, .10);
-    --screen: #0B0D12; --scrim: rgba(18, 22, 34, .42);
-    --shadow: 0 1px 2px rgba(18, 22, 34, .05), 0 8px 24px rgba(18, 22, 34, .06);
-    --shadow-pop: 0 24px 60px rgba(18, 22, 34, .22);
-    --glow: 0 0 0 1px rgba(47, 91, 234, .35), 0 8px 20px rgba(47, 91, 234, .14);
-  }
-}
-:root[data-theme="light"] {
-  color-scheme: light;
-  --bg: #F3F4F8; --surface: #FFFFFF; --surface-2: #F0F2F7; --surface-3: #E4E8F0; --line: #E0E4EC; --line-strong: #CBD1DD;
-  --ink: #121622; --muted: #586074; --faint: #868EA2; --accent: #2F5BEA; --accent-ink: #FFFFFF; --accent-soft: rgba(47, 91, 234, .10);
-  --saffron: #A15F00; --saffron-soft: rgba(214, 137, 16, .14); --good: #0B8550; --good-soft: rgba(11, 133, 80, .11); --bad: #CF3434; --bad-soft: rgba(207, 52, 52, .10);
-  --screen: #0B0D12; --scrim: rgba(18, 22, 34, .42);
-  --shadow: 0 1px 2px rgba(18, 22, 34, .05), 0 8px 24px rgba(18, 22, 34, .06);
-  --shadow-pop: 0 24px 60px rgba(18, 22, 34, .22);
-  --glow: 0 0 0 1px rgba(47, 91, 234, .35), 0 8px 20px rgba(47, 91, 234, .14);
 }
 
 * { box-sizing: border-box; }
@@ -498,6 +486,132 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -.012em; text-wra
 .mini { display: inline-block; width: 70px; height: 6px; border-radius: 99px; background: var(--surface-3); vertical-align: middle; margin-right: 6px; overflow: hidden; }
 .mini > i { display: block; height: 100%; background: var(--accent); border-radius: inherit; }
 
+/* ================= Слой «вау»: сияние, узор, стекло, градиенты ================= */
+html, body { background: var(--bg); }
+/* Северное сияние: три мягких пятна медленно плывут под интерфейсом. */
+.shell { position: relative; z-index: 1; }
+.aurora { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: radial-gradient(120% 80% at 50% -10%, #1A1450 0%, var(--bg) 60%); }
+.aurora i { position: absolute; width: 62vmax; height: 62vmax; border-radius: 50%; opacity: .55; will-change: transform; }
+.aurora i:nth-child(1) { left: -18vmax; top: -22vmax; background: radial-gradient(closest-side, rgba(46, 230, 214, .55), transparent 70%); animation: drift1 34s ease-in-out infinite alternate; }
+.aurora i:nth-child(2) { right: -24vmax; top: -10vmax; background: radial-gradient(closest-side, rgba(155, 92, 255, .55), transparent 70%); animation: drift2 40s ease-in-out infinite alternate; }
+.aurora i:nth-child(3) { left: 20vmax; bottom: -34vmax; background: radial-gradient(closest-side, rgba(255, 77, 157, .42), transparent 70%); animation: drift3 46s ease-in-out infinite alternate; }
+@keyframes drift1 { to { transform: translate(14vmax, 10vmax) scale(1.15); } }
+@keyframes drift2 { to { transform: translate(-12vmax, 14vmax) scale(.9); } }
+@keyframes drift3 { to { transform: translate(-10vmax, -12vmax) scale(1.1); } }
+/* Гирих — восьмиконечные звёзды изразцов Регистана, едва заметно. */
+.girih {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: .07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cg fill='none' stroke='%23FFFFFF' stroke-width='1'%3E%3Cpath d='M36 14l6.4 15.6L58 36l-15.6 6.4L36 58l-6.4-15.6L14 36l15.6-6.4z'/%3E%3Crect x='22' y='22' width='28' height='28'/%3E%3Cpath d='M0 0l14 14M72 0L58 14M0 72l14-14M72 72L58 58'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 72px 72px;
+  -webkit-mask-image: radial-gradient(120% 90% at 70% 0%, #000 20%, transparent 75%); mask-image: radial-gradient(120% 90% at 70% 0%, #000 20%, transparent 75%);
+}
+
+/* Стеклянная рельса */
+.rail { background: rgba(12, 10, 34, .55); backdrop-filter: blur(22px) saturate(150%); -webkit-backdrop-filter: blur(22px) saturate(150%); border-right: 1px solid var(--line); }
+@media (max-width: 999px) { .rail { background: rgba(12, 10, 34, .72); border-bottom: 1px solid var(--line); } }
+body::before { background: rgba(12, 10, 34, .9); }
+.logo { filter: drop-shadow(0 6px 18px rgba(77, 124, 255, .55)); animation: logo-glow 6s ease-in-out infinite; }
+@keyframes logo-glow { 50% { filter: drop-shadow(0 6px 22px rgba(255, 77, 157, .55)); } }
+.brand-name { background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 700; }
+.nav-glow { background: var(--grad-soft); box-shadow: inset 0 0 0 1px rgba(46, 230, 214, .28), 0 6px 20px rgba(77, 124, 255, .18); }
+.nav a[aria-selected="true"] svg { color: var(--accent); filter: drop-shadow(0 0 6px rgba(46, 230, 214, .6)); }
+.count { background: rgba(255, 77, 157, .18); color: #FF9BC6; }
+.budget { background: rgba(255, 255, 255, .04); }
+.who-av { background: var(--grad); color: #fff; }
+
+/* Заголовки — градиентом */
+.section-head h2, .empty h3 { background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 700; letter-spacing: -.02em; }
+.section-head h2 { font-size: 30px; }
+.banner { background: linear-gradient(90deg, rgba(255, 194, 94, .16), rgba(255, 77, 157, .10)); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+
+/* Кнопки: градиент с бегущим бликом */
+.btn { background: rgba(255, 255, 255, .05); border-color: var(--line-strong); }
+.btn:hover { background: rgba(255, 255, 255, .1); border-color: rgba(255, 255, 255, .28); }
+.btn.primary {
+  position: relative; overflow: hidden; isolation: isolate; color: #FFFFFF; border: 0;
+  background: var(--grad-btn); background-size: 180% 100%; background-position: 0 0;
+  box-shadow: 0 8px 26px rgba(63, 94, 255, .38), inset 0 1px 0 rgba(255, 255, 255, .25);
+  transition: background-position .6s var(--ease), box-shadow .3s var(--ease), transform .12s var(--ease);
+}
+.btn.primary::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, .35) 50%, transparent 70%); transform: translateX(-120%); }
+.btn.primary:hover { background: var(--grad-btn); background-size: 180% 100%; background-position: 100% 0; filter: none; box-shadow: 0 12px 36px rgba(139, 69, 245, .5), inset 0 1px 0 rgba(255, 255, 255, .25); }
+.btn.primary:hover::after { transform: translateX(120%); transition: transform .8s var(--ease); }
+.btn.danger.solid { background: linear-gradient(115deg, #E0335E, #FF4D9D); }
+
+/* Поля */
+.field input, .field select, .field textarea, .copy input, .pw input, .panel textarea { background: rgba(5, 4, 20, .55); border-color: var(--line-strong); }
+.field select option { background: var(--solid); }
+
+/* Фильтры */
+.chip { background: rgba(255, 255, 255, .04); }
+.chip[aria-pressed="true"] { background: var(--grad-soft); border-color: rgba(46, 230, 214, .35); box-shadow: 0 4px 18px rgba(77, 124, 255, .18); }
+.chip.attn:not([aria-pressed="true"]) { border-color: rgba(255, 194, 94, .45); box-shadow: 0 0 18px rgba(255, 194, 94, .12); }
+
+/* Карточки — стекло с подсветкой при наведении */
+.ep, .brand-card, .client-card, .plan-card, .chart, .kpi, .fact, .setting, .conn, .agent, .rows, .table-wrap, .steps-card, .plan-mini, .more, .skeleton, .empty {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .025)); border-color: var(--line);
+}
+.ep:hover, .brand-card:hover, .client-card:hover, .kpi:hover, .chart:hover {
+  border-color: rgba(46, 230, 214, .28); box-shadow: 0 0 0 1px rgba(46, 230, 214, .12), 0 24px 60px rgba(77, 124, 255, .16);
+}
+.ep, .brand-card, .client-card, .kpi { transition: border-color .3s var(--ease), box-shadow .3s var(--ease), transform .3s var(--ease); }
+.brand-card:hover, .client-card:hover, .kpi:hover { transform: translateY(-2px); }
+/* Серия ждёт решения — светящаяся градиентная рамка */
+.ep.need { position: relative; box-shadow: 0 18px 60px rgba(155, 92, 255, .18); }
+.ep.need::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.5px; pointer-events: none;
+  background: var(--grad); background-size: 200% 200%; animation: flow 6s linear infinite;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+}
+@keyframes flow { 50% { background-position: 100% 100%; } }
+
+/* Превью — радужное кольцо как у сторис; пока рендерится — кольцо крутится */
+.phone { padding: 2.5px; background: var(--grad); border-radius: 22px; box-shadow: 0 20px 50px rgba(77, 124, 255, .25), 0 0 0 1px rgba(255, 255, 255, .05); overflow: hidden; position: relative; isolation: isolate; }
+.phone video, .phone .screen { border-radius: 19.5px; position: relative; z-index: 1; }
+.phone.rendering { background: transparent; }
+.phone.rendering::before { content: ""; position: absolute; inset: -60%; z-index: 0; background: conic-gradient(from 0deg, #2EE6D6, #4D7CFF, #9B5CFF, #FF4D9D, #FFC25E, #2EE6D6); animation: spin 2.8s linear infinite; }
+.phone .screen { background: radial-gradient(80% 60% at 50% 40%, #1B1648, var(--screen)); animation: none; color: #CFCBF2; }
+.spin { border-color: rgba(255, 255, 255, .12); border-top-color: var(--accent); border-right-color: var(--violet); }
+
+/* Статусы — насыщеннее */
+.pill { background: rgba(255, 255, 255, .07); }
+.st-in_progress, .st-awaiting_client { background: rgba(46, 230, 214, .14); color: var(--accent); }
+.st-awaiting_approval, .st-awaiting_feedback, .st-paused_budget { background: var(--saffron-soft); color: var(--saffron); }
+.pill::before { box-shadow: 0 0 8px currentColor; }
+.tag { background: rgba(255, 255, 255, .05); }
+.tag.engine-tag { background: rgba(155, 92, 255, .16); color: #C9B3FF; }
+.brief { background: linear-gradient(100deg, rgba(255, 194, 94, .14), rgba(255, 77, 157, .08)); border: 1px solid rgba(255, 194, 94, .18); }
+
+/* Дорожка рендера — один градиент через все шаги */
+.pipe li { background: rgba(255, 255, 255, .08); }
+.pipe li.done { background: var(--grad); background-size: 1100% 100%; background-position: calc(var(--k, 0) * 10%) 0; box-shadow: 0 0 10px rgba(77, 124, 255, .35); }
+.pipe li.now { box-shadow: 0 0 14px rgba(46, 230, 214, .6); }
+.pipe-names .is-now { color: var(--accent); text-shadow: 0 0 10px rgba(46, 230, 214, .6); }
+.meter { background: rgba(255, 255, 255, .08); }
+.meter > span { background: var(--grad); box-shadow: 0 0 12px rgba(77, 124, 255, .5); }
+.mini > i { background: var(--grad); }
+.ava { box-shadow: 0 0 0 2px rgba(7, 6, 26, .9), 0 4px 12px rgba(0, 0, 0, .35); }
+
+/* Цифры — градиентом */
+.kpi b, .fact b, .brand-stats b, .plan-name, .plan-price { background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.kpi b { font-size: 30px; }
+.chart .col { fill: url(#gradCol); }
+.chart .col.on { fill: url(#gradCol); filter: brightness(1.25) drop-shadow(0 0 8px rgba(46, 230, 214, .6)); }
+.agent.busy { box-shadow: var(--glow); }
+.state.on { box-shadow: 0 0 14px rgba(75, 227, 161, .18); }
+
+/* Окна и уведомления — стекло */
+.sheet-body { background: rgba(16, 14, 42, .82); backdrop-filter: blur(24px) saturate(150%); -webkit-backdrop-filter: blur(24px) saturate(150%); border-color: rgba(255, 255, 255, .14); }
+.sheet::backdrop { background: rgba(4, 3, 16, .55); }
+.engine { background: rgba(255, 255, 255, .04); }
+.engine:has(input:checked) { background: var(--grad-soft); border-color: rgba(46, 230, 214, .5); box-shadow: 0 0 0 3px rgba(46, 230, 214, .12), 0 8px 24px rgba(77, 124, 255, .2); }
+.toast { background: rgba(20, 17, 52, .85); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-color: rgba(255, 255, 255, .16); }
+.toast::after { background: var(--grad); }
+.chart-tip { background: rgba(20, 17, 52, .92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.asset-img { background: repeating-conic-gradient(rgba(255, 255, 255, .05) 0 25%, rgba(255, 255, 255, .1) 0 50%) 0 0 / 14px 14px; }
+.steps-list li.done .dot { background: var(--grad); border-color: transparent; color: #fff; }
+.quick button.occ { background: linear-gradient(100deg, rgba(255, 194, 94, .18), rgba(255, 77, 157, .12)); }
+
 /* ---------- Движение ---------- */
 /* Появление раздела: блоки поднимаются по очереди. Конечное состояние видимое — анимация лишь подводит к нему. */
 .page-in > *, .page-in .episodes > *, .page-in .brands > *, .page-in .clients > *, .page-in .kpis > *, .page-in .agents > *, .page-in .conns > *, .page-in .charts > *, .page-in .settings > *, .page-in .stack > * {
@@ -515,6 +629,11 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -.012em; text-wra
 }
 </style>
 
+<div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+<div class="girih" aria-hidden="true"></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs><linearGradient id="gradCol" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#4D7CFF"></stop><stop offset=".55" stop-color="#9B5CFF"></stop><stop offset="1" stop-color="#2EE6D6"></stop></linearGradient></defs>
+</svg>
 <div class="shell">
   <aside class="rail" aria-label="Разделы студии">
     <div class="rail-head">
@@ -1077,7 +1196,7 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -.012em; text-wra
     const items = steps
       .map((s, i) => {
         const cls = i < done ? "done" : i === nowIndex && running ? "now" : i === nowIndex && stopped ? "stop" : "";
-        return `<li class="${cls}" title="${esc(s.label)} · № ${s.agents.join(", № ")}"></li>`;
+        return `<li class="${cls}" style="--k:${i}" title="${esc(s.label)} · № ${s.agents.join(", № ")}"></li>`;
       })
       .join("");
     const names = steps.map((s, i) => `<span class="${i === nowIndex && running ? "is-now" : ""}">${esc(s.label)}</span>`).join("");
@@ -1280,14 +1399,15 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -.012em; text-wra
     const meta = isClient()
       ? `<span>${esc(date)}</span>${ep.duration ? `<span>${Math.round(ep.duration)} с</span>` : ""}`
       : `<span>${esc(date)}</span>${ep.duration ? `<span>${Math.round(ep.duration)} с</span>` : ""}<span>${money(ep.costUsd)}</span><span>${esc(ep.id)}</span>`;
-    return `<article class="ep" data-id="${ep.id}">
+    const need = isClient() ? waitingClient(ep) : ep.status === "awaiting_approval" || (ep.status === "awaiting_feedback" && ep.feedbackFrom !== "client");
+    return `<article class="ep${need ? " need" : ""}" data-id="${ep.id}">
       <div class="ep-head">
         <div class="ep-top"><span class="pill st-${ep.status}">${esc(ep.statusLabel.replace(/^\S+\s/, ""))}</span>${tags}</div>
         <h3>${esc(ep.title)}</h3>
         ${ep.logline ? `<p class="logline">${esc(ep.logline)}</p>` : ""}
         <div class="meta mono">${meta}</div>
       </div>
-      <div class="ep-media"><div class="phone">${media}</div></div>
+      <div class="ep-media"><div class="phone${ep.status === "in_progress" ? " rendering" : ""}">${media}</div></div>
       <div class="ep-body">
         ${ep.brief ? `<div class="brief"><b>${isClient() ? "Ваше задание" : "Задание"}</b>${esc(ep.brief)}</div>` : ""}
         ${isClient() && ep.stepsDone >= state.steps.length ? "" : pipeline(ep)}

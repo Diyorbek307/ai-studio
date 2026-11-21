@@ -4,29 +4,17 @@
 <style>
 /* Вход в студию и в кабинет клиента: одна карточка на фоне с мягкой подсветкой, система как в кабинете. */
 :root {
+  /* Вход в стиле кабинета: индиго-ночь с сиянием, стеклянная карточка, градиентная кнопка. */
   color-scheme: dark;
-  --bg: #0B0D12; --surface: #12151C; --surface-2: #191D26; --line: #262B37; --line-strong: #363D4E; --ink: #E9ECF3; --muted: #9098AB;
-  --accent: #5B8CFF; --accent-ink: #06122E; --accent-soft: rgba(91, 140, 255, .15); --saffron: #F2B544; --bad: #FF6B6B; --bad-soft: rgba(255, 107, 107, .13);
-  --shadow: 0 24px 60px rgba(0, 0, 0, .5);
+  --bg: #07061A; --surface: rgba(18, 15, 46, .72); --surface-2: rgba(255, 255, 255, .06); --line: rgba(255, 255, 255, .12); --line-strong: rgba(255, 255, 255, .2);
+  --ink: #F5F3FF; --muted: #ABA8CC; --accent: #2EE6D6; --accent-ink: #03141A; --accent-soft: rgba(46, 230, 214, .16); --saffron: #FFC25E;
+  --bad: #FF6B8B; --bad-soft: rgba(255, 107, 139, .15);
+  --shadow: 0 30px 80px rgba(2, 1, 12, .7);
   --font-display: "Onest", "Golos Text", system-ui, sans-serif;
   --font-body: "Golos Text", "Onest", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) {
-    color-scheme: light;
-    --bg: #F3F4F8; --surface: #FFFFFF; --surface-2: #EEF0F6; --line: #E0E4EC; --line-strong: #CBD1DD; --ink: #121622; --muted: #586074;
-    --accent: #2F5BEA; --accent-ink: #FFFFFF; --accent-soft: rgba(47, 91, 234, .10); --saffron: #A15F00; --bad: #CF3434; --bad-soft: rgba(207, 52, 52, .10);
-    --shadow: 0 24px 60px rgba(18, 22, 34, .14);
-  }
-}
-:root[data-theme="light"] {
-  color-scheme: light;
-  --bg: #F3F4F8; --surface: #FFFFFF; --surface-2: #EEF0F6; --line: #E0E4EC; --line-strong: #CBD1DD; --ink: #121622; --muted: #586074;
-  --accent: #2F5BEA; --accent-ink: #FFFFFF; --accent-soft: rgba(47, 91, 234, .10); --saffron: #A15F00; --bad: #CF3434; --bad-soft: rgba(207, 52, 52, .10);
-  --shadow: 0 24px 60px rgba(18, 22, 34, .14);
-}
 * { box-sizing: border-box; }
-body { background: radial-gradient(60% 50% at 50% 0%, var(--accent-soft), transparent 70%), var(--bg); color: var(--ink); font: 15px/1.55 var(--font-body); -webkit-font-smoothing: antialiased; min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; }
+body { background: radial-gradient(50% 45% at 15% 10%, rgba(46, 230, 214, .28), transparent 70%), radial-gradient(45% 45% at 90% 15%, rgba(155, 92, 255, .32), transparent 70%), radial-gradient(50% 50% at 60% 100%, rgba(255, 77, 157, .22), transparent 70%), var(--bg); color: var(--ink); font: 15px/1.55 var(--font-body); -webkit-font-smoothing: antialiased; min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; }
 button, input { font: inherit; color: inherit; }
 a { color: var(--accent); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
@@ -50,6 +38,10 @@ input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px 
 .btn:active { transform: scale(.98); }
 @keyframes card-in { from { opacity: 0; transform: translateY(14px) scale(.98); } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+.card { backdrop-filter: blur(24px) saturate(150%); -webkit-backdrop-filter: blur(24px) saturate(150%); }
+h1, .brand b { background: linear-gradient(100deg, #FFFFFF 10%, #BDF8F2 45%, #D6C6FF 75%, #FFC1DC); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.btn { background: linear-gradient(115deg, #0E9E96 0%, #3F5EFF 40%, #8B45F5 72%, #D93C8A 100%); color: #fff; box-shadow: 0 10px 30px rgba(63, 94, 255, .4); }
+input { background: rgba(5, 4, 20, .55); }
 </style>
 
 <main class="card">
