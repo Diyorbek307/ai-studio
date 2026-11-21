@@ -82,7 +82,7 @@ export function renderInvoicePage(invoice: Invoice, client: Client, seriesTitle:
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ink: #E7ECF5; --muted: #97A3BA; --line: #26324A; --accent: #43B6D6; --bg: #0B111D; --paper: #131B2B; --good: #4CC48D; color-scheme: dark; } }
 :root[data-theme="dark"] { --ink: #E7ECF5; --muted: #97A3BA; --line: #26324A; --accent: #43B6D6; --bg: #0B111D; --paper: #131B2B; --good: #4CC48D; color-scheme: dark; }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif; padding: 24px 16px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 "Golos Text", system-ui, -apple-system, "Segoe UI", sans-serif; padding: 24px 16px; }
 .sheet { max-width: 820px; margin: 0 auto; background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 32px 28px; }
 .bar { max-width: 820px; margin: 0 auto 14px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; }
 .bar button { border: 0; background: var(--accent); color: #fff; font: inherit; font-weight: 700; padding: 10px 16px; border-radius: 10px; cursor: pointer; }

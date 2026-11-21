@@ -1,34 +1,36 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Manrope:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@500;600;700&family=Golos+Text:wght@400;500;600&display=swap">
 <style>
-/* Вход в студию и в кабинет клиента: одна карточка по центру, палитра как в пульте студии. */
+/* Вход в студию и в кабинет клиента: одна карточка на фоне с мягкой подсветкой, система как в кабинете. */
 :root {
-  --bg: #EEF2F6; --surface: #FFFFFF; --surface-2: #E4EAF1; --line: #D3DCE6; --ink: #111A2C; --muted: #586378;
-  --accent: #0B6E8E; --accent-ink: #FFFFFF; --accent-soft: #D7ECF3; --saffron: #B87411; --bad: #B83A33; --bad-soft: #F8E0DD;
-  --shadow: 0 1px 2px rgba(17, 26, 44, .06), 0 10px 30px rgba(17, 26, 44, .08);
-  --font-display: "Unbounded", "Manrope", system-ui, sans-serif;
-  --font-body: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+  --bg: #0B0D12; --surface: #12151C; --surface-2: #191D26; --line: #262B37; --line-strong: #363D4E; --ink: #E9ECF3; --muted: #9098AB;
+  --accent: #5B8CFF; --accent-ink: #06122E; --accent-soft: rgba(91, 140, 255, .15); --saffron: #F2B544; --bad: #FF6B6B; --bad-soft: rgba(255, 107, 107, .13);
+  --shadow: 0 24px 60px rgba(0, 0, 0, .5);
+  --font-display: "Onest", "Golos Text", system-ui, sans-serif;
+  --font-body: "Golos Text", "Onest", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0B111D; --surface: #131B2B; --surface-2: #1A2438; --line: #26324A; --ink: #E7ECF5; --muted: #97A3BA;
-    --accent: #43B6D6; --accent-ink: #04202B; --accent-soft: #10323F; --saffron: #F0B656; --bad: #F2786E; --bad-soft: #3B1A19;
-    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 30px rgba(0, 0, 0, .3);
-    color-scheme: dark;
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --bg: #F3F4F8; --surface: #FFFFFF; --surface-2: #EEF0F6; --line: #E0E4EC; --line-strong: #CBD1DD; --ink: #121622; --muted: #586074;
+    --accent: #2F5BEA; --accent-ink: #FFFFFF; --accent-soft: rgba(47, 91, 234, .10); --saffron: #A15F00; --bad: #CF3434; --bad-soft: rgba(207, 52, 52, .10);
+    --shadow: 0 24px 60px rgba(18, 22, 34, .14);
   }
 }
-:root[data-theme="dark"] {
-  --bg: #0B111D; --surface: #131B2B; --surface-2: #1A2438; --line: #26324A; --ink: #E7ECF5; --muted: #97A3BA;
-  --accent: #43B6D6; --accent-ink: #04202B; --accent-soft: #10323F; --saffron: #F0B656; --bad: #F2786E; --bad-soft: #3B1A19;
-  color-scheme: dark;
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #F3F4F8; --surface: #FFFFFF; --surface-2: #EEF0F6; --line: #E0E4EC; --line-strong: #CBD1DD; --ink: #121622; --muted: #586074;
+  --accent: #2F5BEA; --accent-ink: #FFFFFF; --accent-soft: rgba(47, 91, 234, .10); --saffron: #A15F00; --bad: #CF3434; --bad-soft: rgba(207, 52, 52, .10);
+  --shadow: 0 24px 60px rgba(18, 22, 34, .14);
 }
 * { box-sizing: border-box; }
-body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--font-body); -webkit-font-smoothing: antialiased; min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; }
+body { background: radial-gradient(60% 50% at 50% 0%, var(--accent-soft), transparent 70%), var(--bg); color: var(--ink); font: 15px/1.55 var(--font-body); -webkit-font-smoothing: antialiased; min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; }
 button, input { font: inherit; color: inherit; }
 a { color: var(--accent); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
-.card { width: min(420px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); padding: 28px 24px; display: grid; gap: 18px; }
+.card { animation: card-in .5s cubic-bezier(.2, .8, .2, 1) both; width: min(420px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); padding: 28px 24px; display: grid; gap: 18px; }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
 .brand svg { width: 38px; height: 38px; flex: none; }
 .brand b { font: 700 17px/1.1 var(--font-display); }
@@ -41,6 +43,13 @@ input { width: 100%; border: 1px solid var(--line); border-radius: 10px; padding
 .btn[disabled] { opacity: .6; cursor: progress; }
 .error { background: var(--bad-soft); color: var(--ink); border-radius: 10px; padding: 10px 12px; font-size: 14px; }
 .foot { font-size: 13px; color: var(--muted); text-align: center; }
+input { border-color: var(--line-strong); transition: border-color .18s, box-shadow .18s; }
+input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.btn { transition: filter .18s, transform .12s, box-shadow .25s; }
+.btn:hover { filter: brightness(1.08); box-shadow: 0 8px 24px var(--accent-soft); }
+.btn:active { transform: scale(.98); }
+@keyframes card-in { from { opacity: 0; transform: translateY(14px) scale(.98); } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 
 <main class="card">
