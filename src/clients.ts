@@ -167,6 +167,8 @@ export function createClient(input: ClientInput): Client {
   if (!(APPROVAL_MODES as readonly string[]).includes(approval)) throw new Error("Неизвестный порядок согласования");
   const email = normalizeEmail(input.email);
   if (clientByEmail(email)) throw new Error("Клиент с такой почтой уже есть");
+  // Почта — логин: её не должно быть и у сотрудников студии (data/team.json).
+  if (readCollection<{ email: string }>("team").some((m) => m.email === email)) throw new Error("Эта почта уже используется для входа");
   if (!input.contactName.trim()) throw new Error("Укажи контактное лицо");
   const periodStart = input.periodStart || localDay();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(periodStart)) throw new Error("Дата старта: ГГГГ-ММ-ДД");

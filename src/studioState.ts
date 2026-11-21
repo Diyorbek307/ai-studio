@@ -19,6 +19,7 @@ import {
 import { config } from "./config.js";
 import { type Lead, listLeads } from "./leads.js";
 import { listReports, type WeeklyReport } from "./reports.js";
+import { listTeam, type PublicMember, publicMember } from "./team.js";
 import { endCardFor } from "./media/endCard.js";
 import { CHARACTER_VARIANTS, type CharacterVariant, characterAsset, isPlaceholder, locationAsset } from "./media/cutout.js";
 import { isStepDone, STEPS, type Step } from "./pipeline.js";
@@ -120,7 +121,11 @@ export type InvoiceUrl = (invoice: Invoice) => string;
 
 export interface StudioState {
   generatedAt: string;
-  role: "owner" | "client";
+  role: "owner" | "operator" | "client";
+  /** Сотрудник студии, если вошёл оператор. */
+  operator?: { name: string; email: string };
+  /** Команда студии — только у владельца. */
+  team?: PublicMember[];
   defaultSeries: string;
   brands: UiBrand[];
   providers: Record<"claude" | "tts" | "telegram" | "instagram" | "publicUrl", boolean> & {
@@ -369,7 +374,7 @@ export function buildStudioState(
     };
   }
 
-  return {
+  const full: StudioState = {
     ...common,
     role: "owner",
     defaultSeries: config.series,
@@ -395,5 +400,30 @@ export function buildStudioState(
     reports: listReports().slice(0, 40),
     analytics: buildAnalytics(clients, listInvoices(), all),
     audit: recentAudit(60),
+    team: listTeam().map(publicMember),
+  };
+  if (viewer.role !== "operator") return full;
+
+  // Оператор ведёт серии и бренды: без денег, данных клиентов, заявок, журнала и команды.
+  // Из клиентов — только то, что нужно для согласования: чей бренд и кто согласует.
+  return {
+    ...full,
+    role: "operator",
+    operator: { name: viewer.member.name, email: viewer.member.email },
+    clients: full.clients?.map((c) => ({
+      ...c,
+      email: "",
+      phone: undefined,
+      legal: undefined,
+      priceUsd: 0,
+      unpaidUsd: 0,
+      contactName: "",
+    })),
+    invoices: undefined,
+    leads: undefined,
+    reports: undefined,
+    analytics: undefined,
+    audit: undefined,
+    team: undefined,
   };
 }

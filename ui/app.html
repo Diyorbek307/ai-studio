@@ -644,7 +644,7 @@ main { padding-block: 20px 48px; }
       <p class="sheet-note" id="inviteNote"></p>
     </div>
     <div class="copy"><input id="inviteUrl" readonly aria-label="Ссылка-приглашение"><button class="btn primary" type="button" id="inviteCopy">Скопировать</button></div>
-    <p class="hint">По ссылке клиент задаёт свой пароль и сразу попадает в кабинет. Ссылка одноразовая и действует 7 дней; новая ссылка отменяет старую.</p>
+    <p class="hint">По ссылке человек задаёт свой пароль и сразу попадает в кабинет. Ссылка одноразовая и действует 7 дней; новая ссылка отменяет старую.</p>
     <div class="sheet-actions"><button class="btn" type="button" data-close>Готово</button></div>
   </div>
 </dialog>
@@ -672,6 +672,7 @@ main { padding-block: 20px 48px; }
   let tgLink = null; // код привязки Telegram, который клиент только что получил
   let uploadTarget = null; // куда загружаем картинку: { slug, kind, id }
   const isClient = () => state?.role === "client";
+  const isOperator = () => state?.role === "operator";
   const clientOfBrand = (slug) => (state.clients || []).find((c) => c.brand === slug);
   const day = (iso) => new Date(iso.length === 10 ? iso + "T00:00:00" : iso).toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
   const dayBefore = (iso) => { const d = new Date(iso + "T00:00:00"); d.setDate(d.getDate() - 1); return d.toLocaleDateString("ru-RU", { day: "numeric", month: "short" }); };
@@ -778,7 +779,8 @@ main { padding-block: 20px 48px; }
   // ---------- Шапка и вкладки ----------
   const OWNER_TABS = [["series", "Серии", "countYou"], ["brands", "Бренды"], ["clients", "Клиенты", "countClients"], ["analytics", "Аналитика"], ["agents", "Агенты"], ["connections", "Подключения"]];
   const CLIENT_TABS = [["series", "Серии", "countYou"], ["brands", "Ваш сериал"], ["plan", "Тариф и счета", "countUnpaid"], ["settings", "Настройки"]];
-  const tabs = () => (isClient() ? CLIENT_TABS : OWNER_TABS);
+  const OPERATOR_TABS = [["series", "Серии", "countYou"], ["brands", "Бренды"], ["agents", "Агенты"]];
+  const tabs = () => (isClient() ? CLIENT_TABS : isOperator() ? OPERATOR_TABS : OWNER_TABS);
   function currentTab() {
     const h = location.hash.slice(1);
     return state && tabs().some((t) => t[0] === h) ? h : "series";
@@ -817,7 +819,9 @@ main { padding-block: 20px 48px; }
     } else {
       const n = state.brands.length;
       $("#brandName").textContent = "AI-студия";
-      $("#seriesName").textContent = `${n} ${plural(n, "бренд", "бренда", "брендов")} · ${state.episodes.length} ${plural(state.episodes.length, "серия", "серии", "серий")}`;
+      $("#seriesName").textContent = isOperator()
+        ? `Оператор · ${state.operator.name}`
+        : `${n} ${plural(n, "бренд", "бренда", "брендов")} · ${state.episodes.length} ${plural(state.episodes.length, "серия", "серии", "серий")}`;
       const { spent, limit } = state.budget;
       share = limit > 0 ? Math.min(1, spent / limit) : 1;
       $("#budgetLabel").textContent = "Расход сегодня";
@@ -1249,7 +1253,7 @@ main { padding-block: 20px 48px; }
           <div class="brand-actions">
             <button class="btn primary" type="button" data-new-for="${esc(b.slug)}">Новая серия</button>
             <button class="btn" type="button" data-show-brand="${esc(b.slug)}">Серии бренда</button>
-            ${account ? "" : `<button class="btn" type="button" data-new-client="${esc(b.slug)}">Подключить клиента</button>`}
+            ${account || isOperator() ? "" : `<button class="btn" type="button" data-new-client="${esc(b.slug)}">Подключить клиента</button>`}
           </div>
         </article>`;
       })
@@ -1342,6 +1346,7 @@ main { padding-block: 20px 48px; }
       ${cards}
       <div><h3 class="block-title">Счета</h3>${invoiceRows ? `<div class="rows">${invoiceRows}</div>` : '<p class="hint">Счета выставляются сами в начале каждого периода тарифа.</p>'}</div>
       <div><h3 class="block-title">Заявки с сайта</h3>${leadRows ? `<div class="rows">${leadRows}</div>` : '<p class="hint">Заявки с главной страницы студии появятся здесь и придут тебе в Telegram.</p>'}</div>
+      <div><h3 class="block-title">Команда студии</h3>${teamBlock()}</div>
       <div><h3 class="block-title">Журнал действий</h3>${auditRows ? `<div class="rows">${auditRows}</div>` : '<p class="hint">Здесь видно, кто что одобрил, оплатил и поменял.</p>'}</div>`;
   }
 
@@ -1456,6 +1461,34 @@ main { padding-block: 20px 48px; }
     tip.style.left = Math.max(8, x) + "px";
     tip.style.top = Math.max(8, e.clientY - tip.offsetHeight - 12) + "px";
   });
+
+  // Операторы ведут серии и бренды вместо тебя: без денег, клиентов, аналитики и настроек.
+  function teamBlock() {
+    const rows = (state.team || [])
+      .map((m) => `<div class="row">
+          <div class="row-main"><b>${esc(m.name)}</b><span class="mono">${esc(m.email)}</span></div>
+          <div class="row-side">
+            ${m.status === "disabled" ? '<span class="tag">отключён</span>' : m.hasLogin ? '<span class="tag ok">входит</span>' : m.inviteActive ? '<span class="tag warn">приглашение отправлено</span>' : '<span class="tag">без входа</span>'}
+            <button class="btn small" type="button" data-team-invite="${esc(m.id)}">${m.hasLogin ? "Новая ссылка" : "Ссылка входа"}</button>
+            <button class="btn small" type="button" data-team-status="${esc(m.id)}" data-value="${m.status === "active" ? "disabled" : "active"}">${m.status === "active" ? "Отключить" : "Включить"}</button>
+          </div>
+        </div>`)
+      .join("");
+    return `${rows ? `<div class="rows">${rows}</div>` : '<p class="hint">Операторы делают и одобряют серии, загружают картинки героев и настраивают бренды. Деньги, клиенты, аналитика и настройки им не видны.</p>'}
+      <form class="setting" id="teamForm" style="margin-top:10px"><b>Пригласить оператора</b>
+        <div class="pw">
+          <label class="field"><span>Имя</span><input name="name" required maxlength="80" placeholder="Азиз"></label>
+          <label class="field"><span>Почта (логин)</span><input name="email" type="email" required maxlength="120" placeholder="aziz@studio.uz"></label>
+          <button class="btn primary" type="submit">Пригласить</button>
+        </div>
+      </form>`;
+  }
+
+  function showInvite(url, expiresAt, note) {
+    $("#inviteNote").textContent = `${note} Действует до ${day(expiresAt)}.`;
+    $("#inviteUrl").value = url;
+    $("#inviteSheet").showModal();
+  }
 
   // ---------- Тариф и настройки (клиент) ----------
   function renderPlan() {
@@ -1610,6 +1643,8 @@ main { padding-block: 20px 48px; }
     if (isClient()) {
       renderPlan();
       if (!document.querySelector("#settingsBox :focus")) renderSettings();
+    } else if (isOperator()) {
+      renderAgents();
     } else {
       renderAgents();
       renderConnections();
@@ -1817,6 +1852,22 @@ main { padding-block: 20px 48px; }
       $("#assetInput").click();
       return;
     }
+    const teamInvite = t.closest("[data-team-invite]");
+    if (teamInvite) {
+      post(`/api/team/${teamInvite.dataset.teamInvite}/invite`).then((data) => {
+        if (data) showInvite(data.url, data.expiresAt, "Новая ссылка отменяет старую.");
+        load();
+      });
+      return;
+    }
+    const teamStatus = t.closest("[data-team-status]");
+    if (teamStatus) {
+      post(`/api/team/${teamStatus.dataset.teamStatus}`, { status: teamStatus.dataset.value }).then((ok) => {
+        if (ok) toast(teamStatus.dataset.value === "active" ? "Доступ включён" : "Доступ отключён — сотрудник больше не войдёт");
+        load();
+      });
+      return;
+    }
     const trainBtn = t.closest("[data-train]");
     if (trainBtn) {
       const [slug, id] = trainBtn.dataset.train.split("|");
@@ -1968,6 +2019,17 @@ main { padding-block: 20px 48px; }
         cta: form.get("cta") || "",
       });
       if (ok) toast("Концовка сохранена — она будет в следующих сериях");
+      load();
+      return;
+    }
+    if (event.target.id === "teamForm") {
+      event.preventDefault();
+      const form = new FormData(event.target);
+      const data = await post("/api/team", { name: String(form.get("name") || "").trim(), email: String(form.get("email") || "").trim() });
+      if (data) {
+        event.target.reset();
+        showInvite(data.url, data.expiresAt, "Отправьте ссылку сотруднику: он задаст пароль и войдёт как оператор.");
+      }
       load();
       return;
     }

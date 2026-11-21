@@ -211,6 +211,40 @@ test("концовка бренда настраивается владельц�
   assert.equal(after.brands.find((x) => x.slug === "bozor-seriali")!.endCard, undefined);
 });
 
+test("оператор: входит по приглашению, ведёт серии и бренды, но не видит денег и клиентов", async () => {
+  assert.equal((await asOwner("/api/team", { name: "Азиз", email: "boss@bozor.uz" })).status, 400); // почта клиента занята
+  const created = (await (await asOwner("/api/team", { name: "Азиз", email: "aziz@studio.uz" })).json()) as { id: string; url: string };
+  const token = new URL(created.url).pathname.split("/").pop()!;
+  assert.equal((await fetch(`${base}/invite/${token}`)).status, 200);
+  const accepted = await fetch(base + "/api/invite", form({ token, password: "operator-pass" }));
+  assert.equal(accepted.status, 200);
+  const cookie = accepted.headers.get("set-cookie")!.split(";")[0]!;
+  const asOp = (url: string, body: Record<string, string> = {}) => {
+    const init = form(body);
+    return fetch(base + url, { ...init, headers: { ...(init.headers as Record<string, string>), Cookie: cookie } });
+  };
+
+  const st = (await (await fetch(base + "/api/state", { headers: { Cookie: cookie } })).json()) as State;
+  assert.equal(st.role, "operator");
+  assert.equal(st.operator?.name, "Азиз");
+  assert.equal(st.invoices, undefined);
+  assert.equal(st.analytics, undefined);
+  assert.equal(st.team, undefined);
+  assert.ok(st.clients!.every((c) => c.email === "" && c.priceUsd === 0));
+  assert.ok(st.episodes.length > 0);
+
+  assert.equal((await asOp("/api/brands/bozor-seriali/endcard", { enabled: "0" })).status, 200);
+  assert.equal((await asOp("/api/clients", { brand: "x", contactName: "x", email: "x@x.uz", plan: "start" })).status, 403);
+  assert.equal((await fetch(`${base}/api/backup`, { headers: { Cookie: cookie } })).status, 403);
+  const inv = st.clients![0] && (await (await fetch(base + "/api/state", { headers: owner })).json() as State).invoices![0]!;
+  assert.equal((await fetch(`${base}/invoices/${inv.id}`, { headers: { Cookie: cookie } })).status, 404);
+
+  // Владелец отключает сотрудника — его сессия больше не действует.
+  assert.equal((await asOwner(`/api/team/${created.id}`, { status: "disabled" })).status, 200);
+  assert.equal((await fetch(base + "/api/state", { headers: { Cookie: cookie } })).status, 401);
+  assert.equal((await fetch(base + "/api/login", form({ login: "aziz@studio.uz", password: "operator-pass" }))).status, 401);
+});
+
 test("смена пароля выдаёт новую сессию, выход стирает cookie", async () => {
   const res = await asClient("/api/me/password", { current: "client-pass-1", next: "client-pass-2" });
   assert.equal(res.status, 200);

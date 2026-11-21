@@ -4,6 +4,7 @@ import type http from "node:http";
 import path from "node:path";
 import { type Client, getClient, verifyClientLogin } from "./clients.js";
 import { config } from "./config.js";
+import { getMember, type TeamMember, verifyMemberLogin } from "./team.js";
 
 /**
  * Вход в студию.
@@ -12,7 +13,7 @@ import { config } from "./config.js";
  * Сессия — подписанная HMAC cookie (HttpOnly, SameSite=Lax), на сервере ничего не хранится.
  */
 
-export type Viewer = { role: "owner" } | { role: "client"; client: Client };
+export type Viewer = { role: "owner" } | { role: "operator"; member: TeamMember } | { role: "client"; client: Client };
 
 export const SESSION_COOKIE = "studio_session";
 const SESSION_DAYS = 30;
@@ -37,7 +38,7 @@ function sign(payload: string): string {
 }
 
 interface SessionPayload {
-  r: "owner" | "client";
+  r: "owner" | "operator" | "client";
   c?: string;
   /** Срок, мс с 1970. */
   e: number;
@@ -62,7 +63,11 @@ export function createSession(viewer: Viewer): string {
   const payload: SessionPayload = {
     r: viewer.role,
     e: Date.now() + SESSION_DAYS * 86_400_000,
-    ...(viewer.role === "client" ? { c: viewer.client.id, p: passwordStamp(viewer.client) } : { p: ownerStamp() }),
+    ...(viewer.role === "client"
+      ? { c: viewer.client.id, p: passwordStamp(viewer.client) }
+      : viewer.role === "operator"
+        ? { c: viewer.member.id, p: stamp(viewer.member.passwordHash ?? "") }
+        : { p: ownerStamp() }),
   };
   const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
   return `${body}.${sign(body)}`;
@@ -83,6 +88,16 @@ export function readSession(token: string | undefined): Viewer | undefined {
   }
   if (!payload.e || payload.e < Date.now()) return undefined;
   if (payload.r === "owner") return payload.p === ownerStamp() ? { role: "owner" } : undefined;
+  if (payload.r === "operator" && payload.c) {
+    try {
+      const member = getMember(payload.c);
+      // Отключённый сотрудник или сменённый пароль — сессия больше не действует.
+      if (member.status !== "active" || !member.passwordHash || stamp(member.passwordHash) !== payload.p) return undefined;
+      return { role: "operator", member };
+    } catch {
+      return undefined;
+    }
+  }
   if (payload.r === "client" && payload.c) {
     try {
       const client = getClient(payload.c);
@@ -152,7 +167,9 @@ export function login(loginName: string, password: string): Viewer | undefined {
   const name = loginName.trim();
   if (name.toLowerCase() === "admin") return ownerPasswordOk(password) ? { role: "owner" } : undefined;
   const client = verifyClientLogin(name, password);
-  return client ? { role: "client", client } : undefined;
+  if (client) return { role: "client", client };
+  const member = verifyMemberLogin(name, password);
+  return member ? { role: "operator", member } : undefined;
 }
 
 // ---------- Защита от перебора ----------

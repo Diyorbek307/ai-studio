@@ -34,6 +34,7 @@ import {
 } from "./clients.js";
 import { config } from "./config.js";
 import { renderInvoicePage } from "./invoicePage.js";
+import { acceptMemberInvite, changeMemberPassword, createMember, createMemberInvite, getMember, memberByInvite, setMemberStatus } from "./team.js";
 import { addLead } from "./leads.js";
 import { errorMessage, log } from "./log.js";
 import { designBrandSeries } from "./agents/mascotDesigner.js";
@@ -178,9 +179,16 @@ function publicInfo(): Record<string, unknown> {
   return { plans: PLAN_IDS.map((id) => PLANS[id]) };
 }
 
+/** Адрес студии для ссылок-приглашений. */
+function baseUrl(req: http.IncomingMessage): string {
+  return config.server.publicBaseUrl || `http://${req.headers.host ?? `localhost:${config.server.port}`}`;
+}
+
 /** Короткое имя для журнала действий. */
 function actorName(viewer: Viewer): string {
-  return viewer.role === "owner" ? "Студия" : viewer.client.company;
+  if (viewer.role === "owner") return "Студия";
+  if (viewer.role === "operator") return `Оператор ${viewer.member.name}`;
+  return viewer.client.company;
 }
 
 /** Уведомление владельцу в Telegram — без ошибок наружу. */
@@ -219,6 +227,11 @@ class HttpError extends Error {
 
 function ownerOnly(viewer: Viewer): void {
   if (viewer.role !== "owner") throw new HttpError(403, "Нет доступа");
+}
+
+/** Команда студии: владелец и операторы — серии и бренды, без денег и клиентов. */
+function staffOnly(viewer: Viewer): void {
+  if (viewer.role !== "owner" && viewer.role !== "operator") throw new HttpError(403, "Нет доступа");
 }
 
 /** Клиент может решать только по своим сериям, которые ждут его решения. */
@@ -297,13 +310,13 @@ async function handlePublic(req: http.IncomingMessage, res: http.ServerResponse,
   const invite = /^\/invite\/([A-Za-z0-9_-]{20,64})$/.exec(url.pathname);
   if (invite && req.method === "GET") {
     const client = clientByInvite(invite[1]!);
-    html(
-      res,
-      page(LOGIN_FILE, "Приглашение — AI-студия", {
-        STUDIO_AUTH: client ? { mode: "invite", token: invite[1], company: client.company, email: client.email } : { mode: "invite-expired" },
-      }),
-      client ? 200 : 410,
-    );
+    const member = client ? undefined : memberByInvite(invite[1]!);
+    const auth = client
+      ? { mode: "invite", token: invite[1], company: client.company, email: client.email }
+      : member
+        ? { mode: "invite", token: invite[1], company: "AI-студия", email: member.email }
+        : { mode: "invite-expired" };
+    html(res, page(LOGIN_FILE, "Приглашение — AI-студия", { STUDIO_AUTH: auth }), client || member ? 200 : 410);
     return true;
   }
 
@@ -345,7 +358,14 @@ async function handlePublic(req: http.IncomingMessage, res: http.ServerResponse,
         return true;
       }
       try {
-        const client = acceptInvite(form.get("token") ?? "", form.get("password") ?? "");
+        const token = form.get("token") ?? "";
+        if (memberByInvite(token)) {
+          const member = acceptMemberInvite(token, form.get("password") ?? "");
+          audit(`Оператор ${member.name}`, "вошёл(а) в команду по приглашению");
+          json(res, 200, { ok: true }, { "Set-Cookie": sessionCookie(createSession({ role: "operator", member })) });
+          return true;
+        }
+        const client = acceptInvite(token, form.get("password") ?? "");
         audit(client.company, "открыл(а) кабинет по приглашению");
         await notifyOwner(`🔑 ${client.company} открыл(а) кабинет клиента.`);
         json(res, 200, { ok: true }, { "Set-Cookie": sessionCookie(createSession({ role: "client", client })) });
@@ -384,7 +404,7 @@ async function handlePublic(req: http.IncomingMessage, res: http.ServerResponse,
 
 async function handlePrivate(req: http.IncomingMessage, res: http.ServerResponse, url: URL, viewer: Viewer): Promise<void> {
   if (url.pathname === "/app" && req.method === "GET") {
-    html(res, page(UI_FILE, viewer.role === "owner" ? "AI-студия" : `${viewer.client.company} — AI-студия`));
+    html(res, page(UI_FILE, viewer.role === "client" ? `${viewer.client.company} — AI-студия` : "AI-студия"));
     return;
   }
 
@@ -425,7 +445,7 @@ async function handlePrivate(req: http.IncomingMessage, res: http.ServerResponse
   const invoicePage = /^\/invoices\/(inv-[0-9a-f]{8})$/.exec(url.pathname);
   if (invoicePage && req.method === "GET") {
     const invoice = listInvoices().find((i) => i.id === invoicePage[1]);
-    if (!invoice || (viewer.role === "client" && invoice.clientId !== viewer.client.id)) throw new HttpError(404, "Счёт не найден");
+    if (!invoice || viewer.role === "operator" || (viewer.role === "client" && invoice.clientId !== viewer.client.id)) throw new HttpError(404, "Счёт не найден");
     const client = getClient(invoice.clientId);
     let title = client.brand;
     try {
@@ -442,7 +462,7 @@ async function handlePrivate(req: http.IncomingMessage, res: http.ServerResponse
 
   const train = /^\/api\/brands\/([a-z0-9-]+)\/characters\/([a-z0-9-]+)\/train$/.exec(url.pathname);
   if (train) {
-    ownerOnly(viewer);
+    staffOnly(viewer);
     const [, slug, id] = train as unknown as [string, string, string];
     const ref = await trainCharacter(slug, id);
     background(`Обучение героя ${id}`, watchSoulTraining(slug, id));
@@ -452,7 +472,7 @@ async function handlePrivate(req: http.IncomingMessage, res: http.ServerResponse
 
   const upload = /^\/api\/brands\/([a-z0-9-]+)\/(characters|locations)\/([a-z0-9-]+)$/.exec(url.pathname);
   if (upload) {
-    ownerOnly(viewer);
+    staffOnly(viewer);
     const [, slug, kind, id] = upload as unknown as [string, string, AssetKind, string];
     const series = loadSeries(slug);
     const known = kind === "characters" ? series.characters.some((c) => c.id === id) : series.locations.some((l) => l.id === id);
@@ -467,7 +487,7 @@ async function handlePrivate(req: http.IncomingMessage, res: http.ServerResponse
       fs.rmSync(path.dirname(tmp), { recursive: true, force: true });
     }
     const what = variant === "talk" ? "рот героя" : variant === "blink" ? "моргание героя" : kind === "characters" ? "героя" : "локацию";
-    audit("Студия", `загрузила ${what}`, slug, id);
+    audit(actorName(viewer), `загрузил(а) ${what}`, slug, id);
     json(res, 200, { ok: true });
     return;
   }
@@ -559,6 +579,14 @@ async function handlePrivate(req: http.IncomingMessage, res: http.ServerResponse
     return;
   }
 
+  if (url.pathname === "/api/me/password" && viewer.role === "operator") {
+    changeMemberPassword(viewer.member.id, form.get("current") ?? "", form.get("next") ?? "");
+    const member = getMember(viewer.member.id);
+    audit(actorName(viewer), "сменил(а) пароль");
+    json(res, 200, { ok: true }, { "Set-Cookie": sessionCookie(createSession({ role: "operator", member })) });
+    return;
+  }
+
   if (url.pathname === "/api/me/password") {
     if (viewer.role !== "client") throw new HttpError(403, "Нет доступа");
     changePassword(viewer.client.id, form.get("current") ?? "", form.get("next") ?? "");
@@ -569,9 +597,8 @@ async function handlePrivate(req: http.IncomingMessage, res: http.ServerResponse
     return;
   }
 
-  ownerOnly(viewer);
-
   if (url.pathname === "/api/brands") {
+    staffOnly(viewer);
     const company = (form.get("company") ?? "").trim();
     const product = (form.get("product") ?? "").trim();
     const language = form.get("language") ?? "uz";
@@ -595,6 +622,7 @@ async function handlePrivate(req: http.IncomingMessage, res: http.ServerResponse
 
   const endCard = /^\/api\/brands\/([a-z0-9-]+)\/endcard$/.exec(url.pathname);
   if (endCard) {
+    staffOnly(viewer);
     const series = loadSeries(endCard[1]!);
     const field = (k: string, max: number) => (form.get(k) ?? "").replace(/\s+/g, " ").trim().slice(0, max) || undefined;
     series.end_card = {
@@ -605,7 +633,32 @@ async function handlePrivate(req: http.IncomingMessage, res: http.ServerResponse
       color: series.end_card?.color,
     };
     saveSeries(series);
-    audit("Студия", series.end_card.enabled ? "настроила концовку серий" : "выключила концовку серий", series.title);
+    audit(actorName(viewer), series.end_card.enabled ? "настроила концовку серий" : "выключила концовку серий", series.title);
+    json(res, 200, { ok: true });
+    return;
+  }
+
+  ownerOnly(viewer);
+
+  if (url.pathname === "/api/team") {
+    const member = createMember({ name: form.get("name") ?? "", email: form.get("email") ?? "" });
+    const { token, expiresAt } = createMemberInvite(member.id);
+    audit("Студия", "пригласила сотрудника", member.name, member.email);
+    json(res, 200, { ok: true, id: member.id, url: `${baseUrl(req)}/invite/${token}`, expiresAt });
+    return;
+  }
+
+  const teamAction = /^\/api\/team\/(tm-[0-9a-f]{8})(?:\/(invite))?$/.exec(url.pathname);
+  if (teamAction) {
+    const id = teamAction[1]!;
+    if (teamAction[2] === "invite") {
+      const { token, expiresAt } = createMemberInvite(id);
+      audit("Студия", "выдала приглашение сотруднику", getMember(id).name);
+      json(res, 200, { ok: true, url: `${baseUrl(req)}/invite/${token}`, expiresAt });
+      return;
+    }
+    const member = setMemberStatus(id, form.get("status") ?? "");
+    audit("Студия", member.status === "active" ? "включила доступ сотруднику" : "отключила доступ сотруднику", member.name);
     json(res, 200, { ok: true });
     return;
   }
