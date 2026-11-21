@@ -132,7 +132,8 @@ export const config = {
 
   server: {
     port: num("PORT", 8080),
-    publicBaseUrl: str("PUBLIC_BASE_URL").replace(/\/+$/, ""),
+    // На Render адрес сервиса приходит сам в RENDER_EXTERNAL_URL — PUBLIC_BASE_URL можно не заполнять.
+    publicBaseUrl: (str("PUBLIC_BASE_URL") || str("RENDER_EXTERNAL_URL")).replace(/\/+$/, ""),
     adminPassword: str("STUDIO_ADMIN_PASSWORD"),
     production: str("NODE_ENV") === "production",
   },

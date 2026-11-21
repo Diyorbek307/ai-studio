@@ -1,16 +1,15 @@
-# Render: веб-сервис с постоянным диском под ролики, сериалы, клиентов и счета.
-# Бесплатный старт: заполни только GEMINI_API_KEY, STUDIO_ADMIN_PASSWORD, PUBLIC_BASE_URL и Telegram.
-# Диск доступен на платных тарифах; без диска ролики пропадают при каждом деплое.
+# Render: бесплатный веб-сервис (Docker) для старта и демо.
+# Заполни STUDIO_ADMIN_PASSWORD; для настоящих роликов — GEMINI_API_KEY. Адрес сервиса Render передаёт сам.
+# На бесплатном тарифе нет диска: клиенты, серии и ролики стираются при деплое и после сна сервера
+# (засыпает через 15 минут без посещений). Когда пойдут клиенты — переключи на постоянный тариф:
+#   plan: starter
+#   disk: { name: studio-data, mountPath: /data, sizeGB: 5 }
 services:
   - type: web
     name: ai-studio
     runtime: docker
-    plan: starter
+    plan: free
     healthCheckPath: /health
-    disk:
-      name: studio-data
-      mountPath: /data
-      sizeGB: 5
     envVars:
       - key: NODE_ENV
         value: production
@@ -24,9 +23,6 @@ services:
         value: "5"
       - key: EPISODES_PER_DAY
         value: "1"
-      # Адрес сервиса на Render, например https://ai-studio.onrender.com
-      - key: PUBLIC_BASE_URL
-        sync: false
       - key: STUDIO_ADMIN_PASSWORD
         sync: false
       # Ключ подписи сессий кабинета — Render сгенерирует сам
